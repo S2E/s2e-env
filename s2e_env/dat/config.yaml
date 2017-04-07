@@ -1,0 +1,97 @@
+# apt-get dependencies
+dependencies:
+    common:
+        # Build dependencies
+        - build-essential
+        - cmake
+        - wget
+        - git
+        - texinfo
+        - flex
+        - bison
+        - python-dev
+
+        # S2E dependencies
+        - libdwarf-dev
+        - libelf-dev
+        - libiberty-dev
+        - binutils-dev
+        - libreadline-dev
+        - libboost-dev
+        - zlib1g-dev
+        - libjemalloc-dev
+        - nasm
+        - pkg-config
+        - libmemcached-dev
+        - libvdeplug-dev
+        - libpq-dev
+        - libc6-dev-i386
+        - libboost-system-dev
+        - libboost-serialization-dev
+        - libboost-regex-dev
+        - libprotobuf-dev
+        - protobuf-compiler
+        - libbsd-dev
+        - libsigc++-2.0-dev
+        - libsdl-dev
+        - libglib2.0-dev
+        - python-docutils
+        - qemu
+    ubuntu_16:
+        - libprocps4-dev
+    ubuntu_14:
+        - libprocps3-dev
+
+# S2E Git repos
+repos:
+    url: https://github.com/S2E
+
+    # Names of git repositories
+    s2e: manifest
+    images:
+        linux: s2e-linux-kernel
+
+# Repo. Used for managing the S2E git repositories
+repo:
+    url: https://storage.googleapis.com/git-repo-downloads/repo
+
+# Packer. Used for building images
+packer:
+    url: https://releases.hashicorp.com/packer/0.12.3/packer_0.12.3_linux_amd64.zip
+
+# Directories that will automatically be built when running ``s2e init``
+dirs:
+    - bin
+    - build
+    - images
+    - include
+    - lib
+    - projects
+    - share
+    - source
+
+# Templates used for project creation
+templates:
+    launch_scripts:
+        - launch-s2e.sh
+        - launch-non-s2e.sh
+        - launch-raw.sh
+
+# Mapping of architecture to guest tools directory
+guest_tools:
+    i386: guest-tools32
+    x86_64: guest-tools64
+
+# Functions that are supported by S2E's FunctionModels plugin
+function_models:
+    - strcpy
+    - strncpy
+    - strlen
+    - strcmp
+    - strncmp
+    - memcpy
+    - memcmp
+    - printf
+    - fprintf
+    - strcat
+    - strncat

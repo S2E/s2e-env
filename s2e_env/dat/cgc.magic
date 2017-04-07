@@ -1,0 +1,27 @@
+0 string      \177CGC     CGC
+>4    byte        0       invalid class
+>4    byte        1       32-bit
+>5    byte        0       invalid byte order
+>5    byte        1       LSB
+>>16  leshort     0       no file type,
+!:strength *2
+!:mime    application/x-object
+>>16    leshort         1               relocatable,
+!:mime  application/x-object
+>>16    leshort         2               executable,
+!:mime  application/x-executable
+>>16    leshort         3               shared object,
+!:mime  application/x-sharedlib
+>>16    leshort         4               core file
+!:mime  application/x-coredump
+>>16    beshort         0               no file type,
+!:mime  application/octet-stream
+>>16    beshort         1               relocatable,
+!:mime  application/x-object
+>>16    beshort         2               executable,
+!:mime  application/x-executable
+>>16    beshort         3               shared object,
+!:mime  application/x-sharedlib
+>>16    beshort         4               core file,
+!:mime  application/x-coredump
+>>7   byte        67      (CGC/Linux)
