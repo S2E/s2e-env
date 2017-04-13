@@ -61,14 +61,15 @@ class Command(ProjectCommand):
         if not os.path.isfile(ida_path):
             raise CommandError('IDA Pro not found at %s' % ida_path)
 
-        # Change into the project directory
-        os.chdir(self._project_dir)
+        target_path = self._project_desc['target']
 
         # Get the basic block information
-        bbs = self._get_basic_blocks(ida_path)
+        bbs = self._get_basic_blocks(ida_path, target_path)
 
         # Get translation block coverage information
-        tbs = self._get_tb_coverage()
+        tbs = self._get_tb_coverage(os.path.basename(target_path))
+        if not tbs:
+            raise CommandError('No translation block information found')
 
         # Calculate the basic block coverage information
         bb_coverage = self._basic_block_coverage(bbs, tbs)
@@ -76,7 +77,7 @@ class Command(ProjectCommand):
         # Write the basic block information to a JSON file
         self._save_basic_block_coverage(bb_coverage)
 
-    def _get_basic_blocks(self, ida_path):
+    def _get_basic_blocks(self, ida_path, target_path):
         """
         Extract basic block information from the target binary using S2E's IDA
         Pro script.
@@ -86,6 +87,7 @@ class Command(ProjectCommand):
 
         Args:
             ida_path: Path to the IDA Pro executable.
+            target_path: Path to the analysis target.
 
         Returns:
             A list of ``BasicBlock``s, i.e. named tuples containing:
@@ -101,7 +103,6 @@ class Command(ProjectCommand):
                 # are created with a symlink to the target program, then IDA
                 # Pro will generate the idb and bblist files in the symlinked
                 # target's directory. Which is not what we want
-                target_path = self._project_desc['target']
                 target_name = os.path.basename(target_path)
 
                 temp_target_path = os.path.join(temp_dir, target_name)
@@ -131,10 +132,13 @@ class Command(ProjectCommand):
         except ErrorReturnCode as e:
             raise CommandError(e)
 
-    def _get_tb_coverage(self):
+    def _get_tb_coverage(self, target_name):
         """
-        Extract translation block (TB) coverage from the JSON files generated
+        Extract translation block (TB) coverage from the JSON file(s) generated
         by the ``TranslationBlockCoverage`` plugin.
+
+        Args:
+            target_name: Name of the analysis target file.
 
         Returns:
             A list of ``TranslationBlock``'s, i.e. named tuples containing:
@@ -143,17 +147,17 @@ class Command(ProjectCommand):
         """
         self.info('Generating translation block coverage information')
 
-        target_path = self._project_desc['target']
-        target_name = os.path.basename(target_path)
-
+        # Include both multi-node and single node results
         tb_coverage_files = glob.glob(os.path.join(self._project_dir,
                                                    's2e-last', '*',
+                                                   'tbcoverage-*.json')) + \
+                            glob.glob(os.path.join(self._project_dir,
+                                                   's2e-last',
                                                    'tbcoverage-*.json'))
         if not tb_coverage_files:
             self.warn('No translation block coverage files found in s2e-last. '
                       'Did you enable the ``TranslationBlockCoverage`` plugin '
                       'in s2e-config.lua?')
-            return
 
         covered_tbs = set()
         for tb_coverage_file in tb_coverage_files:
@@ -167,6 +171,7 @@ class Command(ProjectCommand):
             if target_name not in tb_coverage_data:
                 self.warn('Target %s not found in translation block JSON file '
                           '%s. Skipping...' % (target_name, tb_coverage_file))
+                continue
 
             covered_tbs.update(TranslationBlock(start_addr, end_addr) for
                                start_addr, end_addr, _ in
@@ -198,7 +203,7 @@ class Command(ProjectCommand):
                 # Check if the translation block falls within a basic block OR
                 # a basic block falls within a translation block
                 if (bb.end_addr >= tb_start_addr >= bb.start_addr or
-                    bb.start_addr <= tb_end_addr <= bb.end_addr):
+                        bb.start_addr <= tb_end_addr <= bb.end_addr):
                     covered_bbs.add(bb)
 
         return list(covered_bbs)
@@ -207,7 +212,7 @@ class Command(ProjectCommand):
         """
         Write the basic block coverage information to a JSON file.
         """
-        bb_coverage_file = os.path.join(self._project_dir,
+        bb_coverage_file = os.path.join(self._project_dir, 's2e-last',
                                         'basic_block_coverage.json')
 
         self.info('Saving basic block coverage to %s' % bb_coverage_file)
