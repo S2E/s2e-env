@@ -77,7 +77,7 @@ class Command(EnvCommand):
             git_repo_dir = self.env_path('source', git_repo)
 
             if not os.path.isdir(git_repo_dir):
-                self.warn('%s does not exist. Skipping' % git_repo)
+                self.warn('%s does not exist. Skipping...' % git_repo)
                 continue
 
             try:

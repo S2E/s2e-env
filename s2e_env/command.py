@@ -337,7 +337,8 @@ class ProjectCommand(EnvCommand):
                 self._project_desc = json.load(f)
         except Exception as e:
             raise CommandError('Unable to open project description for %s - '
-                               '%s' % (os.path.basename(self._project_dir), e))
+                               '%s. Are you sure this is an S2E environment?' %
+                               (os.path.basename(self._project_dir), e))
 
     def add_arguments(self, parser):
         super(ProjectCommand, self).add_arguments(parser)
