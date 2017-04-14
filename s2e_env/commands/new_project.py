@@ -84,7 +84,12 @@ class Command(EnvCommand):
                                  'exists, replace it')
 
     def handle(self, **options):
+        # Need an absolute path for the target in order to simplify
+        # symlink creation.
         target_path = options['target']
+        target_path = os.path.abspath(target_path)
+        options['target'] = target_path
+
         magic_checks = [
             (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject),
             (Magic(), ELF32_REGEX, LinuxProject),
