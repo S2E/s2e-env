@@ -60,7 +60,7 @@ class Command(EnvCommand):
         try:
             # Set up some environment variables
             env_vars = os.environ.copy()
-            env_vars['S2EPREFIX'] = self._env_dir
+            env_vars['S2EPREFIX'] = self.install_path()
 
             # Run make
             make = sh.Command('make').bake(directory=build_dir, file=makefile,

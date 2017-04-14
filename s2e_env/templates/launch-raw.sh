@@ -8,7 +8,7 @@
 # run time
 #
 
-{{ env_dir }}/bin/qemu-system-{{ arch }}                            \
+{{ install_dir }}/bin/qemu-system-{{ arch }}                            \
     -m {{ memory }} -enable-kvm                                     \
     -drive file={{ image_path }},format=raw,cache=writeback $*
 

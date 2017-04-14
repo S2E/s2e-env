@@ -84,13 +84,10 @@ packer:
 
 # Directories that will automatically be built when running ``s2e init``
 dirs:
-    - bin
     - build
     - images
-    - include
-    - lib
+    - install
     - projects
-    - share
     - source
 
 # Templates used for project creation
