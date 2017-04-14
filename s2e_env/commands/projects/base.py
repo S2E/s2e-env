@@ -254,7 +254,7 @@ class BaseProject(EnvCommand):
         """
         Create a symlink to the guest tools directory.
         """
-        guest_tools_path = self.env_path(
+        guest_tools_path = self.install_path(
             'bin', CONSTANTS['guest_tools'][self._arch]
         )
 
@@ -284,6 +284,7 @@ class BaseProject(EnvCommand):
             context = {
                 'current_time': datetime.datetime.now(),
                 'env_dir': self.env_path(),
+                'install_dir': self.install_path(),
                 'arch': self._arch,
                 'image_path': self._img_json['path'],
                 'memory': self._img_json['memory'],

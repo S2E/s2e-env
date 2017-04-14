@@ -262,6 +262,11 @@ class EnvCommand(BaseCommand):
         """
         return os.path.join(self._env_dir, *p)
 
+    def install_path(self, *p):
+        """
+        Create a path relative to the S2E install directory.
+        """
+        return self.env_path('install', *p)
 
 class ProjectCommand(EnvCommand):
     """

@@ -78,7 +78,7 @@ class CGCProject(BaseProject):
         self._render_template(context, 's2e-config.cgc.lua', output_path)
 
     def _create_dirs(self):
-        recipes_path = self.env_path('share', 'decree-recipes')
+        recipes_path = self.install_path('share', 'decree-recipes')
         seeds_path = os.path.join(self._project_path, 'seeds')
 
         # Create a symlink to the recipes directory
