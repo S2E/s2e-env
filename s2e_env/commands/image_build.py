@@ -20,12 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
-import os
+import glob
 import grp
+import json
+import os
 import pwd
 import subprocess
-import json
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
@@ -66,13 +66,24 @@ def _print_group_error(group_name):
 def _check_groups():
     if not _user_belongs_to('docker'):
         _print_group_error('docker')
-        return False
+        raise CommandError()
 
     if not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
         _print_group_error('kvm')
-        return False
+        raise CommandError()
 
-    return True
+
+def _check_vmlinux():
+    """
+    Check that /boot/vmlinux* files are readable.
+    This is important for guestfish.
+    """
+    try:
+        for f in glob.glob("/boot/vmli*"):
+            with open(f):
+                pass
+    except IOError:
+        raise CommandError('Make sure that kernels in /boot are readable. This is required for guestfish.')
 
 
 def _image_templates(img_build_dir):
@@ -126,8 +137,8 @@ class Command(EnvCommand):
             self._print_image_list()
             return
 
-        if not _check_groups():
-            return
+        _check_groups()
+        _check_vmlinux()
 
         self._check_ram_size(memory)
         self._check_core_num(num_cores)
