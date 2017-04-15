@@ -92,6 +92,7 @@ dirs:
     - build
     - images
     - install
+    - install/bin
     - projects
     - source
 

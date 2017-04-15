@@ -251,10 +251,19 @@ class EnvCommand(BaseCommand):
         self._env_dir = options['env']
         options.pop('env', ())
 
+        try:
+            with open(self.s2eenv_path()):
+                pass
+        except IOError:
+            raise CommandError('This does not look like an S2E project directory.')
+
     def add_arguments(self, parser):
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
+
+    def s2eenv_path(self):
+        return self.env_path('.s2eenv')
 
     def env_path(self, *p):
         """
