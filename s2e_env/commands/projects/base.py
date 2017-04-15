@@ -288,6 +288,7 @@ class BaseProject(EnvCommand):
                 'image_path': self._img_json['path'],
                 'memory': self._img_json['memory'],
                 'snapshot': self._img_json['snapshot'],
+                'qemu_extra_flags': self._img_json['qemu_extra_flags'],
             }
 
             script_path = os.path.join(self._project_path, template)
