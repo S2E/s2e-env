@@ -12,4 +12,4 @@ LD_PRELOAD={{ install_dir }}/share/libs2e/libs2e-{{ arch }}.so      \
     {{ install_dir }}/bin/qemu-system-{{ arch }}                    \
     -k en-us -m {{ memory }} -enable-kvm                            \
     -drive file={{ image_path }},format=s2e,cache=writeback         \
-    -serial file:serial.txt -net none -net nic,model=e1000 $*
+    -serial file:serial.txt {{ qemu_extra_flags }} $*
