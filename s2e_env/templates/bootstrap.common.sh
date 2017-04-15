@@ -1,5 +1,3 @@
-update_guest_tools
-
 # Don't print crashes in the syslog. This prevents unnecessary forking in the
 # kernel
 sudo sysctl -w debug.exception-trace=0
