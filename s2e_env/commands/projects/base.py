@@ -159,18 +159,17 @@ class BaseProject(EnvCommand):
                       without the .json extension).
         """
         # Construct the path to the image description file
-        img_json_path = self.env_path('images', '.%s' % img_name)
+        img_json_path = self.image_path(img_name, 'image.json')
 
-        if not img_json_path.endswith('.json'):
-            img_json_path = '%s.json' % img_json_path
-
-        # Try to load the image description file
         try:
             with open(img_json_path, 'r') as f:
-                return json.load(f)
+                ret = json.load(f)
+                ret['path'] = self.image_path(img_name, 'image.raw.s2e')
+                return ret
         except Exception:
-            raise CommandError('Unable to open image description %s' %
-                               os.path.basename(img_json_path))
+            raise CommandError('Unable to open image description %s\n'
+                               'Check that the image exists' %
+                               img_json_path)
 
     def _create_empty(self):
         """
@@ -238,7 +237,7 @@ class BaseProject(EnvCommand):
         The architecture is determined by the QEMU executable used to build the
         image.
         """
-        return self._img_json['qemu'].split('-')[-1]
+        return self._img_json['qemu_build']
 
     def _symlink_target(self):
         """
