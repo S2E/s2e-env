@@ -91,6 +91,10 @@ class Command(BaseCommand):
         for dir_ in CONSTANTS['dirs']:
             os.mkdir(os.path.join(env_path, dir_))
 
+        # Create marker file to recognize s2e environment folder
+        with open(os.path.join(env_path, '.s2eenv'), 'w'):
+            pass
+
         # Get the source repositories
         self._get_s2e_sources(env_path)
         self._get_img_sources(env_path)
