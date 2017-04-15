@@ -268,6 +268,18 @@ class EnvCommand(BaseCommand):
         """
         return self.env_path('install', *p)
 
+    def source_path(self, *p):
+        """
+        Create a path relative to the source directory
+        """
+        return os.path.join(self._env_dir, 'source', *p)
+
+    def image_path(self, *p):
+        """
+        Create a path relative to the image directory
+        """
+        return os.path.join(self._env_dir, 'images', *p)
+
 class ProjectCommand(EnvCommand):
     """
     The base command for all commands that work on existing projects.

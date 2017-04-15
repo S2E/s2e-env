@@ -209,7 +209,7 @@ class Command(BaseCommand):
 
         If the repo binary does not exist, download it.
         """
-        repo_path = os.path.join(env_path, 'bin', 'repo')
+        repo_path = os.path.join(env_path, 'install', 'bin', 'repo')
         if not os.path.isfile(repo_path):
             self._download_repo(repo_path)
 
