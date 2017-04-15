@@ -74,6 +74,10 @@ class BaseProject(EnvCommand):
                         autoescape=False)
         self._template_env.filters['datetimefilter'] = datetimefilter
 
+    def _validate_binary(self, target_arch, os_name, os_arch):
+        if target_arch == 'x86_64' and os_arch != 'x86_64':
+            raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
+
     def handle(self, **options):
         self._target_path = options['target']
 
@@ -98,6 +102,9 @@ class BaseProject(EnvCommand):
 
         # Load the image JSON description
         self._img_json = self._load_image_json(options['image'])
+
+        # Check architecture consistency
+        self._validate_binary(options['target_arch'], self._img_json['os_name'], self._img_json['os_arch'])
 
         # Save use seeds flag
         self._use_seeds = options['use_seeds']
