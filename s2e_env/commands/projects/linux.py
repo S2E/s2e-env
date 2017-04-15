@@ -112,12 +112,21 @@ class LinuxProject(BaseProject):
             else:
                 parsed_args.append(arg)
 
+        if not use_symb_input_file:
+            self.warn('')
+            self.warn('You did not specify the input file marker @@.')
+            self.warn('This marker is automatically substituted by a file with symbolic content.')
+            self.warn('You will have to manually edit bootstrap.sh in order to '
+                      'run the program on multiple paths.')
+            self.warn('Example: ' + self._target_path + ' @@')
+            self.warn('')
+
         if self._use_seeds and not use_symb_input_file:
             self.warn('Seed files have been enabled, however you did not  '
                       'specify an input file marker (i.e. \'@@\') to be '
-                      'substituted with a seed file. This means that seed '
-                      'files will be fetched but never used. Is this '
-                      'intentional?')
+                      'substituted with a seed file.')
+            self.warn('This means that seed files will be fetched but never used. '
+                      'Is this intentional?')
 
         return use_symb_input_file, parsed_args
 
