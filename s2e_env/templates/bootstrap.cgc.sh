@@ -63,31 +63,7 @@ function execute {
 # Bootstrap script starts executing from here #
 ###############################################
 
-update_guest_tools
-
-# Don't print crashes in the syslog. This prevents unnecessary forking in the
-# kernel
-sudo sysctl -w debug.exception-trace=0
-
-# Prevent core dumps from being created. This prevents unnecessary forking in
-# the kernel
-ulimit -c 0
-
 # Patch cb-test so that it works without core dumps
 sudo sed -i 's/resource.RLIM_INFINITY/0/g' /usr/bin/cb-test
 
-# Ensure that /tmp is mounted in memory (if you built the image using s2e-env
-# then this should already be the case. But better to be safe than sorry!)
-if ! mount | grep "none on /tmp type tmpfs"; then
-    ./s2ecmd kill -1 "/tmp must be mounted as a RAM disk"
-fi
-
-# Download the target file to analyze
-./s2eget "{{ target }}"
-
-# Run the analysis
-execute "./{{ target }}"
-
-# Kill states before exiting
-./s2ecmd kill 0 "'{{ target }}' state killed"
-
+{% include 'bootstrap.common.sh' %}
