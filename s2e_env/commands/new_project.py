@@ -91,21 +91,22 @@ class Command(EnvCommand):
         options['target'] = target_path
 
         magic_checks = [
-            (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject),
-            (Magic(), ELF32_REGEX, LinuxProject),
-            (Magic(), ELF64_REGEX, LinuxProject),
-            (Magic(), PE32_REGEX, WindowsProject),
-            (Magic(), PE64_REGEX, WindowsProject),
+            (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
+            (Magic(), ELF32_REGEX, LinuxProject, 'i386'),
+            (Magic(), ELF64_REGEX, LinuxProject, 'x86_64'),
+            (Magic(), PE32_REGEX, WindowsProject, 'i386'),
+            (Magic(), PE64_REGEX, WindowsProject, 'x86_64'),
         ]
 
         # Check the target program against the valid file types
-        for magic_check, regex, proj_class in magic_checks:
+        for magic_check, regex, proj_class, arch in magic_checks:
             magic = magic_check.from_file(target_path)
             matches = regex.match(magic)
 
             # If we find a match, create that project. The user instructions
             # are returned
             if matches:
+                options['target_arch'] = arch
                 return call_command(proj_class(), **options)
 
         # Otherwise no valid file type was found
