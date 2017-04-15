@@ -66,4 +66,7 @@ function execute {
 # Patch cb-test so that it works without core dumps
 sudo sed -i 's/resource.RLIM_INFINITY/0/g' /usr/bin/cb-test
 
+# Some binaries have strange headers, allow them here
+echo 1 | sudo tee /proc/sys/cgc/relaxed_headers
+
 {% include 'bootstrap.common.sh' %}
