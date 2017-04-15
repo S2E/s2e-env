@@ -56,7 +56,7 @@ class Command(EnvCommand):
 
         # Get information on the available images
         images = {}
-        for img_path in glob.glob(self.env_path('images', '.*.json')):
+        for img_path in glob.glob(self.env_path('images', '*.json')):
             # We only care about the file name, not the extension (first index)
             # Remove the leading '.' from the hidden file
             name = os.path.splitext(os.path.basename(img_path))[0][1:]
@@ -73,7 +73,7 @@ class Command(EnvCommand):
         projects = {}
         for project in os.listdir(self.env_path('projects')):
             json_desc_path = self.env_path('projects', project,
-                                           '.project.json')
+                                           'project.json')
             with open(json_desc_path, 'r') as f:
                 projects[project] = json.load(f)
 

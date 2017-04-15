@@ -305,7 +305,7 @@ class ProjectCommand(EnvCommand):
 
         # Load the project description
         try:
-            proj_desc_path = os.path.join(self._project_dir, '.project.json')
+            proj_desc_path = os.path.join(self._project_dir, 'project.json')
             with open(proj_desc_path, 'r') as f:
                 self._project_desc = json.load(f)
         except Exception as e:

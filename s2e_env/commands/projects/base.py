@@ -220,7 +220,7 @@ class BaseProject(EnvCommand):
         """
         self.info('Creating JSON description')
 
-        project_desc_path = os.path.join(self._project_path, '.project.json')
+        project_desc_path = os.path.join(self._project_path, 'project.json')
 
         creation_time = time.mktime(datetime.datetime.now().timetuple())
         project_desc = {
