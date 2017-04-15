@@ -99,8 +99,6 @@ dirs:
 templates:
     launch_scripts:
         - launch-s2e.sh
-        - launch-non-s2e.sh
-        - launch-raw.sh
 
 # Mapping of architecture to guest tools directory
 guest_tools:
