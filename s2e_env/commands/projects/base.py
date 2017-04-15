@@ -284,6 +284,7 @@ class BaseProject(EnvCommand):
                 'current_time': datetime.datetime.now(),
                 'env_dir': self.env_path(),
                 'install_dir': self.install_path(),
+                'build_dir': self.build_path(),
                 'arch': self._arch,
                 'image_path': self._img_json['path'],
                 'memory': self._img_json['memory'],

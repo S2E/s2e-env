@@ -69,7 +69,7 @@ class Command(EnvCommand):
 
             if options['debug']:
                 self.info('Building S2E (debug) in %s' % build_dir)
-                make('install-debug')
+                make('all-debug')
             else:
                 self.info('Building S2E (release) in %s' % build_dir)
                 make('install')
