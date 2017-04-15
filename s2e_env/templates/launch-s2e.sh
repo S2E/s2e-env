@@ -21,6 +21,7 @@ DRIVE="-drive file={{ image_path }},format=s2e,cache=writeback"
 export S2E_CONFIG=s2e-config.lua
 export S2E_SHARED_DIR={{ install_dir }}/share/libs2e
 export S2E_MAX_PROCESSES=1
+export S2E_UNBUFFERED_STREAM=1
 
 if [ "x$DEBUG" != "x" ]; then
 
