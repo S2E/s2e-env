@@ -29,6 +29,7 @@ import subprocess
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
+import s2e_env.utils.google
 
 
 def _ram_type(value):
@@ -112,7 +113,7 @@ class Command(EnvCommand):
         parser.add_argument('name',
                             help='The name of the image to build. If empty,'
                                  ' shows available images', nargs='?')
-        parser.add_argument('-d', '--headless', action='store_true',
+        parser.add_argument('-g', '--headless', action='store_true',
                             help='Build the image in headless mode (i.e. '
                                  'without a GUI)')
         parser.add_argument('-m', '--memory', required=False, default=256,
@@ -127,6 +128,8 @@ class Command(EnvCommand):
                             help='Deletes all images and rebuilds them from scratch')
         parser.add_argument('-a', '--archive', action='store_true',
                             help='Creates an archive for every support image')
+        parser.add_argument('-d', '--download', action='store_true',
+                            help='Download image from repository instead of building it')
 
     def handle(self, **options):
         image_name = options['name']
@@ -135,6 +138,7 @@ class Command(EnvCommand):
         headless = options['headless']
         clean = options['clean']
         archive = options['archive']
+        download = options['download']
 
         if not image_name:
             self._print_image_list()
@@ -155,6 +159,10 @@ class Command(EnvCommand):
 
         if image_name != 'all' and image_name not in templates:
             raise CommandError('Invalid image image_name %s' % image_name)
+
+        if download:
+            self._download_images(templates, image_name)
+            return
 
         rule_name = image_name
 
@@ -207,7 +215,7 @@ class Command(EnvCommand):
         print('Available images:')
 
         for template, desc in templates.iteritems():
-            print(' * %s - %s' % (template, desc))
+            print(' * %s - %s' % (template, desc['name']))
 
         print(' * all - Build all images')
 
@@ -228,3 +236,27 @@ class Command(EnvCommand):
         """
         if value <= 0 or value > 10:
             self.warn('The specified number of cores seems high')
+
+    def _download_images(self, templates, image_name):
+        images = []
+        if image_name == 'all':
+            images = templates.keys()
+        else:
+            images.append(image_name)
+
+        for image in images:
+            dest_file = self.image_path(image + '.tar.xz')
+            self._download(templates[image]['url'], dest_file)
+            self._decompress(dest_file)
+
+    def _download(self, url, path):
+        self.info('Downloading ' + url)
+        s2e_env.utils.google.download(url, path)
+
+    def _decompress(self, path):
+        self.info('Decompressing ' + path)
+        try:
+            cwd = os.path.dirname(path)
+            subprocess.check_call(['tar', 'xJvf', path], cwd=cwd)
+        except subprocess.CalledProcessError:
+            raise CommandError('Image decompression failed')
