@@ -233,6 +233,8 @@ class BaseProject(EnvCommand):
         project_desc = {
             'target': self._target_path,
             'creation_time': creation_time,
+            'arch': self._arch,
+            'image': self._img_json
         }
 
         with open(project_desc_path, 'w') as f:
