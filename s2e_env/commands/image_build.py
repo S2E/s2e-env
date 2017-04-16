@@ -125,6 +125,8 @@ class Command(EnvCommand):
                                  'VM image. Defaults to 2')
         parser.add_argument('-x', '--clean', action='store_true',
                             help='Deletes all images and rebuilds them from scratch')
+        parser.add_argument('-a', '--archive', action='store_true',
+                            help='Creates an archive for every support image')
 
     def handle(self, **options):
         image_name = options['name']
@@ -132,6 +134,7 @@ class Command(EnvCommand):
         num_cores = options['num_cores']
         headless = options['headless']
         clean = options['clean']
+        archive = options['archive']
 
         if not image_name:
             self._print_image_list()
@@ -149,8 +152,16 @@ class Command(EnvCommand):
 
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = _image_templates(img_build_dir)
+
         if image_name != 'all' and image_name not in templates:
             raise CommandError('Invalid image image_name %s' % image_name)
+
+        rule_name = image_name
+
+        if archive:
+            rule_name = 'archive'
+            if image_name != 'all':
+                rule_name = os.path.join(self.image_path(), image_name + '.tar.xz')
 
         env = os.environ.copy()
 
@@ -173,7 +184,7 @@ class Command(EnvCommand):
             'make',
             '-j%d' % num_cores,
             '-f', os.path.join(img_build_dir, 'Makefile'),
-            image_name
+            rule_name
         ]
 
         try:
