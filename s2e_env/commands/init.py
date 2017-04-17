@@ -65,7 +65,7 @@ class Command(BaseCommand):
                                'current working directory. Please `cd ..`')
 
         # Then check if something already exists at the environment directory
-        if os.path.isdir(env_path):
+        if os.path.isdir(env_path) and not os.listdir(env_path) == []:
             if force:
                 self.info('%s already exists - removing' % env_path)
                 shutil.rmtree(env_path)
