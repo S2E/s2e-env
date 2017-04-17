@@ -71,9 +71,10 @@ class Command(EnvCommand):
                                  'name of the target program. If you are '
                                  'creating an empty project then this field '
                                  'must be specified')
-        parser.add_argument('-i', '--image', required=True,
+        parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
-                                 'directory (without a file extension)')
+                                 'directory. If missing, the image will be guessed '
+                                 'based on the type of the binary')
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
                                  'concolic files. The user must create these '

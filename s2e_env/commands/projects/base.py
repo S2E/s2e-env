@@ -30,6 +30,7 @@ import time
 from jinja2 import Environment, FileSystemLoader
 
 from s2e_env.command import EnvCommand, CommandError
+from s2e_env.commands.image_build import get_image_templates
 from s2e_env import CONSTANTS
 
 FILE_DIR = os.path.dirname(__file__)
@@ -78,6 +79,25 @@ class BaseProject(EnvCommand):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
             raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
 
+    def _guess_image(self, target_arch):
+        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
+        templates = get_image_templates(img_build_dir)
+        if len(templates) == 0:
+            raise CommandError('No images available. Please build them first.')
+
+        for k, v in templates.iteritems():
+            try:
+                img = self._load_image_json(k)
+                self._validate_binary(target_arch, img['os_name'], img['os_arch'])
+                self.warn('No image was specified (-i option).')
+                self.warn('Found %s, which looks suitable for this binary.' % k)
+                self.warn('Please use -i if you want to use another one.')
+                return k
+            except:
+                pass
+
+        raise CommandError('Cannot guess suitable image for this binary. Please use the -i option.')
+
     def handle(self, **options):
         self._target_path = options['target']
 
@@ -101,7 +121,11 @@ class BaseProject(EnvCommand):
         self._project_path = self.env_path('projects', project_name)
 
         # Load the image JSON description
-        self._img_json = self._load_image_json(options['image'])
+        image = options['image']
+        if image is None:
+            image = self._guess_image(options['target_arch'])
+
+        self._img_json = self._load_image_json(image)
 
         # Check architecture consistency
         self._validate_binary(options['target_arch'], self._img_json['os_name'], self._img_json['os_arch'])
