@@ -87,7 +87,7 @@ def _check_vmlinux():
         raise CommandError('Make sure that kernels in /boot are readable. This is required for guestfish.')
 
 
-def _image_templates(img_build_dir):
+def get_image_templates(img_build_dir):
     images = os.path.join(img_build_dir, "images.json")
     with open(images, 'r') as f:
         template_json = json.load(f)
@@ -155,7 +155,7 @@ class Command(EnvCommand):
             os.makedirs(self.image_path())
 
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        templates = _image_templates(img_build_dir)
+        templates = get_image_templates(img_build_dir)
 
         if image_name != 'all' and image_name not in templates:
             raise CommandError('Invalid image image_name %s' % image_name)
@@ -204,7 +204,7 @@ class Command(EnvCommand):
 
     def _print_image_list(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        templates = _image_templates(img_build_dir)
+        templates = get_image_templates(img_build_dir)
 
         if not templates:
             raise CommandError(
