@@ -50,14 +50,33 @@ class Command(BaseCommand):
         parser.add_argument('dir', help='The environment directory')
         parser.add_argument('-s', '--skip-dependencies', action='store_true',
                             help='Skip the dependency install via apt')
+        parser.add_argument('-b', '--use-existing-install', required=False, default=None,
+                            help='Do not fetch sources but instead use existing S2E installation '
+                                 'whose prefix is specified by this parameter (e.g., /opt/s2e)')
         parser.add_argument('-f', '--force', action='store_true',
                             help='Use this flag to force environment creation '
                                  'even if an environment already exists at '
                                  'this location')
 
+    def install_binary_dist(self, env_path, prefix):
+        # We must use an absolute path because of symlinks
+        prefix = os.path.abspath(prefix)
+
+        self.info('Using S2E installation in %s' % prefix)
+        install = os.path.join(env_path, 'install')
+        shutil.rmtree(install, True)
+        os.symlink(prefix, install)
+
+        # We still need to guest-images repo, because it contains
+        # info about location of the images
+        guest_images_repo = CONSTANTS['repos']['images']['build']
+        self._git_clone_to_source(env_path, guest_images_repo)
+
+
     def handle(self, **options):
         env_path = os.path.realpath(options['dir'])
         force = options['force']
+        prefix = options['use_existing_install']
 
         # First check if we are already in the environment directory
         if os.path.realpath(env_path) == os.path.realpath(os.getcwd()):
@@ -78,14 +97,11 @@ class Command(BaseCommand):
                                    '``s2e build`` or ``s2e update`` instead' %
                                    env_path)
 
-        # Install S2E's dependencies via apt-get
-        if not options['skip_dependencies']:
-            self._install_dependencies()
 
-        # At this point it is safe to assume that the environment directory
-        # does not exist. So let's create it
+        # Create environment if it doesn't exist
         self.info('Creating environment in %s' % env_path)
-        os.mkdir(env_path)
+        if not os.path.isdir(env_path):
+            os.mkdir(env_path)
 
         # Create the directories within the environment
         for dir_ in CONSTANTS['dirs']:
@@ -95,12 +111,19 @@ class Command(BaseCommand):
         with open(os.path.join(env_path, '.s2eenv'), 'w'):
             pass
 
-        # Get the source repositories
-        self._get_s2e_sources(env_path)
-        self._get_img_sources(env_path)
+        if prefix is not None:
+            self.install_binary_dist(env_path, prefix)
+            return 'Environment created in %s.' % env_path
+        else:
+            # Install S2E's dependencies via apt-get
+            if not options['skip_dependencies']:
+                self._install_dependencies()
 
-        return ('Environment created in %s. Now run ``s2e build`` to build' %
-                env_path)
+            # Get the source repositories
+            self._get_s2e_sources(env_path)
+            self._get_img_sources(env_path)
+
+            return 'Environment created in %s. Now run ``s2e build`` to build' % env_path
 
     def _install_dependencies(self):
         """
@@ -186,26 +209,30 @@ class Command(BaseCommand):
         # Success!
         self.success('Fetched %s' % git_s2e_repo)
 
+    def _git_clone(self, git_repo_url, git_repo_dir):
+        try:
+            self.info('Fetching from %s to %s' % (git_repo_url, git_repo_dir))
+            git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
+                      _err=sys.stderr, _fg=True)
+        except ErrorReturnCode as e:
+            raise CommandError(e)
+
+    def _git_clone_to_source(self, env_path, git_repo):
+        git_url = CONSTANTS['repos']['url']
+
+        git_repo_dir = os.path.join(env_path, 'source', git_repo)
+        git_repo_url = '%s/%s' % (git_url, git_repo)
+        self._git_clone(git_repo_url, git_repo_dir)
+        self.success('Fetched %s' % git_repo)
+
     def _get_img_sources(self, env_path):
         """
         Download the S2E image repositories.
         """
-        git_url = CONSTANTS['repos']['url']
         git_repos = CONSTANTS['repos']['images'].values()
 
         for git_repo in git_repos:
-            git_repo_dir = os.path.join(env_path, 'source', git_repo)
-            git_repo_url = '%s/%s' % (git_url, git_repo)
-
-            try:
-                self.info('Fetching %s from %s' % (git_repo, git_repo_url))
-                git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
-                          _err=sys.stderr, _fg=True)
-            except ErrorReturnCode as e:
-                raise CommandError(e)
-
-            # Success!
-            self.success('Fetched %s' % git_repo)
+            self._git_clone_to_source(env_path, git_repo)
 
     def _get_repo(self, env_path):
         """
