@@ -1,6 +1,4 @@
 """
-MIT License
-
 Copyright (c) 2017 Dependable Systems Laboratory, EPFL
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
