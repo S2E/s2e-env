@@ -11,6 +11,8 @@ might be the analysis of the ``file`` program from
 # Prerequisites
 
 We assume that you are working on Ubuntu 14.04 (or newer) 64-bit OS.
+[Repo](https://code.google.com/p/git-repo/) only works with Python 2.7, so you
+should use Python 2.7 too.
 
 # Install
 
