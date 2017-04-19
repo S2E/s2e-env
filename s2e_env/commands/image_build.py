@@ -144,9 +144,6 @@ class Command(EnvCommand):
             self._print_image_list()
             return
 
-        _check_groups()
-        _check_vmlinux()
-
         self._check_ram_size(memory)
         self._check_core_num(num_cores)
 
@@ -163,6 +160,9 @@ class Command(EnvCommand):
         if download:
             self._download_images(templates, image_name)
             return
+
+        _check_groups()
+        _check_vmlinux()
 
         rule_name = image_name
 
