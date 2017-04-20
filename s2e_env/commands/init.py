@@ -28,12 +28,12 @@ import sys
 
 import requests
 import sh
-from sh import git, ErrorReturnCode
+from sh import ErrorReturnCode
 from sh.contrib import sudo
 
 from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
-
+from s2e_env.utils import repos
 
 class Command(BaseCommand):
     """
@@ -65,10 +65,10 @@ class Command(BaseCommand):
         shutil.rmtree(install, True)
         os.symlink(prefix, install)
 
-        # We still need to guest-images repo, because it contains
+        # We still need to clone guest-images repo, because it contains
         # info about location of the images
         guest_images_repo = CONSTANTS['repos']['images']['build']
-        self._git_clone_to_source(env_path, guest_images_repo)
+        repos.git_clone_to_source(env_path, guest_images_repo)
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -206,22 +206,6 @@ class Command(BaseCommand):
         # Success!
         self.success('Fetched %s' % git_s2e_repo)
 
-    def _git_clone(self, git_repo_url, git_repo_dir):
-        try:
-            self.info('Fetching from %s to %s' % (git_repo_url, git_repo_dir))
-            git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
-                      _err=sys.stderr, _fg=True)
-        except ErrorReturnCode as e:
-            raise CommandError(e)
-
-    def _git_clone_to_source(self, env_path, git_repo):
-        git_url = CONSTANTS['repos']['url']
-
-        git_repo_dir = os.path.join(env_path, 'source', git_repo)
-        git_repo_url = '%s/%s' % (git_url, git_repo)
-        self._git_clone(git_repo_url, git_repo_dir)
-        self.success('Fetched %s' % git_repo)
-
     def _get_img_sources(self, env_path):
         """
         Download the S2E image repositories.
@@ -229,7 +213,7 @@ class Command(BaseCommand):
         git_repos = CONSTANTS['repos']['images'].values()
 
         for git_repo in git_repos:
-            self._git_clone_to_source(env_path, git_repo)
+            repos.git_clone_to_source(env_path, git_repo)
 
     def _get_repo(self, env_path):
         """
