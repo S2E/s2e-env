@@ -55,7 +55,7 @@ class Command(ProjectCommand):
         parser.add_argument('-i', '--ida', required=True,
                             help='Path to IDA Pro executable')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         # Check that the path to IDA is valid
         ida_path = options['ida']
         if not os.path.isfile(ida_path):
@@ -149,7 +149,7 @@ class Command(ProjectCommand):
         tb_coverage_files = glob.glob(os.path.join(self._project_dir,
                                                    's2e-last', '*',
                                                    'tbcoverage-*.json'))
-        if len(tb_coverage_files) == 0:
+        if not tb_coverage_files:
             self.warn('No translation block coverage files found in s2e-last. '
                       'Did you enable the ``TranslationBlockCoverage`` plugin '
                       'in s2e-config.lua?')

@@ -29,9 +29,9 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from projects.cgc import CGCProject
-from projects.linux import LinuxProject
-from projects.windows import WindowsProject
+from s2e_env.commands.projects.cgc import CGCProject
+from s2e_env.commands.projects.linux import LinuxProject
+from s2e_env.commands.projects.windows import WindowsProject
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -82,7 +82,7 @@ class Command(EnvCommand):
                             help='If a project with the given name already '
                                  'exists, replace it')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         # Need an absolute path for the target in order to simplify
         # symlink creation.
         target_path = options['target']

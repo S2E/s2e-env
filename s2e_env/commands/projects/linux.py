@@ -23,7 +23,7 @@ SOFTWARE.
 import datetime
 import os
 
-from base import BaseProject
+from .base import BaseProject
 from s2e_env.utils.elf import ELFAnalysis
 
 
@@ -73,7 +73,7 @@ class LinuxProject(BaseProject):
         self._dynamically_linked = False
         self._modelled_functions = []
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         self._target_args = options['target_args']
 
         return super(LinuxProject, self).handle(**options)
@@ -174,7 +174,7 @@ class LinuxProject(BaseProject):
         if self._dynamically_linked:
             s2e_so = self.S2E_SO_INSTS.format(target_path=self._target_path)
 
-            if len(self._modelled_functions) > 0:
+            if self._modelled_functions:
                 modelled_funcs = ', '.join(self._modelled_functions)
                 func_models = self.FUNC_MODELS_INSTS.format(\
                                                 target_path=self._target_path,
@@ -188,4 +188,3 @@ class LinuxProject(BaseProject):
         # Remove empty instructions
         inst_list = [intro, s2e_so, func_models, seeds]
         return '\n\n'.join(inst for inst in inst_list if inst != '')
-
