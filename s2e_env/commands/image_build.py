@@ -34,6 +34,7 @@ import sh
 from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
+from s2e_env.utils import repos
 import s2e_env.utils.google
 
 
@@ -171,6 +172,10 @@ class Command(EnvCommand):
             if image_name != 'all':
                 rule_name = os.path.join(self.image_path(), '%s.tar.xz' % image_name)
 
+        # Clone kernel if needed.
+        # This is necessary if the s2e env has been initialized with -b flag.
+        self._clone_kernel()
+
         env = os.environ.copy()
 
         env['S2E_INSTALL_ROOT'] = self.install_path()
@@ -196,6 +201,18 @@ class Command(EnvCommand):
             raise CommandError(e)
 
         return 'Built image \'%s\'' % image_name
+
+    def _clone_kernel(self):
+        kernels_root = self.source_path(CONSTANTS['repos']['images']['linux'])
+        if os.path.exists(kernels_root):
+            self.info('Kernel repository already exists in %s' % kernels_root)
+            return
+
+        self.info('Cloning kernels repository to %s' % kernels_root)
+
+        kernels_repo = CONSTANTS['repos']['images']['linux']
+        repos.git_clone_to_source(self.env_path(), kernels_repo)
+
 
     def _print_image_list(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
