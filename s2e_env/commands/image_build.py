@@ -20,24 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import print_function
+
 import glob
 import grp
 import json
 import os
 import pwd
+import sh
 import subprocess
+import sys
 
+from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 import s2e_env.utils.google
-
-
-def _ram_type(value):
-    return int(value)
-
-
-def _cpu_cores_type(value):
-    return int(value)
 
 
 def _get_user_groups(user_name):
@@ -58,10 +55,10 @@ def _user_belongs_to(group_name):
 
 
 def _print_group_error(group_name):
-    print "You must belong to %s in order to build images." % group_name
-    print "Please run the following command, then logout and login:"
-    print ""
-    print "   sudo usermod -a -G %s $(whoami)" % group_name
+    print('You must belong to %s in order to build images.' % group_name)
+    print('Please run the following command, then logout and login:')
+    print('')
+    print('   sudo usermod -a -G %s $(whoami)' % group_name)
 
 
 def _check_groups():
@@ -117,17 +114,17 @@ class Command(EnvCommand):
                             help='Build the image in headless mode (i.e. '
                                  'without a GUI)')
         parser.add_argument('-m', '--memory', required=False, default=256,
-                            type=_ram_type,
+                            type=int,
                             help='Amount of RAM allocated to the image. '
                                  'Defaults to 256 MB')
         parser.add_argument('-c', '--num-cores', required=False, default=2,
-                            type=_cpu_cores_type,
+                            type=int,
                             help='The number of cores used when building the '
                                  'VM image. Defaults to 2')
         parser.add_argument('-x', '--clean', action='store_true',
                             help='Deletes all images and rebuilds them from scratch')
         parser.add_argument('-a', '--archive', action='store_true',
-                            help='Creates an archive for every support image')
+                            help='Creates an archive for every supported image')
         parser.add_argument('-d', '--download', action='store_true',
                             help='Download image from repository instead of building it')
 
@@ -139,6 +136,10 @@ class Command(EnvCommand):
         clean = options['clean']
         archive = options['archive']
         download = options['download']
+
+        # If DISPLAY is missing, don't use headless mode
+        if headless:
+            self._headless = True
 
         if not image_name:
             self._print_image_list()
@@ -169,36 +170,31 @@ class Command(EnvCommand):
         if archive:
             rule_name = 'archive'
             if image_name != 'all':
-                rule_name = os.path.join(self.image_path(), image_name + '.tar.xz')
+                rule_name = os.path.join(self.image_path(), '%s.tar.xz' % image_name)
 
         env = os.environ.copy()
 
-        env['S2E_INSTALL_ROOT'] = self.s2e_install_path()
+        env['S2E_INSTALL_ROOT'] = self.install_path()
         env['S2E_LINUX_KERNELS_ROOT'] = self.source_path(CONSTANTS['repos']['images']['linux'])
         env['OUTPUT_DIR'] = self.image_path()
         env['SNAPSHOT_MEMORY'] = str(memory)
 
-        if not headless:
+        if not self._headless:
             env['GRAPHICS'] = ''
 
-        if clean:
-            args = ['make', '-f', os.path.join(img_build_dir, 'Makefile'), 'clean']
-            try:
-                subprocess.check_call(args, env=env, cwd=self.image_path())
-            except subprocess.CalledProcessError:
-                raise CommandError('Image cleaning failed')
-
-        args = [
-            'make',
-            '-j%d' % num_cores,
-            '-f', os.path.join(img_build_dir, 'Makefile'),
-            rule_name
-        ]
-
         try:
-            subprocess.check_call(args, env=env, cwd=self.image_path())
-        except subprocess.CalledProcessError:
-            raise CommandError('Image build failed')
+            make = sh.Command('make').bake(file=os.path.join(img_build_dir,
+                                                             'Makefile'),
+                                           directory=self.image_path(),
+                                           _out=sys.stdout, _err=sys.stderr,
+                                           _env=env, _fg=True)
+            if options['clean']:
+                make('clean')
+
+            make_image = make.bake(j=num_cores)
+            make_image(rule_name)
+        except ErrorReturnCode as e:
+            raise CommandError(e)
 
         return 'Built image \'%s\'' % image_name
 
@@ -228,14 +224,16 @@ class Command(EnvCommand):
         Ensure that the amount of RAM is sensible.
         """
         if value <= 0 or value > 2 * 1024:
-            self.warn('The specified memory size for the image looks too high. Less than 2GB is recommended for best performance.')
+            self.warn('The specified memory size for the image looks too high. '
+                      'Less than 2GB is recommended for best performance.')
 
     def _check_core_num(self, value):
         """
         Ensure that the number of CPU cores is sensible.
         """
         if value <= 0 or value > 10:
-            self.warn('The specified number of cores seems high')
+            self.warn('The specified number of cores seems high. '
+                      'Less than 10 is recommended for best image building performance.')
 
     def _download_images(self, templates, image_name):
         images = []
@@ -245,16 +243,16 @@ class Command(EnvCommand):
             images.append(image_name)
 
         for image in images:
-            dest_file = self.image_path(image + '.tar.xz')
+            dest_file = self.image_path('%s.tar.xz' % image)
             self._download(templates[image]['url'], dest_file)
             self._decompress(dest_file)
 
     def _download(self, url, path):
-        self.info('Downloading ' + url)
+        self.info('Downloading %s' % url)
         s2e_env.utils.google.download(url, path)
 
     def _decompress(self, path):
-        self.info('Decompressing ' + path)
+        self.info('Decompressing %s' % path)
         try:
             cwd = os.path.dirname(path)
             subprocess.check_call(['tar', 'xJvf', path], cwd=cwd)
