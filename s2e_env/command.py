@@ -307,6 +307,7 @@ class ProjectCommand(EnvCommand):
 
         self._project_dir = None
         self._project_desc = None
+        self._project_name = None
 
     def handle_common_args(self, options):
         """
@@ -316,6 +317,7 @@ class ProjectCommand(EnvCommand):
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
+        self._project_name = options['project']
         options.pop('project', ())
 
         # Load the project description
