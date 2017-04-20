@@ -20,8 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from base import BaseProject
 from s2e_env.command import CommandError
+
+from .base import BaseProject
 
 
 class WindowsProject(BaseProject):
@@ -29,7 +30,7 @@ class WindowsProject(BaseProject):
     Create a Windows project.
     """
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         raise CommandError('Windows project support not yet implemented')
 
     def _create_bootstrap(self):
@@ -40,4 +41,3 @@ class WindowsProject(BaseProject):
 
     def _create_instructions(self):
         pass
-

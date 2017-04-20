@@ -70,8 +70,7 @@ class Command(BaseCommand):
         guest_images_repo = CONSTANTS['repos']['images']['build']
         self._git_clone_to_source(env_path, guest_images_repo)
 
-
-    def handle(self, **options):
+    def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
         force = options['force']
         prefix = options['use_existing_install']

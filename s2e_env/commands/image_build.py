@@ -27,9 +27,9 @@ import grp
 import json
 import os
 import pwd
-import sh
 import subprocess
 import sys
+import sh
 
 from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
@@ -128,12 +128,11 @@ class Command(EnvCommand):
         parser.add_argument('-d', '--download', action='store_true',
                             help='Download image from repository instead of building it')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         image_name = options['name']
         memory = options['memory']
         num_cores = options['num_cores']
         headless = options['headless']
-        clean = options['clean']
         archive = options['archive']
         download = options['download']
 

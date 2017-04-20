@@ -42,12 +42,13 @@ class memoize(object):
     def __call__(self, *args):
         if not isinstance(args, collections.Hashable):
             return self._func(args)
+
         if args in self._cache:
             return self._cache[args]
-        else:
-            value = self._func(*args)
-            self._cache[args] = value
-            return value
+
+        value = self._func(*args)
+        self._cache[args] = value
+        return value
 
     def __repr__(self):
         # Return the function's docstring

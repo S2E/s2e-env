@@ -75,17 +75,17 @@ class BaseProject(EnvCommand):
                         autoescape=False)
         self._template_env.filters['datetimefilter'] = datetimefilter
 
-    def _validate_binary(self, target_arch, os_name, os_arch):
+    def _validate_binary(self, target_arch, _, os_arch):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
             raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
 
     def _guess_image(self, target_arch):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
-        if len(templates) == 0:
+        if not templates:
             raise CommandError('No images available. Please build them first.')
 
-        for k, v in templates.iteritems():
+        for k in templates.keys():
             try:
                 img = self._load_image_json(k)
                 self._validate_binary(target_arch, img['os_name'], img['os_arch'])
@@ -93,12 +93,12 @@ class BaseProject(EnvCommand):
                 self.warn('Found %s, which looks suitable for this binary.' % k)
                 self.warn('Please use -i if you want to use another one.')
                 return k
-            except:
+            except Exception:
                 pass
 
         raise CommandError('Cannot guess suitable image for this binary. Please use the -i option.')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         self._target_path = options['target']
 
         # The default project name is the target program to be analyzed

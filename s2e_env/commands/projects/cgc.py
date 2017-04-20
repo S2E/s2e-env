@@ -23,9 +23,9 @@ SOFTWARE.
 import datetime
 import os
 
-from base import BaseProject
-
 from s2e_env.command import CommandError
+from .base import BaseProject
+
 
 class CGCProject(BaseProject):
     """
@@ -55,7 +55,7 @@ class CGCProject(BaseProject):
         if 'cgc' not in os_name:
             raise CommandError('Please use a CGC image for this binary')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         options['use_seeds'] = True
 
         return super(CGCProject, self).handle(**options)

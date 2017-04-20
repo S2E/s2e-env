@@ -38,7 +38,7 @@ class Command(EnvCommand):
 
     help = 'Updates the S2E repos.'
 
-    def handle(self):
+    def handle(self, *args, **options):
         self._update_s2e_sources()
         self._update_img_sources()
 

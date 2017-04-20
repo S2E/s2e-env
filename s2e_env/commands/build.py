@@ -43,7 +43,7 @@ class Command(EnvCommand):
         parser.add_argument('-g', '--debug', action='store_true',
                             help='Build S2E in debug mode')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         # Exit if the makefile doesn't exist
         makefile = self.env_path('source', 's2e', 'Makefile')
         if not os.path.isfile(makefile):
