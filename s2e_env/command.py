@@ -255,7 +255,7 @@ class EnvCommand(BaseCommand):
             with open(self.s2eenv_path()):
                 pass
         except IOError:
-            raise CommandError('This does not look like an S2E project directory.')
+            raise CommandError('This does not look like an S2E environment directory.')
 
     def add_arguments(self, parser):
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
@@ -263,6 +263,9 @@ class EnvCommand(BaseCommand):
                                  'to the current working directory')
 
     def s2eenv_path(self):
+        """
+        Get the path to the .s2eenv file.
+        """
         return self.env_path('.s2eenv')
 
     def env_path(self, *p):
@@ -279,27 +282,28 @@ class EnvCommand(BaseCommand):
 
     def project_path(self, *p):
         """
-        Create a path relative to the S2E projects directory
+        Create a path relative to the S2E projects directory.
         """
-        return os.path.join(self._env_dir, 'projects', *p)
+        return self.env_path('projects', *p)
 
     def build_path(self, *p):
         """
-        Create a path relative to the S2E install directory
+        Create a path relative to the S2E install directory.
         """
-        return os.path.join(self._env_dir, 'build', 's2e', *p)
+        return self.env_path('build', 's2e', *p)
 
     def source_path(self, *p):
         """
-        Create a path relative to the source directory
+        Create a path relative to the source directory.
         """
-        return os.path.join(self._env_dir, 'source', *p)
+        return self.env_path('source', *p)
 
     def image_path(self, *p):
         """
-        Create a path relative to the image directory
+        Create a path relative to the image directory.
         """
-        return os.path.join(self._env_dir, 'images', *p)
+        return self.env_path('images', *p)
+
 
 class ProjectCommand(EnvCommand):
     """
