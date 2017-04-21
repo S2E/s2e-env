@@ -23,24 +23,22 @@ SOFTWARE.
 from __future__ import print_function
 
 import argparse
+import ctypes.util
 import datetime
 import os
-import signal
 import shlex
+import signal
 import subprocess
 import threading
-from threading import Thread
 import time
+from threading import Thread
 
-import ctypes.util
-
-from s2e_env.commands import server
-
+from s2e_env import server
 from s2e_env.command import ProjectCommand
+from s2e_env.server import CGCInterfacePlugin
+from s2e_env.server import QMPTCPServer, QMPConnectionHandler
+from s2e_env.tui.tui import Tui
 from s2e_env.utils import terminal
-from s2e_env.commands.server import QMPTCPServer, QMPConnectionHandler
-from s2e_env.commands.server.cgc_interface import CGCInterfacePlugin
-from s2e_env.commands.tui.tui import Tui
 
 libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
