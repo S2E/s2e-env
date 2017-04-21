@@ -1,5 +1,5 @@
 """
-Copyright (c) 2017 Dependable Systems Laboratory, EPFL
+Copyright (c) 2017 Cyberhaven
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from threading import Thread
+from Queue import Queue
 
-import os
-
-import yaml
-
-from s2e_env.utils.memoize import memoize
+_terminating = False
 
 
-# Paths
-YAML_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
-                                'config.yaml')
+def terminate():
+    global _terminating
+    _terminating = True
 
 
-@memoize
-def _load_constants():
-    with open(YAML_CONFIG_PATH, 'r') as f:
-        return yaml.load(f)
+def terminating():
+    return _terminating
 
 
-CONSTANTS = _load_constants()
+class QueueProcessor(Thread):
+    """
+    All common method for queue-based processors go here.
+    """
+
+    def __init__(self):
+        Thread.__init__(self)
+        self._queue = Queue()
+        self._binaries = {}
+
+    def get_binary(self, binary_name):
+        if binary_name not in self._binaries.keys():
+            self._binaries[binary_name] = {}
+
+        return self._binaries[binary_name]

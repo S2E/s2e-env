@@ -1,5 +1,3 @@
-# MIT License
-# 
 # Copyright (c) 2017 Dependable Systems Laboratory, EPFL
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,6 +31,14 @@ dependencies:
         - flex
         - bison
         - python-dev
+
+        # Image build dependencies
+        - libguestfs-tools
+        - genisoimage
+        - python-pip
+        - xz-utils
+        - docker.io
+        - p7zip
 
         # S2E dependencies
         - libdwarf-dev
@@ -73,32 +79,25 @@ repos:
     s2e: manifest
     images:
         linux: s2e-linux-kernel
+        build: guest-images
 
 # Repo. Used for managing the S2E git repositories
 repo:
     url: https://storage.googleapis.com/git-repo-downloads/repo
 
-# Packer. Used for building images
-packer:
-    url: https://releases.hashicorp.com/packer/0.12.3/packer_0.12.3_linux_amd64.zip
-
 # Directories that will automatically be built when running ``s2e init``
 dirs:
-    - bin
     - build
     - images
-    - include
-    - lib
+    - install
+    - install/bin
     - projects
-    - share
     - source
 
 # Templates used for project creation
 templates:
     launch_scripts:
         - launch-s2e.sh
-        - launch-non-s2e.sh
-        - launch-raw.sh
 
 # Mapping of architecture to guest tools directory
 guest_tools:

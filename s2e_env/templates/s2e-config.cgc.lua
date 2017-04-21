@@ -124,7 +124,7 @@ pluginsConfig.ProcessExecutionDetector = {
 }
 
 pluginsConfig.ForkLimiter = {
-    maxForkCount = 1,
+    maxForkCount = -1,
     processForkDelay = 5,
 }
 

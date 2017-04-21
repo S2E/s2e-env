@@ -20,23 +20,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from s2e_env.command import CommandError
 
-import os
-
-import yaml
-
-from s2e_env.utils.memoize import memoize
+from .base import BaseProject
 
 
-# Paths
-YAML_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
-                                'config.yaml')
+class WindowsProject(BaseProject):
+    """
+    Create a Windows project.
+    """
 
+    def handle(self, *args, **options):
+        raise CommandError('Windows project support not yet implemented')
 
-@memoize
-def _load_constants():
-    with open(YAML_CONFIG_PATH, 'r') as f:
-        return yaml.load(f)
+    def _create_bootstrap(self):
+        pass
 
+    def _create_config(self):
+        pass
 
-CONSTANTS = _load_constants()
+    def _create_instructions(self):
+        pass

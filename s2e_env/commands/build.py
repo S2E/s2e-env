@@ -1,6 +1,4 @@
 """
-MIT License
-
 Copyright (c) 2017 Dependable Systems Laboratory, EPFL
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -45,7 +43,7 @@ class Command(EnvCommand):
         parser.add_argument('-g', '--debug', action='store_true',
                             help='Build S2E in debug mode')
 
-    def handle(self, **options):
+    def handle(self, *args, **options):
         # Exit if the makefile doesn't exist
         makefile = self.env_path('source', 's2e', 'Makefile')
         if not os.path.isfile(makefile):
@@ -60,7 +58,7 @@ class Command(EnvCommand):
         try:
             # Set up some environment variables
             env_vars = os.environ.copy()
-            env_vars['S2EPREFIX'] = self._env_dir
+            env_vars['S2EPREFIX'] = self.install_path()
 
             # Run make
             make = sh.Command('make').bake(directory=build_dir, file=makefile,
@@ -69,7 +67,7 @@ class Command(EnvCommand):
 
             if options['debug']:
                 self.info('Building S2E (debug) in %s' % build_dir)
-                make('install-debug')
+                make('all-debug')
             else:
                 self.info('Building S2E (release) in %s' % build_dir)
                 make('install')

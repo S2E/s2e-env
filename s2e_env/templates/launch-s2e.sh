@@ -7,14 +7,54 @@
 # arguments can be passed to this script at run time
 #
 
-export S2E_CONFIG=s2e-config.lua
-export S2E_SHARED_DIR={{ env_dir }}/share/libs2e
-export S2E_MAX_PROCESSES=1
+INSTALL_DIR="{{ install_dir }}"
+BUILD_DIR="{{ build_dir }}"
+BUILD=debug
 
-LD_PRELOAD={{ env_dir }}/share/libs2e/libs2e-{{ arch }}-s2e.so      \
-    {{ env_dir }}/bin/qemu-system-{{ arch }}                        \
-    -k en-us -nographic -monitor null -m {{ memory }} -enable-kvm   \
-    -drive file={{ image_path }},format=s2e,cache=writeback         \
-    -serial file:serial.txt -net none -net nic,model=e1000          \
+if [ "x$1" = "xdebug" ]; then
+  DEBUG=1
+  shift
+fi
+
+DRIVE="-drive file={{ image_path }},format=s2e,cache=writeback"
+
+export S2E_CONFIG=s2e-config.lua
+export S2E_SHARED_DIR={{ install_dir }}/share/libs2e
+export S2E_MAX_PROCESSES=1
+export S2E_UNBUFFERED_STREAM=1
+
+if [ "x$DEBUG" != "x" ]; then
+
+QEMU="$BUILD_DIR/qemu-$BUILD/{{ arch }}-softmmu/qemu-system-{{ arch }}"
+LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ arch }}-s2e-softmmu/libs2e.so"
+
+cat >> gdb.ini <<EOF
+handle SIGUSR2 noprint
+set disassembly-flavor intel
+set print pretty on
+set environment S2E_CONFIG=$S2E_CONFIG
+set environment S2E_SHARED_DIR=$S2E_SHARED_DIR
+set environment LD_PRELOAD=$LIBS2E
+set environment S2E_UNBUFFERED_STREAM=1
+#set environment QEMU_LOG_LEVEL=int,exec
+#set environment S2E_QMP_SERVER=127.0.0.1:3322
+EOF
+
+GDB="gdb  --init-command=gdb.ini --args"
+
+$GDB $QEMU $DRIVE \
+    -k en-us -nographic -monitor null -m {{ memory }} -enable-kvm \
+    -serial file:serial.txt {{ qemu_extra_flags }} \
     -loadvm {{ snapshot }} $*
 
+else
+
+QEMU="$INSTALL_DIR/bin/qemu-system-{{ arch }}"
+LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ arch }}-s2e.so"
+
+LD_PRELOAD=$LIBS2E $QEMU $DRIVE \
+    -k en-us -nographic -monitor null -m {{ memory }} -enable-kvm \
+    -serial file:serial.txt {{ qemu_extra_flags }} \
+    -loadvm {{ snapshot }} $*
+
+fi

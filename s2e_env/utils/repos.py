@@ -1,5 +1,5 @@
 """
-Copyright (c) 2017 Dependable Systems Laboratory, EPFL
+Copyright (c) 2017 Cyberhaven
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import os
+import sys
 
-import yaml
-
-from s2e_env.utils.memoize import memoize
-
-
-# Paths
-YAML_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
-                                'config.yaml')
+from sh import git, ErrorReturnCode
+from s2e_env import CONSTANTS
+from s2e_env.command import  CommandError
+from . import terminal
 
 
-@memoize
-def _load_constants():
-    with open(YAML_CONFIG_PATH, 'r') as f:
-        return yaml.load(f)
+def git_clone(git_repo_url, git_repo_dir):
+    try:
+        terminal.print_info('Fetching from %s to %s' % (git_repo_url, git_repo_dir))
+        git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
+                  _err=sys.stderr, _fg=True)
+    except ErrorReturnCode as e:
+        raise CommandError(e)
 
 
-CONSTANTS = _load_constants()
+def git_clone_to_source(env_path, git_repo):
+    git_url = CONSTANTS['repos']['url']
+
+    git_repo_dir = os.path.join(env_path, 'source', git_repo)
+    git_repo_url = '%s/%s' % (git_url, git_repo)
+    git_clone(git_repo_url, git_repo_dir)
+    terminal.print_success('Fetched %s' % git_repo)

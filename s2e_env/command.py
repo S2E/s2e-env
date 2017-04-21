@@ -251,16 +251,58 @@ class EnvCommand(BaseCommand):
         self._env_dir = options['env']
         options.pop('env', ())
 
+        try:
+            with open(self.s2eenv_path()):
+                pass
+        except IOError:
+            raise CommandError('This does not look like an S2E environment directory.')
+
     def add_arguments(self, parser):
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
+
+    def s2eenv_path(self):
+        """
+        Get the path to the .s2eenv file.
+        """
+        return self.env_path('.s2eenv')
 
     def env_path(self, *p):
         """
         Create a path relative to the environment directory.
         """
         return os.path.join(self._env_dir, *p)
+
+    def install_path(self, *p):
+        """
+        Create a path relative to the S2E install directory.
+        """
+        return self.env_path('install', *p)
+
+    def project_path(self, *p):
+        """
+        Create a path relative to the S2E projects directory.
+        """
+        return self.env_path('projects', *p)
+
+    def build_path(self, *p):
+        """
+        Create a path relative to the S2E install directory.
+        """
+        return self.env_path('build', 's2e', *p)
+
+    def source_path(self, *p):
+        """
+        Create a path relative to the source directory.
+        """
+        return self.env_path('source', *p)
+
+    def image_path(self, *p):
+        """
+        Create a path relative to the image directory.
+        """
+        return self.env_path('images', *p)
 
 
 class ProjectCommand(EnvCommand):
@@ -275,6 +317,7 @@ class ProjectCommand(EnvCommand):
 
         self._project_dir = None
         self._project_desc = None
+        self._project_name = None
 
     def handle_common_args(self, options):
         """
@@ -284,11 +327,12 @@ class ProjectCommand(EnvCommand):
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
+        self._project_name = options['project']
         options.pop('project', ())
 
         # Load the project description
         try:
-            proj_desc_path = os.path.join(self._project_dir, '.project.json')
+            proj_desc_path = os.path.join(self._project_dir, 'project.json')
             with open(proj_desc_path, 'r') as f:
                 self._project_desc = json.load(f)
         except Exception as e:
