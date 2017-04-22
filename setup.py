@@ -24,6 +24,7 @@ setup(
         'requests',
         'sh',
         'termcolor',
+        'psutil'
     ],
     packages=find_packages(),
     include_package_data=True,

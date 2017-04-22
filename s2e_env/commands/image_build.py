@@ -29,6 +29,8 @@ import os
 import pwd
 import subprocess
 import sys
+
+import psutil
 import sh
 
 from sh import ErrorReturnCode
@@ -70,6 +72,15 @@ def _check_groups():
     if not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
         _print_group_error('kvm')
         raise CommandError()
+
+
+def _check_virtualbox():
+    for pid in psutil.pids():
+        p = psutil.Process(pid)
+        if p.name() == 'VBoxHeadless':
+            raise CommandError('S2E uses KVM to build images. VirtualBox is currently running, '
+                               'which is not compatible with KVM. Please close all VirtualBox VMs '
+                               'and try again.')
 
 
 def _check_vmlinux():
@@ -168,6 +179,7 @@ class Command(EnvCommand):
 
         _check_groups()
         _check_vmlinux()
+        _check_virtualbox()
 
         rule_name = image_name
 
