@@ -161,6 +161,9 @@ class BaseCommand(object):
         args = cmd_options.pop('args', ())
 
         try:
+            if os.getuid() == 0:
+                raise CommandError('Please do not run s2e as root')
+
             output = self.execute(*args, **cmd_options)
         except Exception as e:
             # Only handle CommandErrors here
