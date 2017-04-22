@@ -56,7 +56,7 @@ def _user_belongs_to(group_name):
 
 
 def _print_group_error(group_name):
-    print('You must belong to %s in order to build images.' % group_name)
+    print('You must belong to the %s group in order to build images.' % group_name)
     print('Please run the following command, then logout and login:')
     print('')
     print('   sudo usermod -a -G %s $(whoami)' % group_name)
@@ -82,7 +82,11 @@ def _check_vmlinux():
             with open(f):
                 pass
     except IOError:
-        raise CommandError('Make sure that kernels in /boot are readable. This is required for guestfish.')
+        print('Make sure that kernels in /boot are readable. This is required for guestfish.')
+        print('Please run the following command:')
+        print('')
+        print('sudo chmod ugo+r /boot/vmlinu*')
+        raise CommandError()
 
 
 def get_image_templates(img_build_dir):
