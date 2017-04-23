@@ -31,12 +31,13 @@ import subprocess
 import sys
 
 import psutil
-import sh
 
+import sh
 from sh import ErrorReturnCode
+
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils import repos
+from s2e_env.utils import repos, terminal
 import s2e_env.utils.google
 
 
@@ -107,7 +108,41 @@ def get_image_templates(img_build_dir):
         return template_json['images']
 
 
-class Command(EnvCommand):
+class ImageDownloaderMixin(object):
+    def __init__(self):
+        pass
+
+    def download_images(self, image_name=None):
+        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
+        templates = get_image_templates(img_build_dir)
+
+        images = templates.keys()
+        if image_name:
+            images = [image_name]
+
+        for image in images:
+            self._download_image(templates, image)
+
+    def _download_image(self, templates, image):
+        dest_file = self.image_path('%s.tar.xz' % image)
+        self._download(templates[image]['url'], dest_file)
+        _decompress(dest_file)
+
+    def _download(self, url, path):
+        terminal.print_info('Downloading %s' % url)
+        s2e_env.utils.google.download(url, path)
+
+
+def _decompress(path):
+    terminal.print_info('Decompressing %s' % path)
+    try:
+        cwd = os.path.dirname(path)
+        subprocess.check_call(['tar', 'xJvf', path], cwd=cwd)
+    except subprocess.CalledProcessError:
+        raise CommandError('Image decompression failed')
+
+
+class Command(EnvCommand, ImageDownloaderMixin):
     """
     Builds an image.
     """
@@ -174,7 +209,10 @@ class Command(EnvCommand):
             raise CommandError('Invalid image image_name %s' % image_name)
 
         if download:
-            self._download_images(templates, image_name)
+            if image_name == 'all':
+                self.download_images()
+            else:
+                self.download_images(image_name)
             return
 
         _check_groups()
@@ -229,7 +267,6 @@ class Command(EnvCommand):
         kernels_repo = CONSTANTS['repos']['images']['linux']
         repos.git_clone_to_source(self.env_path(), kernels_repo)
 
-
     def _print_image_list(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
@@ -267,26 +304,4 @@ class Command(EnvCommand):
             self.warn('The specified number of cores seems high. '
                       'Less than 10 is recommended for best image building performance.')
 
-    def _download_images(self, templates, image_name):
-        images = []
-        if image_name == 'all':
-            images = templates.keys()
-        else:
-            images.append(image_name)
 
-        for image in images:
-            dest_file = self.image_path('%s.tar.xz' % image)
-            self._download(templates[image]['url'], dest_file)
-            self._decompress(dest_file)
-
-    def _download(self, url, path):
-        self.info('Downloading %s' % url)
-        s2e_env.utils.google.download(url, path)
-
-    def _decompress(self, path):
-        self.info('Decompressing %s' % path)
-        try:
-            cwd = os.path.dirname(path)
-            subprocess.check_call(['tar', 'xJvf', path], cwd=cwd)
-        except subprocess.CalledProcessError:
-            raise CommandError('Image decompression failed')
