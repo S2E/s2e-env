@@ -75,7 +75,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                         autoescape=False)
         self._template_env.filters['datetimefilter'] = datetimefilter
 
-    def _validate_binary(self, target_arch, _, os_arch):
+    def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
             raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
 
@@ -91,7 +91,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
         for k, v in templates.iteritems():
             try:
-                self._validate_binary(target_arch, v['os_name'], v['os_arch'])
+                self._validate_binary(target_arch, v['os_name'], v['os_arch'], v['os_binary_formats'])
                 self.warn('No image was specified (-i option).')
                 self.warn('Found %s, which looks suitable for this binary.' % k)
                 self.warn('Please use -i if you want to use another one.')
@@ -138,7 +138,10 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         self._img_json = self._get_or_download_image(image, options['download_image'])
 
         # Check architecture consistency
-        self._validate_binary(options['target_arch'], self._img_json['os_name'], self._img_json['os_arch'])
+        self._validate_binary(
+            options['target_arch'], self._img_json['os_name'],
+            self._img_json['os_arch'], self._img_json['os_binary_formats']
+        )
 
         # Save use seeds flag
         self._use_seeds = options['use_seeds']
