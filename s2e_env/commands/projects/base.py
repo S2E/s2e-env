@@ -86,8 +86,6 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         """
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
-        if not templates:
-            raise CommandError('No images available. Please build them first.')
 
         for k, v in templates.iteritems():
             try:
@@ -99,7 +97,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
             except Exception:
                 pass
 
-        raise CommandError('Cannot guess suitable image for this binary. Please use the -i option.')
+        raise CommandError('No suitable image available for this binary.')
 
     def _get_or_download_image(self, image, download):
         try:

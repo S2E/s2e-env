@@ -103,9 +103,12 @@ def _check_vmlinux():
 
 def get_image_templates(img_build_dir):
     images = os.path.join(img_build_dir, "images.json")
-    with open(images, 'r') as f:
-        template_json = json.load(f)
-        return template_json['images']
+    try:
+        with open(images, 'r') as f:
+            template_json = json.load(f)
+            return template_json['images']
+    except:
+        raise CommandError('Could not parse %s. Something is wrong with the environment.' % images)
 
 
 class ImageDownloaderMixin(object):
