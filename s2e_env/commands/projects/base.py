@@ -30,7 +30,7 @@ import time
 from jinja2 import Environment, FileSystemLoader
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.image_build import get_image_templates
+from s2e_env.commands.image_build import get_image_templates, ImageDownloaderMixin
 from s2e_env import CONSTANTS
 
 FILE_DIR = os.path.dirname(__file__)
@@ -44,7 +44,7 @@ def datetimefilter(value, format_='%H:%M %d-%m-%Y'):
     return value.strftime(format_)
 
 
-class BaseProject(EnvCommand):
+class BaseProject(EnvCommand, ImageDownloaderMixin):
     """
     The base class for the different projects that the ``new_project`` command
     can create.
@@ -101,6 +101,17 @@ class BaseProject(EnvCommand):
 
         raise CommandError('Cannot guess suitable image for this binary. Please use the -i option.')
 
+    def _get_or_download_image(self, image, download):
+        try:
+            return self._load_image_json(image)
+        except Exception:
+            if not download:
+                raise
+
+        self.info('Image %s missing, attempting to download...' % image)
+        self.download_images(image)
+        return self._load_image_json(image)
+
     def handle(self, *args, **options):
         self._target_path = options['target']
 
@@ -124,7 +135,7 @@ class BaseProject(EnvCommand):
         if image is None:
             image = self._guess_image(options['target_arch'])
 
-        self._img_json = self._load_image_json(image)
+        self._img_json = self._get_or_download_image(image, options['download_image'])
 
         # Check architecture consistency
         self._validate_binary(options['target_arch'], self._img_json['os_name'], self._img_json['os_arch'])
@@ -198,7 +209,7 @@ class BaseProject(EnvCommand):
                 return ret
         except Exception:
             raise CommandError('Unable to open image description %s\n'
-                               'Check that the image exists' %
+                               'Check that the image exists, was built, or downloaded' %
                                img_json_path)
 
     def _check_project_dir(self, force=False):

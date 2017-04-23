@@ -69,6 +69,9 @@ class Command(EnvCommand):
                             help='The name of an image in the ``images`` '
                                  'directory. If missing, the image will be guessed '
                                  'based on the type of the binary')
+        parser.add_argument('-d', '--download-image', required=False, default=False,
+                            action='store_true',
+                            help='Download a suitable image if it is not available')
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
                                  'concolic files. The user must create these '
