@@ -108,10 +108,6 @@ class BaseProject(EnvCommand):
         # (without any file extension)
         project_name = options['name']
         if not project_name:
-            if not self._target_path:
-                raise CommandError('If you are creating an empty project you '
-                                   'must specify a project name using the '
-                                   '``--name`` option')
             project_name, _ = \
                 os.path.splitext(os.path.basename(self._target_path))
 
@@ -204,28 +200,6 @@ class BaseProject(EnvCommand):
             raise CommandError('Unable to open image description %s\n'
                                'Check that the image exists' %
                                img_json_path)
-
-    def _create_empty(self):
-        """
-        Create an empty project.
-
-        The project will be created in the S2E environment's ``projects``
-        directory. The created project differs to that created by the
-        ``_create`` method in that it consists only of the launch scripts.
-        """
-        # Check if the project dir already exists
-        self._check_project_dir()
-
-        # Create the project directory
-        os.mkdir(self._project_path)
-
-        # Render the templates
-        self.info('Creating launch scripts')
-        self._create_launch_scripts()
-
-        # Return the instructions to the user
-        return ('Empty project \'%s\' created' %
-                os.path.basename(self._project_path))
 
     def _check_project_dir(self, force=False):
         """
