@@ -80,15 +80,18 @@ class BaseProject(EnvCommand):
             raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
 
     def _guess_image(self, target_arch):
+        """
+        At this stage, images may not exist, so we get the list of images
+        from images.json rather than from the images folder.
+        """
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
         if not templates:
             raise CommandError('No images available. Please build them first.')
 
-        for k in templates.keys():
+        for k, v in templates.iteritems():
             try:
-                img = self._load_image_json(k)
-                self._validate_binary(target_arch, img['os_name'], img['os_arch'])
+                self._validate_binary(target_arch, v['os_name'], v['os_arch'])
                 self.warn('No image was specified (-i option).')
                 self.warn('Found %s, which looks suitable for this binary.' % k)
                 self.warn('Please use -i if you want to use another one.')
