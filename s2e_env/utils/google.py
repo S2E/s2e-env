@@ -51,8 +51,10 @@ def _save_response_content(response, destination):
                 f.write(chunk)
 
             if next_count > 1024 * 1024 * 10:
-                terminal.print_info('Downloaded %d bytes' % bytes_count)
+                terminal.print_info('Downloaded %d bytes\r' % bytes_count, new_line=False, flush=True)
                 next_count = 0
+
+        terminal.print_info('')
 
 
 def _download(docid, destination):
