@@ -30,7 +30,7 @@ import time
 from jinja2 import Environment, FileSystemLoader
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.image_build import get_image_templates
+from s2e_env.commands.image_build import get_image_templates, ImageDownloaderMixin
 from s2e_env import CONSTANTS
 
 FILE_DIR = os.path.dirname(__file__)
@@ -44,7 +44,7 @@ def datetimefilter(value, format_='%H:%M %d-%m-%Y'):
     return value.strftime(format_)
 
 
-class BaseProject(EnvCommand):
+class BaseProject(EnvCommand, ImageDownloaderMixin):
     """
     The base class for the different projects that the ``new_project`` command
     can create.
@@ -75,20 +75,21 @@ class BaseProject(EnvCommand):
                         autoescape=False)
         self._template_env.filters['datetimefilter'] = datetimefilter
 
-    def _validate_binary(self, target_arch, _, os_arch):
+    def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
             raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
 
     def _guess_image(self, target_arch):
+        """
+        At this stage, images may not exist, so we get the list of images
+        from images.json rather than from the images folder.
+        """
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
-        if not templates:
-            raise CommandError('No images available. Please build them first.')
 
-        for k in templates.keys():
+        for k, v in templates.iteritems():
             try:
-                img = self._load_image_json(k)
-                self._validate_binary(target_arch, img['os_name'], img['os_arch'])
+                self._validate_binary(target_arch, v['os_name'], v['os_arch'], v['os_binary_formats'])
                 self.warn('No image was specified (-i option).')
                 self.warn('Found %s, which looks suitable for this binary.' % k)
                 self.warn('Please use -i if you want to use another one.')
@@ -96,7 +97,18 @@ class BaseProject(EnvCommand):
             except Exception:
                 pass
 
-        raise CommandError('Cannot guess suitable image for this binary. Please use the -i option.')
+        raise CommandError('No suitable image available for this binary.')
+
+    def _get_or_download_image(self, image, download):
+        try:
+            return self._load_image_json(image)
+        except Exception:
+            if not download:
+                raise
+
+        self.info('Image %s missing, attempting to download...' % image)
+        self.download_images(image)
+        return self._load_image_json(image)
 
     def handle(self, *args, **options):
         self._target_path = options['target']
@@ -105,10 +117,6 @@ class BaseProject(EnvCommand):
         # (without any file extension)
         project_name = options['name']
         if not project_name:
-            if not self._target_path:
-                raise CommandError('If you are creating an empty project you '
-                                   'must specify a project name using the '
-                                   '``--name`` option')
             project_name, _ = \
                 os.path.splitext(os.path.basename(self._target_path))
 
@@ -125,10 +133,13 @@ class BaseProject(EnvCommand):
         if image is None:
             image = self._guess_image(options['target_arch'])
 
-        self._img_json = self._load_image_json(image)
+        self._img_json = self._get_or_download_image(image, options['download_image'])
 
         # Check architecture consistency
-        self._validate_binary(options['target_arch'], self._img_json['os_name'], self._img_json['os_arch'])
+        self._validate_binary(
+            options['target_arch'], self._img_json['os_name'],
+            self._img_json['os_arch'], self._img_json['os_binary_formats']
+        )
 
         # Save use seeds flag
         self._use_seeds = options['use_seeds']
@@ -199,30 +210,8 @@ class BaseProject(EnvCommand):
                 return ret
         except Exception:
             raise CommandError('Unable to open image description %s\n'
-                               'Check that the image exists' %
+                               'Check that the image exists, was built, or downloaded' %
                                img_json_path)
-
-    def _create_empty(self):
-        """
-        Create an empty project.
-
-        The project will be created in the S2E environment's ``projects``
-        directory. The created project differs to that created by the
-        ``_create`` method in that it consists only of the launch scripts.
-        """
-        # Check if the project dir already exists
-        self._check_project_dir()
-
-        # Create the project directory
-        os.mkdir(self._project_path)
-
-        # Render the templates
-        self.info('Creating launch scripts')
-        self._create_launch_scripts()
-
-        # Return the instructions to the user
-        return ('Empty project \'%s\' created' %
-                os.path.basename(self._project_path))
 
     def _check_project_dir(self, force=False):
         """

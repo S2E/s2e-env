@@ -23,8 +23,9 @@ SOFTWARE.
 import datetime
 import os
 
-from .base import BaseProject
+from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
+from .base import BaseProject
 
 
 class LinuxProject(BaseProject):
@@ -77,6 +78,13 @@ class LinuxProject(BaseProject):
         self._target_args = options['target_args']
 
         return super(LinuxProject, self).handle(**options)
+
+    def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
+        if 'elf' not in os_binary_formats:
+            raise CommandError('Please use a Linux image for this binary')
+
+        # Run default checks
+        super(LinuxProject, self)._validate_binary(target_arch, os_name, os_arch, os_binary_formats)
 
     def _parse_target_args(self):
         """

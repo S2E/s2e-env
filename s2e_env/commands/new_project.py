@@ -58,21 +58,20 @@ class Command(EnvCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
 
-        parser.add_argument('target', nargs='?',
-                            help='Path to the target file to analyze. You may '
-                                 'leave this empty, in which case an empty '
-                                 'Linux project will be created')
+        parser.add_argument('target', nargs=1,
+                            help='Path to the target file to analyze')
         parser.add_argument('target_args', nargs=argparse.REMAINDER,
                             help='Arguments to the target program')
         parser.add_argument('-n', '--name', required=False, default=None,
                             help='The name of the project. Defaults to the '
-                                 'name of the target program. If you are '
-                                 'creating an empty project then this field '
-                                 'must be specified')
+                                 'name of the target program.')
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
                                  'directory. If missing, the image will be guessed '
                                  'based on the type of the binary')
+        parser.add_argument('-d', '--download-image', required=False, default=False,
+                            action='store_true',
+                            help='Download a suitable image if it is not available')
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
                                  'concolic files. The user must create these '
@@ -85,7 +84,7 @@ class Command(EnvCommand):
     def handle(self, *args, **options):
         # Need an absolute path for the target in order to simplify
         # symlink creation.
-        target_path = options['target']
+        target_path = options['target'][0]
         target_path = os.path.abspath(target_path)
         options['target'] = target_path
 

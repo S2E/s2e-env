@@ -30,8 +30,8 @@ import shlex
 import signal
 import subprocess
 import threading
-import time
 from threading import Thread
+import time
 
 from s2e_env import server
 from s2e_env.command import ProjectCommand

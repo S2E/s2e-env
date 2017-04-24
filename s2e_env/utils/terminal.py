@@ -26,12 +26,19 @@ import sys
 import termcolor
 
 
-def print_info(msg):
+def print_info(msg, new_line=True, flush=False):
     """
     Print an info message to stdout.
     """
-    text = 'INFO: %s\n' % msg
+    text = 'INFO: %s' % msg
+
+    if new_line:
+        text = '%s\n' % text
+
     sys.stdout.write(text)
+
+    if flush:
+        sys.stdout.flush()
 
 
 def print_success(msg):
