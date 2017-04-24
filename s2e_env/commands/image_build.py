@@ -84,6 +84,12 @@ def _check_virtualbox():
                                'and try again.')
 
 
+def _check_kvm():
+    if not os.path.exists('/dev/kvm'):
+        raise CommandError('KVM is required to build images. Check that /dev/kvm exists. '
+                           'Alternatively, you can also download pre-built images (-d option).')
+
+
 def _check_vmlinux():
     """
     Check that /boot/vmlinux* files are readable.
@@ -218,6 +224,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
                 self.download_images(image_name)
             return
 
+        _check_kvm()
         _check_groups()
         _check_vmlinux()
         _check_virtualbox()
@@ -306,5 +313,3 @@ class Command(EnvCommand, ImageDownloaderMixin):
         if value <= 0 or value > 10:
             self.warn('The specified number of cores seems high. '
                       'Less than 10 is recommended for best image building performance.')
-
-
