@@ -74,15 +74,15 @@ A typical workflow is therefore:
 2. Look around the source code, make some modifications, etc. Then when you are
    ready to build run `s2e build`.
 3. You'll need some images to analyze your software in! See what images are
-   available with `s2e image_templates`.
-4. Run `s2e image_build $TEMPLATE` to build one of the images listed in `s2e
-   image_templates`. This will create the image in the `images` directory.
+   available with `s2e image_build`.
+4. Run `s2e image_build $TEMPLATE` to build one of the images listed in the
+   previous step. This will create the image in the `images` directory.
 5. Use `s2e new_project` to create a new analysis project. This will create all
    the launch scripts, configuration files and bootstrap scripts necessary to
    perform the analysis on a given target.
 6. Change into the project directory and run the S2E analysis with the
    `launch-s2e.sh` script.
-7. After your analysis has finished, a number of sumbcommands exist to analyze
+7. After your analysis has finished, a number of subcommands exist to analyze
    and summarize your results, e.g. the ``basic_block_coverage`` subcommand,
    etc.
 
@@ -95,24 +95,17 @@ To grab the latest changes from the git repositories, run `s2e update`.
 
 ```
 .
-├── bin
 ├── build
 ├── images
-├── include
-├── lib
+├── install
 ├── projects
-├── share
 ├── source
 ```
 
-* `bin`: Installed binaries
-* `build`: Projects are built here. You should probably ignore the contents of
-  this directory and use `bin`, `lib`, etc. instead
-* `images`: Images and their JSON descriptions
-* `include`: Installed headers
-* `lib`: Installed libraries
+* `build`: Staging directory for builds
+* `images`: Images created with `s2e image_build` go here
+* `install`: Installed executables, libraries, header files, etc.
 * `projects`: Analysis projects created with `s2e new_project` go here
-* `share`: Architecture-independent data
 * `source`: Source code repositories
 
 # Extending
@@ -126,8 +119,12 @@ For example, to create a command `foo`:
 
 1. Create a new Python module `s2e_env/commands/foo.py`
 2. In `foo.py` define a `Command` class that extends
-   `s2e_env.command.BaseCommand` or (more likely)
-   `s2e_env.command.EnvCommand`
+    * `s2e_env.command.BaseCommand` - The base class. Probably not that useful
+      to inherit directly from this class
+    * `s2e_env.command.EnvCommand` - For commands that operate on an existing
+      S2E environment
+    * `s2e_env.command.ProjectCommand` - For commands that operate on an
+      existing analysis project
 3. The only method required in your `Command` class is
   `handle(self, *args, **options)`. This method contains your command logic
 4. You may optionally define an `add_arguments(self, parser)` method for
