@@ -20,12 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import datetime
 import os
 
 from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
-from .base import BaseProject
+from . import BaseProject
 
 
 class LinuxProject(BaseProject):
@@ -121,13 +122,11 @@ class LinuxProject(BaseProject):
                 parsed_args.append(arg)
 
         if not use_symb_input_file:
-            self.warn('')
             self.warn('You did not specify the input file marker @@.')
             self.warn('This marker is automatically substituted by a file with symbolic content.')
             self.warn('You will have to manually edit bootstrap.sh in order to '
                       'run the program on multiple paths.')
             self.warn('Example: %s @@' % self._target_path)
-            self.warn('')
 
         if self._use_seeds and not use_symb_input_file:
             self.warn('Seed files have been enabled, however you did not  '

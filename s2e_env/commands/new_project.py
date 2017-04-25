@@ -29,9 +29,9 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from s2e_env.commands.projects.cgc import CGCProject
-from s2e_env.commands.projects.linux import LinuxProject
-from s2e_env.commands.projects.windows import WindowsProject
+from s2e_env.commands.project_creation.cgc import CGCProject
+from s2e_env.commands.project_creation.linux import LinuxProject
+from s2e_env.commands.project_creation.windows import WindowsProject
 
 
 # Paths

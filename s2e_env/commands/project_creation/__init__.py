@@ -89,12 +89,14 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
 
+        self.info('No image was specified (-i option). Attempting to guess a '
+                  'suitable image for a %s binary' % target_arch)
+
         for k, v in templates.iteritems():
             try:
                 self._validate_binary(target_arch, v['os_name'], v['os_arch'], v['os_binary_formats'])
-                self.warn('No image was specified (-i option). Found %s, '
-                          'which looks suitable for this binary. Please use '
-                          '-i if you want to use another image' % k)
+                self.warn('Found %s, which looks suitable for this binary. '
+                          'Please use -i if you want to use another image' % k)
                 return k
             except Exception:
                 pass
