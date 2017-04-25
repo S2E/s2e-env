@@ -35,7 +35,8 @@ file is located in `s2e_env/dat/config.yaml`. If you wish to customize your
 
 For example, you may want to clone the S2E source repos via SSH rather than
 HTTPS, in which case you would set the `repos`, `url` option to
-`git@github.com:S2E`.
+`git@github.com:S2E`. If you want to generate basic block coverage, you will
+also have to set the `ida`, `path` option.
 
 # Usage
 

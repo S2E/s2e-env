@@ -30,6 +30,7 @@ import shutil
 import sh
 from sh import ErrorReturnCode
 
+from s2e_env import CONSTANTS, YAML_CONFIG_PATH
 from s2e_env.command import ProjectCommand, CommandError
 
 try:
@@ -45,19 +46,15 @@ TranslationBlock = namedtuple('TranslationBlock', ['start_addr', 'end_addr'])
 class Command(ProjectCommand):
     """
     Generate a basic block coverage report.
+
+    This subcommand requires IDA Pro.
     """
 
-    help = 'Generate a basic block coverage report.'
-
-    def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
-
-        parser.add_argument('-i', '--ida', required=True,
-                            help='Path to IDA Pro executable')
+    help = 'Generate a basic block coverage report. This requires IDA Pro.'
 
     def handle(self, *args, **options):
-        # Check that the path to IDA is valid
-        ida_path = options['ida']
+        # Determine the IDA Pro path and check that it is valid
+        ida_path = self._get_ida_path()
         if not os.path.isfile(ida_path):
             raise CommandError('IDA Pro not found at %s' % ida_path)
 
@@ -75,6 +72,32 @@ class Command(ProjectCommand):
 
         # Write the basic block information to a JSON file
         self._save_basic_block_coverage(bb_coverage)
+
+    def _get_ida_path(self):
+        """
+        Determine which version of IDA to use based on the project's
+        architecture (32 or 64 bit).
+
+        Returns the path to IDA Pro or raises an exception if it cannot be
+        found.
+        """
+        ida_dir = CONSTANTS['ida']['dir']
+        if not ida_dir:
+            raise CommandError('No path to IDA has been given in %s. IDA is '
+                               'required to generate a basic block coverage '
+                               'report' % YAML_CONFIG_PATH)
+
+        project_arch = self._project_desc['arch']
+        if project_arch == 'i386':
+            ida_path = os.path.join(ida_dir, 'idal')
+        elif project_arch == 'x86_64':
+            ida_path = os.path.join(ida_dir, 'idal64')
+        else:
+            raise CommandError('Invalid project architecture \'%s\' - unable '
+                               'to determine the version of IDA Pro to use' %
+                               project_arch)
+
+        return ida_path
 
     def _get_basic_blocks(self, ida_path):
         """
@@ -108,10 +131,14 @@ class Command(ProjectCommand):
                 shutil.copyfile(target_path, temp_target_path)
 
                 # Run the IDA Pro extractBasicBlocks script
+                env_vars = os.environ.copy()
+                env_vars['TVHEADLESS'] = '1'
+
                 ida = sh.Command(ida_path)
-                ida('-B',
-                    '-S%s' % self.env_path('bin', 'extractBasicBlocks.py'),
-                    temp_target_path)
+                ida('-A', '-B',
+                    '-S%s' % self.install_path('bin', 'extractBasicBlocks.py'),
+                    temp_target_path, _out=os.devnull, _tty_out=False,
+                    _cwd=temp_dir, _env=env_vars)
 
                 # Check that the basic block list file was correctly generated
                 bblist_file = os.path.join(temp_dir, '%s.bblist' % target_name)

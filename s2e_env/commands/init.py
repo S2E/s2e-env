@@ -151,6 +151,11 @@ class Command(BaseCommand):
         install_packages = CONSTANTS['dependencies']['common'] + \
                            CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver]
 
+        # Check for IDA Pro. If it has been specified, we will install its
+        # packages too
+        if CONSTANTS['ida']['dir']:
+            install_packages += CONSTANTS['dependencies']['ida']
+
         try:
             apt_get = sudo.bake('apt-get', _fg=True)
 
