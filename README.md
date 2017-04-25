@@ -84,8 +84,7 @@ A typical workflow is therefore:
 6. Change into the project directory and run the S2E analysis with the
    `launch-s2e.sh` script.
 7. After your analysis has finished, a number of subcommands exist to analyze
-   and summarize your results, e.g. the ``basic_block_coverage`` subcommand,
-   etc.
+   and summarize your results, e.g. the ``coverage`` subcommand, etc.
 
 The `s2e info` command can be used to display a summary of the S2E environment.
 To grab the latest changes from the git repositories, run `s2e update`.

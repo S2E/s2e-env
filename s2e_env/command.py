@@ -175,7 +175,7 @@ class BaseCommand(object):
 
         return output
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Handle any common command options here and remove them from the options
         dict given to the command.
@@ -187,7 +187,7 @@ class BaseCommand(object):
         """
         Try to execute the command.
         """
-        self.handle_common_args(options)
+        self.handle_common_args(**options)
 
         success_msg = self.handle(*args, **options)
         if success_msg:
@@ -245,11 +245,11 @@ class EnvCommand(BaseCommand):
 
         self._env_dir = None
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Adds the environment directory as a class member.
         """
-        super(EnvCommand, self).handle_common_args(options)
+        super(EnvCommand, self).handle_common_args(**options)
 
         self._env_dir = options['env']
         options.pop('env', ())
@@ -261,6 +261,7 @@ class EnvCommand(BaseCommand):
             raise CommandError('This does not look like an S2E environment')
 
     def add_arguments(self, parser):
+        super(EnvCommand, self).add_arguments(parser)
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
@@ -322,11 +323,11 @@ class ProjectCommand(EnvCommand):
         self._project_desc = None
         self._project_name = None
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Adds the project directory as a class member.
         """
-        super(ProjectCommand, self).handle_common_args(options)
+        super(ProjectCommand, self).handle_common_args(**options)
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
