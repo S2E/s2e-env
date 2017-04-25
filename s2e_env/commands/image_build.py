@@ -172,7 +172,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
                             type=int,
                             help='Amount of RAM allocated to the image. '
                                  'Defaults to 256 MB')
-        parser.add_argument('-c', '--num-cores', required=False, default=2,
+        parser.add_argument('-c', '--cores', required=False, default=2,
                             type=int,
                             help='The number of cores used when building the '
                                  'VM image. Defaults to 2')
@@ -198,7 +198,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
         memory = options['memory']
         self._check_ram_size(memory)
 
-        num_cores = options['num_cores']
+        num_cores = options['cores']
         self._check_core_num(num_cores)
 
         # The path could have been deleted by a previous clean
