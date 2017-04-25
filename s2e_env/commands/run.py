@@ -144,6 +144,7 @@ class Command(ProjectCommand):
     _legend = {
         'binaries': 'Binary name(s)',
         'run_time': 'Run time (s)',
+        'core_count': '# instances (current/max)',
         'states': 'Number of states',
         'completed_states': 'Number of states completed',
         'completed_seeds': 'Completed seeds',
@@ -156,6 +157,7 @@ class Command(ProjectCommand):
     _layout = [
         'binaries',
         'run_time',
+        'core_count',
         'states',
         'completed_states',
         'completed_seeds',
@@ -280,12 +282,16 @@ class Command(ProjectCommand):
         if not binaries:
             binaries = "Waiting for analysis to start..."
 
+        gs = CollectorThreads.stats.get_global_stats()
+
         data = {
             'binaries': binaries,
             'run_time': elapsed_time,
-            'completed_states': CollectorThreads.stats.get_global_stats().get('state_completed_count', 0),
-            'completed_seeds': CollectorThreads.stats.get_global_stats().get('seeds_completed', 0),
-            'covered_bbs': CollectorThreads.coverage.get_summary().get('covered_tbs_total', 0),
+            'core_count': '%d/%d' % (gs.get('instance_current_count', 0), gs.get('instance_max_count', 0)),
+            'states': gs.get('state_highest_id', 0) - gs.get('state_completed_count', 0),
+            'completed_states': gs.get('state_completed_count', 0),
+            'completed_seeds': gs.get('seeds_completed', 0),
+            'covered_bbs': gs.get('covered_tbs_total', 0),
             'num_crashes': CGCInterfacePlugin.crash_count,
             'pov1': CGCInterfacePlugin.pov1_count,
             'pov2': CGCInterfacePlugin.pov2_count,
