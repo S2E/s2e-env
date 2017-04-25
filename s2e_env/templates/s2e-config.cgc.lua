@@ -1,3 +1,4 @@
+
 --
 -- This file was automatically generatd by s2e-env at
 -- {{ current_time | datetimefilter }}
@@ -15,14 +16,6 @@ s2e = {
 }
 
 plugins = {
-    "BaseInstructions",
-    "HostFiles",
-    "Vmi",
-
-    -- Basic tracing required for test-case generation
-    "ExecutionTracer",
-    "ModuleTracer",
-
     -----------------------
     -- CGC-specific plugins
     "CGCInterface",
@@ -31,12 +24,6 @@ plugins = {
     "Recipe",
     "ExploitGenerator",
     -----------------------
-
-    "WebServiceInterface",
-
-    "ModuleExecutionDetector",
-    "ProcessExecutionDetector",
-    "FunctionMonitor",
 
     "ForkLimiter",
 
@@ -50,29 +37,13 @@ plugins = {
 
     "ControlFlowGraph",
 
-    "MultiSearcher",
-    "CUPASearcher",
-    "SeedSearcher",
-
     "StackMonitor",
     "KeyValueStore",
 }
 
 pluginsConfig = {}
 
-pluginsConfig.HostFiles = {
-    baseDirs = {
-        "{{ project_dir }}",
-        "{{ project_dir }}/seeds",
-    },
-    allowWrite = true,
-}
-
-pluginsConfig.Vmi = {
-    baseDirs = {
-        "{{ project_dir }}",
-    },
-}
+{% include 's2e-config.common.lua' %}
 
 pluginsConfig.CGCInterface = {
     maxPovCount = 10,
@@ -112,19 +83,6 @@ pluginsConfig.Recipe = {
     recipesDir = "{{ project_dir }}/recipes",
 }
 
-pluginsConfig.ModuleExecutionDetector = {
-    mod_0 = {
-        moduleName = "{{ target }}",
-        kernelMode = false,
-    },
-}
-
-pluginsConfig.ProcessExecutionDetector = {
-    moduleNames = {
-        "{{ target }}",
-    },
-}
-
 pluginsConfig.ForkLimiter = {
     maxForkCount = -1,
     processForkDelay = 5,
@@ -138,6 +96,7 @@ pluginsConfig.ControlFlowGraph = {
     reloadConfig = false,
 }
 
+-- Override default CUPASearcher settings
 pluginsConfig.CUPASearcher = {
     logLevel = "info",
     enabled = true,
@@ -152,9 +111,4 @@ pluginsConfig.CUPASearcher = {
         -- Prioritize states that have the lowest syscall read count
         "pc",
     },
-}
-
-pluginsConfig.SeedSearcher = {
-    enableSeeds = true,
-    seedDirectory = "{{ project_dir }}/seeds",
 }

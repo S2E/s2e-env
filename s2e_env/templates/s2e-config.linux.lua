@@ -15,27 +15,8 @@ s2e = {
 }
 
 plugins = {
-    "BaseInstructions",
-    "HostFiles",
-    "Vmi",
-
-    -- Basic tracing required for test-case generation
-    "ExecutionTracer",
-    "ModuleTracer",
-
-    "ModuleExecutionDetector",
-    "ProcessExecutionDetector",
-
-    "WebServiceInterface",
-
     "LinuxMonitor",
-
-    {% if use_seeds == true %}
-    "SeedSearcher",
-    "MultiSearcher",
-    "CUPASearcher",
-    "FunctionMonitor",
-    {% endif %}
+    "TestCaseGenerator"
 
     {% if function_models == true %}
     -- If state explosion becomes a problem, consider uncommenting the
@@ -46,56 +27,14 @@ plugins = {
 
 pluginsConfig = {}
 
-pluginsConfig.HostFiles = {
-    baseDirs = {
-        "{{ project_dir }}",
-        {% if use_seeds == true %}
-        "{{ project_dir }}/seeds",
-        {% endif %}
-    },
-    allowWrite = true,
-}
-
-pluginsConfig.Vmi = {
-    baseDirs = {
-        "{{ project_dir }}",
-    },
-}
-
-pluginsConfig.ModuleExecutionDetector = {
-    mod_0 = {
-        moduleName = "{{ target }}",
-        kernelMode = false,
-    },
-}
-
-pluginsConfig.ProcessExecutionDetector = {
-    moduleNames = {
-        "{{ target }}",
-    },
-}
+{% include 's2e-config.common.lua' %}
 
 pluginsConfig.LinuxMonitor = {
     terminateOnSegFault = true,
     terminateOnTrap = true,
 }
 
-{% if use_seeds == true %}
-pluginsConfig.SeedSearcher = {
-    seedDirectory = "{{ project_dir }}/seeds",
-    enableSeeds = true,
-    maxSeedStates = 1000,
+pluginsConfig.TestCaseGenerator = {
+    generateOnStateKill = true,
+    generateOnSegfault = true
 }
-
-pluginsConfig.CUPASearcher = {
-    enabled = false,
-    classes = {
-        -- This ensures that seed state 0 is kept out of scheduling unless
-        -- instructed by SeedSearcher
-        "seed",
-        -- Prioritize states that have the lowest syscall read count
-        "pc",
-    },
-}
-{% endif %}
-
