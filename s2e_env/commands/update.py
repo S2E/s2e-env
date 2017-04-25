@@ -48,12 +48,11 @@ class Command(EnvCommand):
         """
         Update all of the S2E repositories with repo.
         """
-        s2e_source_path = self.env_path('source', 's2e')
-        repo = sh.Command(self.env_path('bin', 'repo'))
+        repo = sh.Command(self.install_path('bin', 'repo'))
 
         # cd into the S2E source directory
         orig_dir = os.getcwd()
-        os.chdir(s2e_source_path)
+        os.chdir(self.source_path('s2e'))
 
         try:
             self.info('Updating s2e')
