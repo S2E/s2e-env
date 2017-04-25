@@ -20,12 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import json
 import logging
 import os
 
 from .threads import terminating
 from .queueprocessor import QueueProcessor
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +95,6 @@ class Coverage(QueueProcessor):
 
             for bb in cdata:
                 # Both BB and TB coverage data items begin with start_pc and end_pc
-                # (start_pc, end_pc)
                 t = (bb[0], bb[1])
                 data_set.add(t)
 
@@ -125,7 +126,7 @@ class Coverage(QueueProcessor):
                 if self.is_covered(module, bb):
                     continue
 
-                logger.info("Found new bb: %s %x:%x", module, bb[0], bb[1])
+                logger.info('Found new bb: %s %x:%x', module, bb[0], bb[1])
 
                 self._summary_updated = False
 
@@ -165,7 +166,7 @@ class Coverage(QueueProcessor):
         logger.info('Terminating coverage thread')
 
     def queue_coverage(self, analysis, coverage_file, coverage_type, cb):
-        logger.info('Queuing coverage file ' + coverage_file)
+        logger.info('Queuing coverage file %s', coverage_file)
         item = (analysis, coverage_file, coverage_type, cb)
         self._queue.put(item)
 

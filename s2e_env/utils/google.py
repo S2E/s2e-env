@@ -42,7 +42,7 @@ def _get_confirm_token(response):
 def _save_response_content(response, destination):
     bytes_count = 0
     next_count = 0
-    with open(destination, "wb") as f:
+    with open(destination, 'wb') as f:
         for chunk in response.iter_content(CHUNK_SIZE):
             # filter out keep-alive new chunks
             if chunk:
@@ -51,14 +51,15 @@ def _save_response_content(response, destination):
                 f.write(chunk)
 
             if next_count > 1024 * 1024 * 10:
-                terminal.print_info('Downloaded %d bytes\r' % bytes_count, new_line=False, flush=True)
+                terminal.print_info('Downloaded %d bytes\r' % bytes_count,
+                                    new_line=False, flush=True)
                 next_count = 0
 
         terminal.print_info('')
 
 
 def _download(docid, destination):
-    url = "https://docs.google.com/uc?export=download"
+    url = 'https://docs.google.com/uc?export=download'
 
     session = requests.Session()
 

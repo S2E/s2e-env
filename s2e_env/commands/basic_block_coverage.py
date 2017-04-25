@@ -198,7 +198,7 @@ class Command(ProjectCommand):
                 # Check if the translation block falls within a basic block OR
                 # a basic block falls within a translation block
                 if (bb.end_addr >= tb_start_addr >= bb.start_addr or
-                    bb.start_addr <= tb_end_addr <= bb.end_addr):
+                        bb.start_addr <= tb_end_addr <= bb.end_addr):
                     covered_bbs.add(bb)
 
         return list(covered_bbs)

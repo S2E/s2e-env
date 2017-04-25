@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import datetime
 import json
 import os
@@ -77,7 +78,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
     def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
-            raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
+            raise CommandError('Binary is x86_64 while VM image is %s. Please '
+                               'choose another image.' % os_arch)
 
     def _guess_image(self, target_arch):
         """
@@ -90,14 +92,14 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         for k, v in templates.iteritems():
             try:
                 self._validate_binary(target_arch, v['os_name'], v['os_arch'], v['os_binary_formats'])
-                self.warn('No image was specified (-i option).')
-                self.warn('Found %s, which looks suitable for this binary.' % k)
-                self.warn('Please use -i if you want to use another one.')
+                self.warn('No image was specified (-i option). Found %s, '
+                          'which looks suitable for this binary. Please use '
+                          '-i if you want to use another image' % k)
                 return k
             except Exception:
                 pass
 
-        raise CommandError('No suitable image available for this binary.')
+        raise CommandError('No suitable image available for this binary')
 
     def _get_or_download_image(self, image, download):
         try:
@@ -133,7 +135,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         if image is None:
             image = self._guess_image(options['target_arch'])
 
-        self._img_json = self._get_or_download_image(image, options['download_image'])
+        self._img_json = self._get_or_download_image(image,
+                                                     options['download_image'])
 
         # Check architecture consistency
         self._validate_binary(
@@ -159,8 +162,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         self._analyze()
 
         # Render the templates
-        self.info('Creating launch scripts')
-        self._create_launch_scripts()
+        self.info('Creating launch script')
+        self._create_launch_script()
 
         self.info('Creating bootstrap script')
         self._create_bootstrap()
@@ -210,8 +213,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                 return ret
         except Exception:
             raise CommandError('Unable to open image description %s\n'
-                               'Check that the image exists, was built, or downloaded' %
-                               img_json_path)
+                               'Check that the image exists, was built, or '
+                               'downloaded' % img_json_path)
 
     def _check_project_dir(self, force=False):
         """
@@ -296,9 +299,9 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                 st = os.stat(path)
                 os.chmod(path, st.st_mode | stat.S_IEXEC)
 
-    def _create_launch_scripts(self):
+    def _create_launch_script(self):
         """
-        Create the S2E launch scripts.
+        Create the S2E launch script.
         """
         # Render the launch scripts
         for template in CONSTANTS['templates']['launch_scripts']:

@@ -33,6 +33,7 @@ from s2e_env.commands.projects.cgc import CGCProject
 from s2e_env.commands.projects.linux import LinuxProject
 from s2e_env.commands.projects.windows import WindowsProject
 
+
 # Paths
 FILE_DIR = os.path.dirname(__file__)
 CGC_MAGIC = os.path.join(FILE_DIR, '..', 'dat', 'cgc.magic')
@@ -45,9 +46,6 @@ PE32_REGEX = re.compile(r'^PE executable')
 PE64_REGEX = re.compile(r'^PE\+ executable')
 
 
-#
-# The actual command class to execute from the command line
-#
 class Command(EnvCommand):
     """
     Initialize a new analysis project.
@@ -67,9 +65,9 @@ class Command(EnvCommand):
                                  'name of the target program.')
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
-                                 'directory. If missing, the image will be guessed '
-                                 'based on the type of the binary')
-        parser.add_argument('-d', '--download-image', required=False, default=False,
+                                 'directory. If missing, the image will be '
+                                 'guessed based on the type of the binary')
+        parser.add_argument('-d', '--download-image', required=False,
                             action='store_true',
                             help='Download a suitable image if it is not available')
         parser.add_argument('-s', '--use-seeds', action='store_true',

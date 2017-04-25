@@ -35,6 +35,17 @@ from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
 
+
+def _get_img_sources(env_path):
+    """
+    Download the S2E image repositories.
+    """
+    git_repos = CONSTANTS['repos']['images'].values()
+
+    for git_repo in git_repos:
+        repos.git_clone_to_source(env_path, git_repo)
+
+
 class Command(BaseCommand):
     """
     Initializes a new S2E environment.
@@ -48,27 +59,15 @@ class Command(BaseCommand):
         parser.add_argument('dir', help='The environment directory')
         parser.add_argument('-s', '--skip-dependencies', action='store_true',
                             help='Skip the dependency install via apt')
-        parser.add_argument('-b', '--use-existing-install', required=False, default=None,
-                            help='Do not fetch sources but instead use existing S2E installation '
-                                 'whose prefix is specified by this parameter (e.g., /opt/s2e)')
+        parser.add_argument('-b', '--use-existing-install', required=False,
+                            default=None,
+                            help='Do not fetch sources but instead use an '
+                                 'existing S2E installation whose prefix is '
+                                 'specified by this parameter (e.g., /opt/s2e)')
         parser.add_argument('-f', '--force', action='store_true',
                             help='Use this flag to force environment creation '
                                  'even if an environment already exists at '
                                  'this location')
-
-    def install_binary_dist(self, env_path, prefix):
-        # We must use an absolute path because of symlinks
-        prefix = os.path.abspath(prefix)
-
-        self.info('Using S2E installation in %s' % prefix)
-        install = os.path.join(env_path, 'install')
-        shutil.rmtree(install, True)
-        os.symlink(prefix, install)
-
-        # We still need to clone guest-images repo, because it contains
-        # info about location of the images
-        guest_images_repo = CONSTANTS['repos']['images']['build']
-        repos.git_clone_to_source(env_path, guest_images_repo)
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -109,7 +108,7 @@ class Command(BaseCommand):
             pass
 
         if prefix is not None:
-            self.install_binary_dist(env_path, prefix)
+            self._install_binary_dist(env_path, prefix)
             return 'Environment created in %s.' % env_path
         else:
             # Install S2E's dependencies via apt-get
@@ -118,9 +117,24 @@ class Command(BaseCommand):
 
             # Get the source repositories
             self._get_s2e_sources(env_path)
-            self._get_img_sources(env_path)
+            _get_img_sources(env_path)
 
-            return 'Environment created in %s. Now run ``s2e build`` to build' % env_path
+            return ('Environment created in %s. Now run ``s2e build`` to build'
+                    % env_path)
+
+    def _install_binary_dist(self, env_path, prefix):
+        # We must use an absolute path because of symlinks
+        prefix = os.path.abspath(prefix)
+
+        self.info('Using S2E installation in %s' % prefix)
+        install = os.path.join(env_path, 'install')
+        shutil.rmtree(install, True)
+        os.symlink(prefix, install)
+
+        # We still need to clone guest-images repo, because it contains
+        # info about location of the images
+        guest_images_repo = CONSTANTS['repos']['images']['build']
+        repos.git_clone_to_source(env_path, guest_images_repo)
 
     def _install_dependencies(self):
         """
@@ -205,15 +219,6 @@ class Command(BaseCommand):
 
         # Success!
         self.success('Fetched %s' % git_s2e_repo)
-
-    def _get_img_sources(self, env_path):
-        """
-        Download the S2E image repositories.
-        """
-        git_repos = CONSTANTS['repos']['images'].values()
-
-        for git_repo in git_repos:
-            repos.git_clone_to_source(env_path, git_repo)
 
     def _get_repo(self, env_path):
         """

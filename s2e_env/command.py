@@ -258,7 +258,7 @@ class EnvCommand(BaseCommand):
             with open(self.s2eenv_path()):
                 pass
         except IOError:
-            raise CommandError('This does not look like an S2E environment directory.')
+            raise CommandError('This does not look like an S2E environment')
 
     def add_arguments(self, parser):
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,

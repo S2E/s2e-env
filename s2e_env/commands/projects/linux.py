@@ -126,7 +126,7 @@ class LinuxProject(BaseProject):
             self.warn('This marker is automatically substituted by a file with symbolic content.')
             self.warn('You will have to manually edit bootstrap.sh in order to '
                       'run the program on multiple paths.')
-            self.warn('Example: ' + self._target_path + ' @@')
+            self.warn('Example: %s @@' % self._target_path)
             self.warn('')
 
         if self._use_seeds and not use_symb_input_file:

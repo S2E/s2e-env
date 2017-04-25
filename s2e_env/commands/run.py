@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from __future__ import print_function
 
 import argparse
@@ -29,7 +30,6 @@ import os
 import shlex
 import signal
 import subprocess
-import threading
 from threading import Thread
 import time
 
@@ -176,11 +176,9 @@ class Command(ProjectCommand):
 
         parser.add_argument('project_args', nargs=argparse.REMAINDER,
                             help='Optional arguments to the S2E launcher script')
-
         parser.add_argument('-c', '--cores', required=False, default=1,
                             type=int,
                             help='Number of cores to run S2E on')
-
         parser.add_argument('-n', '--no-tui', required=False, default=False,
                             action='store_true',
                             help='Disable text UI')
@@ -211,8 +209,8 @@ class Command(ProjectCommand):
             CollectorThreads.start_threads()
             qmp_server = QMPTCPServer(qmp_socket, QMPConnectionHandler)
             qmp_server.analysis = analysis
-            qmp_server_thread = threading.Thread(
-                target=qmp_server.serve_forever, name='QMPServerThread')
+            qmp_server_thread = Thread(target=qmp_server.serve_forever,
+                                       name='QMPServerThread')
             qmp_server_thread.start()
 
             for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
@@ -246,8 +244,10 @@ class Command(ProjectCommand):
                 qmp_server.server_close()
 
     def _setup_env(self, project_args, cores, qmp_socket):
-        qemu = self.install_path('bin', 'qemu-system-%s' % self._project_desc['arch'])
-        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % self._project_desc['arch'])
+        qemu = self.install_path('bin',
+                                 'qemu-system-%s' % self._project_desc['arch'])
+        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' %
+                                   self._project_desc['arch'])
 
         env = {
             'S2E_MAX_PROCESSES': str(cores),
@@ -275,9 +275,9 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ", ".join(CollectorThreads.coverage.tb_coverage.keys())
+        binaries = ', '.join(CollectorThreads.coverage.tb_coverage.keys())
         if not binaries:
-            binaries = "Waiting for analysis to start..."
+            binaries = 'Waiting for analysis to start...'
 
         gs = CollectorThreads.stats.global_stats
         cov = CollectorThreads.coverage.summary

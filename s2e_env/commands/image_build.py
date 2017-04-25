@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from __future__ import print_function
 
 import glob
@@ -31,14 +32,12 @@ import subprocess
 import sys
 
 import psutil
-
 import sh
 from sh import ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils import repos, terminal
-import s2e_env.utils.google
+from s2e_env.utils import google, repos, terminal
 
 
 def _get_user_groups(user_name):
@@ -58,21 +57,19 @@ def _user_belongs_to(group_name):
     return group_name in groups
 
 
-def _print_group_error(group_name):
-    print('You must belong to the %s group in order to build images.' % group_name)
-    print('Please run the following command, then logout and login:')
-    print('')
-    print('   sudo usermod -a -G %s $(whoami)' % group_name)
+def _raise_group_error(group_name):
+    raise CommandError('You must belong to the {0} group in order to build '
+                       'images. Please run the following command, then logout '
+                       'and login:\n\n'
+                       '\tsudo usermod -a -G {0} $(whoami)'.format(group_name))
 
 
 def _check_groups():
     if not _user_belongs_to('docker'):
-        _print_group_error('docker')
-        raise CommandError()
+        _raise_group_error('docker')
 
     if not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
-        _print_group_error('kvm')
-        raise CommandError()
+        _raise_group_error('kvm')
 
 
 def _check_virtualbox():
@@ -85,9 +82,10 @@ def _check_virtualbox():
 
 
 def _check_kvm():
-    if not os.path.exists('/dev/kvm'):
-        raise CommandError('KVM is required to build images. Check that /dev/kvm exists. '
-                           'Alternatively, you can also download pre-built images (-d option).')
+    if not os.path.exists(os.path.join(os.sep, 'dev', 'kvm')):
+        raise CommandError('KVM is required to build images. Check that '
+                           '/dev/kvm exists. Alternatively, you can also '
+                           'download pre-built images (-d option).')
 
 
 def _check_vmlinux():
@@ -96,31 +94,28 @@ def _check_vmlinux():
     This is important for guestfish.
     """
     try:
-        for f in glob.glob("/boot/vmli*"):
+        for f in glob.glob(os.path.join(os.sep, 'boot', 'vmlinu*')):
             with open(f):
                 pass
     except IOError:
-        print('Make sure that kernels in /boot are readable. This is required for guestfish.')
-        print('Please run the following command:')
-        print('')
-        print('sudo chmod ugo+r /boot/vmlinu*')
-        raise CommandError()
+        raise CommandError('Make sure that the kernels in /boot are readable. '
+                           'This is required for guestfish. Please run the '
+                           'following command:\n\n'
+                           'sudo chmod ugo+r /boot/vmlinu*')
 
 
 def get_image_templates(img_build_dir):
-    images = os.path.join(img_build_dir, "images.json")
+    images = os.path.join(img_build_dir, 'images.json')
     try:
         with open(images, 'r') as f:
             template_json = json.load(f)
             return template_json['images']
     except:
-        raise CommandError('Could not parse %s. Something is wrong with the environment.' % images)
+        raise CommandError('Could not parse %s. Something is wrong with the '
+                           'environment' % images)
 
 
 class ImageDownloaderMixin(object):
-    def __init__(self):
-        pass
-
     def download_images(self, image_name=None):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
@@ -138,8 +133,8 @@ class ImageDownloaderMixin(object):
         _decompress(dest_file)
 
     def _download(self, url, path):
-        terminal.print_info('Downloading %s' % url)
-        s2e_env.utils.google.download(url, path)
+        self.info('Downloading %s' % url)
+        google.download(url, path)
 
 
 def _decompress(path):
@@ -182,29 +177,28 @@ class Command(EnvCommand, ImageDownloaderMixin):
                             help='The number of cores used when building the '
                                  'VM image. Defaults to 2')
         parser.add_argument('-x', '--clean', action='store_true',
-                            help='Deletes all images and rebuilds them from scratch')
+                            help='Deletes all images and rebuild them from '
+                                 'scratch')
         parser.add_argument('-a', '--archive', action='store_true',
-                            help='Creates an archive for every supported image')
+                            help='Creates an archive of every supported image')
         parser.add_argument('-d', '--download', action='store_true',
-                            help='Download image from repository instead of building it')
+                            help='Download image from the repository instead '
+                                 'of building it')
 
     def handle(self, *args, **options):
-        image_name = options['name']
-        memory = options['memory']
-        num_cores = options['num_cores']
-        headless = options['headless']
-        archive = options['archive']
-        download = options['download']
-
         # If DISPLAY is missing, don't use headless mode
-        if headless:
+        if options['headless']:
             self._headless = True
 
+        image_name = options['name']
         if not image_name:
             self._print_image_list()
             return
 
+        memory = options['memory']
         self._check_ram_size(memory)
+
+        num_cores = options['num_cores']
         self._check_core_num(num_cores)
 
         # The path could have been deleted by a previous clean
@@ -217,7 +211,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
         if image_name != 'all' and image_name not in templates:
             raise CommandError('Invalid image image_name %s' % image_name)
 
-        if download:
+        if options['download']:
             if image_name == 'all':
                 self.download_images()
             else:
@@ -231,10 +225,11 @@ class Command(EnvCommand, ImageDownloaderMixin):
 
         rule_name = image_name
 
-        if archive:
+        if options['archive']:
             rule_name = 'archive'
             if image_name != 'all':
-                rule_name = os.path.join(self.image_path(), '%s.tar.xz' % image_name)
+                rule_name = os.path.join(self.image_path(),
+                                         '%s.tar.xz' % image_name)
 
         # Clone kernel if needed.
         # This is necessary if the s2e env has been initialized with -b flag.
@@ -243,7 +238,8 @@ class Command(EnvCommand, ImageDownloaderMixin):
         env = os.environ.copy()
 
         env['S2E_INSTALL_ROOT'] = self.install_path()
-        env['S2E_LINUX_KERNELS_ROOT'] = self.source_path(CONSTANTS['repos']['images']['linux'])
+        env['S2E_LINUX_KERNELS_ROOT'] = \
+            self.source_path(CONSTANTS['repos']['images']['linux'])
         env['OUTPUT_DIR'] = self.image_path()
         env['SNAPSHOT_MEMORY'] = str(memory)
 
@@ -282,10 +278,9 @@ class Command(EnvCommand, ImageDownloaderMixin):
         templates = get_image_templates(img_build_dir)
 
         if not templates:
-            raise CommandError(
-                'No images available to build. Make sure that %s/images.json exists and is valid' %
-                img_build_dir
-            )
+            raise CommandError('No images available to build. Make sure that '
+                               '%s exists and is valid' %
+                               os.path.join(img_build_dir, 'images.json'))
 
         print('Available images:')
 
@@ -304,12 +299,12 @@ class Command(EnvCommand, ImageDownloaderMixin):
         """
         if value <= 0 or value > 2 * 1024:
             self.warn('The specified memory size for the image looks too high. '
-                      'Less than 2GB is recommended for best performance.')
+                      'Less than 2GB is recommended for best performance')
 
     def _check_core_num(self, value):
         """
         Ensure that the number of CPU cores is sensible.
         """
         if value <= 0 or value > 10:
-            self.warn('The specified number of cores seems high. '
-                      'Less than 10 is recommended for best image building performance.')
+            self.warn('The specified number of cores seems high. Less than 10 '
+                      'is recommended for best image building performance')

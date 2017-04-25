@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import SocketServer
 import socket
 import json
@@ -45,7 +46,7 @@ class ThreadingMixIn2(object):
     daemon_threads = False
 
     # Thread name prefix
-    thread_name = "RequestHandlingThread-"
+    thread_name = 'RequestHandlingThread-'
 
     def __init__(self):
         self.threads = []
@@ -81,7 +82,8 @@ class ThreadingMixIn2(object):
             try:
                 t.join()
             except RuntimeError:
-                # Failure happens when we join current thread or a not yet started thread
+                # Failure happens when we join current thread or a not yet
+                # started thread
                 pass
 
 
@@ -91,7 +93,8 @@ class QMPTCPServer(ThreadingMixIn2, SocketServer.TCPServer):
     queue = None
 
     def __init__(self, server_address, RequestHandlerClass):
-        SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
+        SocketServer.TCPServer.__init__(self, server_address,
+                                        RequestHandlerClass)
         ThreadingMixIn2.__init__(self)
         self.stopped = False
 
@@ -137,7 +140,7 @@ class LineRequestHandler(SocketServer.BaseRequestHandler):
         self.request.sendall(data)
 
     def flush(self):
-        """ Empty the buffer, calling callback on content if required """
+        """Empty the buffer, calling callback on content if required"""
         if self.buf:
             self.callback(self.buf)
         self.buf = ''
@@ -164,7 +167,7 @@ class QMPConnectionHandler(LineRequestHandler):
 
         if 'QMP' in obj:
             self.send('{ "execute": "qmp_capabilities" }\n')
-            logger.debug("Sent handshake")
+            logger.debug('Sent handshake')
         else:
             analysis = self.server.analysis
             ret = self.handle_qmp(obj, analysis)
