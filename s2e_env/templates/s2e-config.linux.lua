@@ -26,6 +26,8 @@ plugins = {
     "ModuleExecutionDetector",
     "ProcessExecutionDetector",
 
+    "WebServiceInterface",
+
     "LinuxMonitor",
 
     {% if use_seeds == true %}

@@ -23,9 +23,9 @@ SOFTWARE.
 import logging
 import os
 
+from .collector_threads import CollectorThreads
 from . import coverage
-from .coverage import Coverage
-from .stats import CGCStats
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,6 @@ def translate_paths(analysis, data):
 
 
 class CGCInterfacePlugin(object):
-    coverage = None
-    stats = None
     crash_count = 0
     pov1_count = 0
     pov2_count = 0
@@ -73,19 +71,19 @@ class CGCInterfacePlugin(object):
 
         s2e_coverage_file = data.get('coverage_filename', None)
         if s2e_coverage_file is not None:
-            CGCInterfacePlugin.coverage.queue_coverage(
+            CollectorThreads.coverage.queue_coverage(
                 analysis, s2e_coverage_file, coverage.BB_COVERAGE, None
             )
 
         s2e_tbcoverage_file = data.get('tbcoverage_filename', None)
         if s2e_tbcoverage_file is not None:
-            CGCInterfacePlugin.coverage.queue_coverage(
+            CollectorThreads.coverage.queue_coverage(
                 analysis, s2e_tbcoverage_file, coverage.TB_COVERAGE, None
             )
 
     @staticmethod
     def handle_stats(analysis, data):
-        CGCInterfacePlugin.stats.queue_stats(analysis, data)
+        CollectorThreads.stats.queue_stats(analysis, data)
 
     @staticmethod
     def process(data, analysis):
@@ -108,11 +106,3 @@ class CGCInterfacePlugin(object):
         if data_type == 'testcase':
             CGCInterfacePlugin.handle_testcase(analysis, data)
             return
-
-    @classmethod
-    def start_threads(cls):
-        cls.coverage = Coverage()
-        cls.coverage.start()
-
-        cls.stats = CGCStats()
-        cls.stats.start()

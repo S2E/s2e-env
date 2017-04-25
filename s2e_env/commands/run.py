@@ -37,6 +37,8 @@ from s2e_env import server
 from s2e_env.command import ProjectCommand
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
+from s2e_env.server.collector_threads import CollectorThreads
+from s2e_env.server.threads import terminating, terminate
 from s2e_env.tui.tui import Tui
 from s2e_env.utils import terminal
 
@@ -67,7 +69,7 @@ def _has_s2e_processes(pid):
 
 
 def terminate_s2e():
-    server.queueprocessor.terminate()
+    terminate()
 
     # First, send SIGTERM to S2E process group
     if not s2e_main_process:
@@ -131,7 +133,7 @@ class S2EThread(Thread):
         self._stderr.close()
         self._stdout.close()
 
-        server.queueprocessor.terminate()
+        terminate()
         terminal.print_info('S2E terminated with code %d' % returncode)
         return returncode
 
@@ -207,7 +209,7 @@ class Command(ProjectCommand):
 
         try:
             self.info('Starting service threads')
-            CGCInterfacePlugin.start_threads()
+            CollectorThreads.start_threads()
             qmp_server = QMPTCPServer(qmp_socket, QMPConnectionHandler)
             qmp_server.analysis = analysis
             qmp_server_thread = threading.Thread(
@@ -224,7 +226,7 @@ class Command(ProjectCommand):
             thr = S2EThread(args, env, cwd, fpo, fpe)
             thr.start()
 
-            while not s2e_main_process and not server.queueprocessor.terminating():
+            while not s2e_main_process and not terminating():
                 self.info('Waiting for S2E to start...')
                 time.sleep(1)
 
@@ -233,7 +235,7 @@ class Command(ProjectCommand):
                 tui = Tui()
                 tui.run(self.tui_cb)
             else:
-                while not server.queueprocessor.terminating():
+                while not terminating():
                     print(self._get_data())
                     time.sleep(1)
 
@@ -274,16 +276,16 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ", ".join(CGCInterfacePlugin.coverage.get_tb_coverage().keys())
+        binaries = ", ".join(CollectorThreads.coverage.get_tb_coverage().keys())
         if not binaries:
             binaries = "Waiting for analysis to start..."
 
         data = {
             'binaries': binaries,
             'run_time': elapsed_time,
-            'completed_states': CGCInterfacePlugin.stats.get_global_stats().get('completed_paths', 0),
-            'completed_seeds': CGCInterfacePlugin.stats.get_global_stats().get('completed_seeds', 0),
-            'covered_bbs': CGCInterfacePlugin.coverage.get_summary().get('covered_tbs_total', 0),
+            'completed_states': CollectorThreads.stats.get_global_stats().get('state_completed_count', 0),
+            'completed_seeds': CollectorThreads.stats.get_global_stats().get('seeds_completed', 0),
+            'covered_bbs': CollectorThreads.coverage.get_summary().get('covered_tbs_total', 0),
             'num_crashes': CGCInterfacePlugin.crash_count,
             'pov1': CGCInterfacePlugin.pov1_count,
             'pov2': CGCInterfacePlugin.pov2_count,
@@ -294,4 +296,4 @@ class Command(ProjectCommand):
     def tui_cb(self, tui):
         data = self._get_data()
         tui.set_content(data, Command._legend, Command._layout)
-        return not server.queueprocessor.terminating()
+        return not terminating()

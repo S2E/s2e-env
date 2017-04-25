@@ -20,22 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from threading import Thread
-from Queue import Queue
+_terminating = False
 
 
-class QueueProcessor(Thread):
-    """
-    All common method for queue-based processors go here.
-    """
+def terminate():
+    global _terminating
+    _terminating = True
 
-    def __init__(self):
-        Thread.__init__(self)
-        self._queue = Queue()
-        self._binaries = {}
 
-    def get_binary(self, binary_name):
-        if binary_name not in self._binaries.keys():
-            self._binaries[binary_name] = {}
-
-        return self._binaries[binary_name]
+def terminating():
+    return _terminating

@@ -20,22 +20,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from threading import Thread
-from Queue import Queue
+import logging
+
+from .collector_threads import CollectorThreads
+
+logger = logging.getLogger(__name__)
 
 
-class QueueProcessor(Thread):
-    """
-    All common method for queue-based processors go here.
-    """
+class WebServiceInterfacePlugin(object):
+    coverage = None
+    stats = None
+    crash_count = 0
+    pov1_count = 0
+    pov2_count = 0
 
-    def __init__(self):
-        Thread.__init__(self)
-        self._queue = Queue()
-        self._binaries = {}
+    @staticmethod
+    def handle_stats(analysis, data):
+        CollectorThreads.stats.queue_stats(analysis, data)
 
-    def get_binary(self, binary_name):
-        if binary_name not in self._binaries.keys():
-            self._binaries[binary_name] = {}
+    @staticmethod
+    def process(data, analysis):
+        data_type = data.get('type', None)
 
-        return self._binaries[binary_name]
+        if data_type == 'stats':
+            WebServiceInterfacePlugin.handle_stats(analysis, data)
+            return

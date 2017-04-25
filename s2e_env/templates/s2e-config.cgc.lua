@@ -32,6 +32,8 @@ plugins = {
     "ExploitGenerator",
     -----------------------
 
+    "WebServiceInterface",
+
     "ModuleExecutionDetector",
     "ProcessExecutionDetector",
     "FunctionMonitor",

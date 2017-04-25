@@ -24,7 +24,8 @@ import json
 import logging
 import os
 
-from .queueprocessor import QueueProcessor, terminating
+from .threads import terminating
+from .queueprocessor import QueueProcessor
 
 logger = logging.getLogger(__name__)
 

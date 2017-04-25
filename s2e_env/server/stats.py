@@ -23,7 +23,7 @@ SOFTWARE.
 import logging
 from threading import Thread
 from Queue import Queue
-from .queueprocessor import terminating
+from .threads import terminating
 
 logger = logging.getLogger(__name__)
 
@@ -52,16 +52,18 @@ class CGCStats(Thread):
         self._global_stats['states'] = self._global_stats.get('states', 0) + gs.get('states_delta', 0)
 
         max_stats = [
-            'max_completed_path_depth', 'max_path_depth', 'used_seeds',
-            'recipe_count', 'invalid_recipe_count', 'cfg_bb_count', 'model_count'
+            'state_highest_id', 'state_max_completed_depth', 'state_max_depth', 'seeds_used',
+            'recipe_count', 'invalid_recipe_count', 'cfg_bb_count', 'model_count',
+            'instance_max_count', 'instance_current_count'
         ]
 
         for s in max_stats:
             self._global_stats[s] = max(self._global_stats.get(s, 0), gs.get(s, 0))
 
         aggregated_stats = [
-            'completed_paths', 'completed_seeds',
-            'failed_recipe_tries', 'successful_recipe_tries'
+            'state_completed_count', 'seeds_completed',
+            'recipe_invalid_count', 'recipe_failed_tries',
+            'recipe_successful_tries', 'recipe_count'
         ]
 
         for s in aggregated_stats:
@@ -70,7 +72,7 @@ class CGCStats(Thread):
     def run(self):
         logger.info('Starting stats collection thread')
 
-        while not terminating:
+        while not terminating():
             try:
                 # Need timeout to avoid getting stuck on termination
                 analysis, data = self._queue.get(True, 2)

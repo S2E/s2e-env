@@ -20,22 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from threading import Thread
-from Queue import Queue
+from .coverage import Coverage
+from .stats import CGCStats
 
 
-class QueueProcessor(Thread):
-    """
-    All common method for queue-based processors go here.
-    """
+class CollectorThreads(object):
+    coverage = None
+    stats = None
 
-    def __init__(self):
-        Thread.__init__(self)
-        self._queue = Queue()
-        self._binaries = {}
+    @classmethod
+    def start_threads(cls):
+        cls.coverage = Coverage()
+        cls.coverage.start()
 
-    def get_binary(self, binary_name):
-        if binary_name not in self._binaries.keys():
-            self._binaries[binary_name] = {}
-
-        return self._binaries[binary_name]
+        cls.stats = CGCStats()
+        cls.stats.start()
