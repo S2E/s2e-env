@@ -63,7 +63,8 @@ class CGCStats(Thread):
         aggregated_stats = [
             'state_completed_count', 'seeds_completed',
             'recipe_invalid_count', 'recipe_failed_tries',
-            'recipe_successful_tries', 'recipe_count'
+            'recipe_successful_tries', 'recipe_count',
+            'segfault_count'
         ]
 
         for s in aggregated_stats:
@@ -91,5 +92,6 @@ class CGCStats(Thread):
         data = (analysis, data)
         self._queue.put(data)
 
-    def get_global_stats(self):
+    @property
+    def global_stats(self):
         return self._global_stats

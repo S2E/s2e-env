@@ -33,7 +33,6 @@ import threading
 from threading import Thread
 import time
 
-from s2e_env import server
 from s2e_env.command import ProjectCommand
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
@@ -170,6 +169,7 @@ class Command(ProjectCommand):
     def __init__(self):
         super(Command, self).__init__()
         self._start_time = None
+        self._cgc = False
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -202,10 +202,7 @@ class Command(ProjectCommand):
 
         self._start_time = datetime.datetime.now()
 
-        if 'cgc' not in self._project_desc['image']['os_name']:
-            self.warn('Real time statistics only supported for CGC binaries for now.')
-            self.warn('The UI will be empty.')
-            time.sleep(3)
+        self._cgc = 'cgc' in self._project_desc['image']['os_name']
 
         qmp_server = None
 
@@ -278,11 +275,12 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ", ".join(CollectorThreads.coverage.get_tb_coverage().keys())
+        binaries = ", ".join(CollectorThreads.coverage.tb_coverage.keys())
         if not binaries:
             binaries = "Waiting for analysis to start..."
 
-        gs = CollectorThreads.stats.get_global_stats()
+        gs = CollectorThreads.stats.global_stats
+        cov = CollectorThreads.coverage.summary
 
         data = {
             'binaries': binaries,
@@ -291,11 +289,15 @@ class Command(ProjectCommand):
             'states': gs.get('state_highest_id', 0) - gs.get('state_completed_count', 0),
             'completed_states': gs.get('state_completed_count', 0),
             'completed_seeds': gs.get('seeds_completed', 0),
-            'covered_bbs': gs.get('covered_tbs_total', 0),
-            'num_crashes': CGCInterfacePlugin.crash_count,
-            'pov1': CGCInterfacePlugin.pov1_count,
-            'pov2': CGCInterfacePlugin.pov2_count,
         }
+
+        if self._cgc:
+            data['covered_bbs'] = cov.get('covered_tbs_total', 0)
+            data['num_crashes'] = CGCInterfacePlugin.crash_count
+            data['pov1'] = CGCInterfacePlugin.pov1_count
+            data['pov2'] = CGCInterfacePlugin.pov2_count
+        else:
+            data['num_crashes'] = gs.get('segfault_count', 0)
 
         return data
 
