@@ -16,7 +16,6 @@ setup(
         'pygments',
 
         # s2e-env requirements
-        'docutils',
         'jinja2',
         'psutil',
         'pyelftools',
