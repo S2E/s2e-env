@@ -28,16 +28,15 @@ import grp
 import json
 import os
 import pwd
-import subprocess
 import sys
 
 import psutil
 import sh
-from sh import ErrorReturnCode
+from sh import tar, ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils import google, repos, terminal
+from s2e_env.utils import google, repos
 
 
 def _get_user_groups(user_name):
@@ -120,9 +119,10 @@ class ImageDownloaderMixin(object):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
 
-        images = templates.keys()
         if image_name:
             images = [image_name]
+        else:
+            images = templates.keys()
 
         for image in images:
             self._download_image(templates, image)
@@ -130,20 +130,20 @@ class ImageDownloaderMixin(object):
     def _download_image(self, templates, image):
         dest_file = self.image_path('%s.tar.xz' % image)
         self._download(templates[image]['url'], dest_file)
-        _decompress(dest_file)
+        self._decompress(dest_file)
 
     def _download(self, url, path):
         self.info('Downloading %s' % url)
         google.download(url, path)
 
-
-def _decompress(path):
-    terminal.print_info('Decompressing %s' % path)
-    try:
-        cwd = os.path.dirname(path)
-        subprocess.check_call(['tar', 'xJvf', path], cwd=cwd)
-    except subprocess.CalledProcessError:
-        raise CommandError('Image decompression failed')
+    def _decompress(self, path):
+        self.info('Decompressing %s' % path)
+        try:
+            tar(extract=True, xz=True, verbose=True, file=path,
+                directory=os.path.dirname(path), _fg=True, _out=sys.stdout,
+                _err=sys.stderr)
+        except ErrorReturnCode as e:
+            raise CommandError(e)
 
 
 class Command(EnvCommand, ImageDownloaderMixin):
@@ -216,7 +216,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
                 self.download_images()
             else:
                 self.download_images(image_name)
-            return
+            return 'Successfully downloaded image %s' % image_name
 
         _check_kvm()
         _check_groups()
@@ -283,12 +283,9 @@ class Command(EnvCommand, ImageDownloaderMixin):
                                os.path.join(img_build_dir, 'images.json'))
 
         print('Available images:')
-
-        for template, desc in templates.iteritems():
-            print(' * %s - %s' % (template, desc['name']))
-
         print(' * all - Build all images')
-
+        for template, desc in sorted(templates.iteritems()):
+            print(' * %s - %s' % (template, desc['name']))
         print('\nRun ``s2e image_build <name>`` to build an image. '
               'Note that you must run ``s2e build`` **before** building '
               'an image')
