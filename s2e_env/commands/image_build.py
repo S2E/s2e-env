@@ -31,6 +31,7 @@ import pwd
 import sys
 
 import psutil
+from psutil import NoSuchProcess
 import sh
 from sh import tar, ErrorReturnCode
 
@@ -72,12 +73,17 @@ def _check_groups():
 
 
 def _check_virtualbox():
-    for pid in psutil.pids():
-        p = psutil.Process(pid)
-        if p.name() == 'VBoxHeadless':
-            raise CommandError('S2E uses KVM to build images. VirtualBox is currently running, '
-                               'which is not compatible with KVM. Please close all VirtualBox VMs '
-                               'and try again.')
+    # Adapted from https://github.com/giampaolo/psutil/issues/132#issuecomment-44017679
+    # to avoid race coditions
+    for proc in psutil.process_iter():
+        try:
+            if proc.name == 'VBoxHeadless':
+                raise CommandError('S2E uses KVM to build images. VirtualBox '
+                                   'is currently running, which is not '
+                                   'compatible with KVM. Please close all '
+                                   'VirtualBox VMs and try again')
+        except NoSuchProcess:
+            pass
 
 
 def _check_kvm():
