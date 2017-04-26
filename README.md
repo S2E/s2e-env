@@ -142,3 +142,5 @@ For example, to create a command `foo`:
    ```
 
 5. On error, an `s2e_env.command.CommandError` should be raised
+6. Use the `logging` module for printing messages. When calling
+   `logging.getLogger` the command name should be provided as the logger name.

@@ -30,6 +30,7 @@ import logging
 from .cgc_interface import CGCInterfacePlugin
 from .web_service_interface import WebServiceInterfacePlugin
 
+
 logger = logging.getLogger(__name__)
 
 PLUGINS = {

@@ -21,45 +21,45 @@ SOFTWARE.
 """
 
 
-import sys
+import logging
 
 import termcolor
 
 
-def print_info(msg, new_line=True, flush=False):
+# Success log level
+SUCCESS = 25
+
+
+def success(self, msg, *args, **kwargs):
+    if self.isEnabledFor(SUCCESS):
+        self._log(SUCCESS, msg, args, **kwargs)
+
+
+class ColoredFormatter(logging.Formatter):
     """
-    Print an info message to stdout.
+    Prints log messages in color.
     """
-    text = 'INFO: %s' % msg
 
-    if new_line:
-        text = '%s\n' % text
+    # Maps log levels to colors
+    LOG_COLOR_MAP = {
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'SUCCESS': 'green',
+    }
 
-    sys.stdout.write(text)
+    def __init__(self, use_color=True):
+        super(ColoredFormatter, self).__init__(\
+            fmt='%(levelname)s: [%(name)s] %(message)s')
 
-    if flush:
-        sys.stdout.flush()
+        self._use_color = use_color
 
+    def format(self, record):
+        if self._use_color:
+            color = ColoredFormatter.LOG_COLOR_MAP.get(record.levelname)
 
-def print_success(msg):
-    """
-    Print a success message to stdout.
-    """
-    text = termcolor.colored('INFO: %s\n' % msg, 'green')
-    sys.stdout.write(text)
+            if color:
+                record.levelname = termcolor.colored(record.levelname, color)
+                record.name = termcolor.colored(record.name, color)
+                record.msg = termcolor.colored(record.msg, color)
 
-
-def print_warn(msg):
-    """
-    Print a warning message to stdout.
-    """
-    text = termcolor.colored('WARN: %s\n' % msg, 'yellow')
-    sys.stdout.write(text)
-
-
-def print_error(msg):
-    """
-    Print an error message to stderr.
-    """
-    text = termcolor.colored('ERROR: %s\n' % msg, 'red')
-    sys.stderr.write(text)
+        return super(ColoredFormatter, self).format(record)

@@ -26,6 +26,7 @@ from __future__ import print_function
 import glob
 import grp
 import json
+import logging
 import os
 import pwd
 import sys
@@ -38,6 +39,9 @@ from sh import tar, ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils import google, repos
+
+
+logger = logging.getLogger('image_build')
 
 
 def _get_user_groups(user_name):
@@ -120,6 +124,29 @@ def get_image_templates(img_build_dir):
                            'environment' % images)
 
 
+def _download(url, path):
+    """
+    Download a file from the Google drive and save it at the given ``path``.
+    """
+    logger.info('Downloading %s', url)
+    google.download(url, path)
+
+
+def _decompress(path):
+    """
+    Decompress a .tar.xz file at the given path.
+
+    The decompressed data will be located in the same directory as ``path``.
+    """
+    logger.info('Decompressing %s', path)
+    try:
+        tar(extract=True, xz=True, verbose=True, file=path,
+            directory=os.path.dirname(path), _fg=True, _out=sys.stdout,
+            _err=sys.stderr)
+    except ErrorReturnCode as e:
+        raise CommandError(e)
+
+
 class ImageDownloaderMixin(object):
     def download_images(self, image_name=None):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
@@ -135,22 +162,26 @@ class ImageDownloaderMixin(object):
 
     def _download_image(self, templates, image):
         dest_file = self.image_path('%s.tar.xz' % image)
-        self._download(templates[image]['url'], dest_file)
-        self._decompress(dest_file)
+        _download(templates[image]['url'], dest_file)
+        _decompress(dest_file)
 
-    def _download(self, url, path):
-        self.info('Downloading %s' % url)
-        google.download(url, path)
 
-    def _decompress(self, path):
-        self.info('Decompressing %s' % path)
-        try:
-            tar(extract=True, xz=True, verbose=True, file=path,
-                directory=os.path.dirname(path), _fg=True, _out=sys.stdout,
-                _err=sys.stderr)
-        except ErrorReturnCode as e:
-            raise CommandError(e)
+def _check_ram_size(value):
+    """
+    Ensure that the amount of RAM is sensible.
+    """
+    if value <= 0 or value > 2 * 1024:
+        logger.warning('The specified memory size for the image looks too '
+                       'high. Less than 2GB is recommended for best '
+                       'performance')
 
+def _check_core_num(value):
+    """
+    Ensure that the number of CPU cores is sensible.
+    """
+    if value <= 0 or value > 10:
+        logger.warning('The specified number of cores seems high. Less than '
+                       '10 is recommended for best image building performance')
 
 class Command(EnvCommand, ImageDownloaderMixin):
     """
@@ -202,10 +233,10 @@ class Command(EnvCommand, ImageDownloaderMixin):
             return
 
         memory = options['memory']
-        self._check_ram_size(memory)
+        _check_ram_size(memory)
 
         num_cores = options['cores']
-        self._check_core_num(num_cores)
+        _check_core_num(num_cores)
 
         # The path could have been deleted by a previous clean
         if not os.path.exists(self.image_path()):
@@ -271,10 +302,10 @@ class Command(EnvCommand, ImageDownloaderMixin):
     def _clone_kernel(self):
         kernels_root = self.source_path(CONSTANTS['repos']['images']['linux'])
         if os.path.exists(kernels_root):
-            self.info('Kernel repository already exists in %s' % kernels_root)
+            logger.info('Kernel repository already exists in %s', kernels_root)
             return
 
-        self.info('Cloning kernels repository to %s' % kernels_root)
+        logger.info('Cloning kernels repository to %s', kernels_root)
 
         kernels_repo = CONSTANTS['repos']['images']['linux']
         repos.git_clone_to_source(self.env_path(), kernels_repo)
@@ -295,19 +326,3 @@ class Command(EnvCommand, ImageDownloaderMixin):
         print('\nRun ``s2e image_build <name>`` to build an image. '
               'Note that you must run ``s2e build`` **before** building '
               'an image')
-
-    def _check_ram_size(self, value):
-        """
-        Ensure that the amount of RAM is sensible.
-        """
-        if value <= 0 or value > 2 * 1024:
-            self.warn('The specified memory size for the image looks too high. '
-                      'Less than 2GB is recommended for best performance')
-
-    def _check_core_num(self, value):
-        """
-        Ensure that the number of CPU cores is sensible.
-        """
-        if value <= 0 or value > 10:
-            self.warn('The specified number of cores seems high. Less than 10 '
-                      'is recommended for best image building performance')

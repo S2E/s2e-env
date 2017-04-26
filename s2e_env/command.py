@@ -32,13 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from argparse import ArgumentParser
 import json
+import logging
 import os
 import sys
-
-from s2e_env.utils.terminal import print_info
-from s2e_env.utils.terminal import print_success
-from s2e_env.utils.terminal import print_warn
-from s2e_env.utils.terminal import print_error
 
 
 class CommandError(Exception):
@@ -170,7 +166,8 @@ class BaseCommand(object):
             if not isinstance(e, CommandError):
                 raise
 
-            self.error(e)
+            logger = logging.getLogger(self.name)
+            logger.error(e)
             sys.exit(1)
 
         return output
@@ -191,39 +188,12 @@ class BaseCommand(object):
 
         success_msg = self.handle(*args, **options)
         if success_msg:
-            self.success(success_msg)
+            logger = logging.getLogger(self.name)
+            logger.success(success_msg)
 
     @property
     def name(self):
         return self.__module__.split('.')[-1]
-
-    def info(self, msg):
-        """
-        Print an info message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_info('[%s] %s' % (self.name, msg))
-
-    def success(self, msg):
-        """
-        Print a success message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_success('[%s] %s' % (self.name, msg))
-
-    def warn(self, msg):
-        """
-        Print a warning message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_warn('[%s] %s' % (self.name, msg))
-
-    def error(self, msg):
-        """
-        Print an error message to stderr.
-        """
-        # Always print errors regardless of verbosity
-        print_error('[%s] %s' % (self.name, msg))
 
     def handle(self, *args, **options):
         """

@@ -23,6 +23,7 @@ SOFTWARE.
 
 from collections import namedtuple
 import json
+import logging
 import os
 import shutil
 
@@ -37,6 +38,9 @@ try:
     from tempfile import TemporaryDirectory
 except ImportError:
     from s2e_env.utils.tempdir import TemporaryDirectory
+
+
+logger = logging.getLogger('basicblock')
 
 
 BasicBlock = namedtuple('BasicBlock', ['start_addr', 'end_addr', 'function'])
@@ -58,6 +62,7 @@ def _basic_block_coverage(basic_blocks, translation_blocks):
     Returns:
         A list of ``BasicBlock``s executed by S2E.
     """
+    logger.info('Calculating basic block coverage')
 
     # Naive approach :(
     covered_bbs = set()
@@ -146,7 +151,7 @@ class BasicBlockCoverage(ProjectCommand):
                 2. Basic block end address
                 3. Name of function that the basic block resides in
         """
-        self.info('Generating basic block information from IDA Pro')
+        logger.info('Generating basic block information from IDA Pro')
 
         try:
             with TemporaryDirectory() as temp_dir:
@@ -200,7 +205,7 @@ class BasicBlockCoverage(ProjectCommand):
                 1. Translation block start address
                 2. Translation block end address
         """
-        self.info('Generating translation block coverage information')
+        logger.info('Generating translation block coverage information')
 
         tb_coverage_files = get_tb_files(self._project_dir)
         covered_tbs = set()
@@ -223,7 +228,7 @@ class BasicBlockCoverage(ProjectCommand):
         bb_coverage_file = os.path.join(self._project_dir, 's2e-last',
                                         'basic_block_coverage.json')
 
-        self.info('Saving basic block coverage to %s' % bb_coverage_file)
+        logger.info('Saving basic block coverage to %s', bb_coverage_file)
 
         to_dict = lambda bb: {'start_addr': bb.start_addr,
                               'end_addr': bb.end_addr,
@@ -233,4 +238,4 @@ class BasicBlockCoverage(ProjectCommand):
         with open(bb_coverage_file, 'w') as f:
             json.dump(bbs_json, f)
 
-        self.success('Basic block coverage saved to %s' % bb_coverage_file)
+        logger.success('Basic block coverage saved to %s', bb_coverage_file)

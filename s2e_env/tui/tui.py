@@ -26,10 +26,7 @@ from __future__ import print_function
 import curses
 import time
 
-import logging
 
-
-logger = logging.getLogger(__name__)
 _s_screen = None
 
 

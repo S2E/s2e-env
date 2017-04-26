@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import logging
 import os
 
 from elftools.elf.elffile import ELFFile
@@ -28,6 +29,9 @@ from elftools.dwarf import constants as dwarf_consts
 
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
+
+
+logger = logging.getLogger('lcov')
 
 
 def _get_file_line_coverage(target_path, addr_counts):
@@ -166,7 +170,7 @@ class LineCoverage(ProjectCommand):
             A dictionary mapping (over-approximated) instruction addresses
             executed by S2E to the number of times they were executed.
         """
-        self.info('Generating translation block coverage information')
+        logger.info('Generating translation block coverage information')
 
         tb_coverage_files = get_tb_files(self._project_dir)
         addr_counts = {}
@@ -198,7 +202,7 @@ class LineCoverage(ProjectCommand):
         lcov_path = os.path.join(self._project_dir, 's2e-last',
                                  'coverage.info')
 
-        self.info('Writing line coverage to %s' % lcov_path)
+        logger.info('Writing line coverage to %s', lcov_path)
 
         with open(lcov_path, 'w') as f:
             f.write('TN:\n')
@@ -206,8 +210,8 @@ class LineCoverage(ProjectCommand):
                 abs_src_path = os.path.realpath(os.path.join(build_dir,
                                                              src_file))
                 if not os.path.isfile(abs_src_path):
-                    self.warn('Cannot find source file \'%s\'. Skipping...' %
-                              abs_src_path)
+                    logger.warning('Cannot find source file \'%s\'. '
+                                   'Skipping...', abs_src_path)
                     continue
 
                 num_non_zero_lines = 0
@@ -224,4 +228,4 @@ class LineCoverage(ProjectCommand):
                 f.write('LF:%d\n' % num_instrumented_lines)
                 f.write('end_of_record\n')
 
-            self.success('Line coverage saved to %s' % lcov_path)
+            logger.success('Line coverage saved to %s', lcov_path)

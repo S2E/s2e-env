@@ -22,10 +22,14 @@ SOFTWARE.
 
 
 import datetime
+import logging
 import os
 
 from s2e_env.command import CommandError
 from . import BaseProject
+
+
+logger = logging.getLogger('cgc_project')
 
 
 class CGCProject(BaseProject):
@@ -90,7 +94,7 @@ class CGCProject(BaseProject):
         seeds_path = os.path.join(self._project_path, 'seeds')
 
         # Create a symlink to the recipes directory
-        self.info('Creating a symlink to %s' % recipes_path)
+        logger.info('Creating a symlink to %s', recipes_path)
 
         os.symlink(recipes_path, os.path.join(self._project_path, 'recipes'))
 

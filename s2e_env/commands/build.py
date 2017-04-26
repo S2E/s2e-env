@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import logging
 import os
 import sys
 
@@ -28,6 +29,9 @@ import sh
 from sh import ErrorReturnCode
 
 from s2e_env.command import EnvCommand, CommandError
+
+
+logger = logging.getLogger('build')
 
 
 class Command(EnvCommand):
@@ -66,10 +70,10 @@ class Command(EnvCommand):
                                            _env=env_vars, _fg=True)
 
             if options['debug']:
-                self.info('Building S2E (debug) in %s' % build_dir)
+                logger.info('Building S2E (debug) in %s', build_dir)
                 make('all-debug')
             else:
-                self.info('Building S2E (release) in %s' % build_dir)
+                logger.info('Building S2E (release) in %s', build_dir)
                 make('install')
         except ErrorReturnCode as e:
             raise CommandError(e)

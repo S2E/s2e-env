@@ -69,7 +69,7 @@ class Coverage(QueueProcessor):
             'available_bbs_total': bb_static_aggregate
         }
 
-        logger.info('Updating coverage summary %s', str(coverage))
+        logger.info('Updating coverage summary %s', coverage)
 
         self._summary = coverage
         self._summary_updated = True
@@ -116,9 +116,9 @@ class Coverage(QueueProcessor):
 
         diff = self.compute_bb_diff(data, coverage_type == TB_COVERAGE)
 
-        logger.info('Processing coverage data diff: %s', str(diff))
+        logger.info('Processing coverage data diff: %s', diff)
         for module, coverage in diff.iteritems():
-            logger.info('module: %s coverage: %s ', module, str(coverage))
+            logger.info('module: %s coverage: %s ', module, coverage)
 
             for bb in coverage:
                 # In principle, we could have a diff over the union of bbs

@@ -20,18 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+import logging
 import os
 import sys
 
 from sh import git, ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import  CommandError
-from . import terminal
+
+
+logger = logging.getLogger(__name__)
 
 
 def git_clone(git_repo_url, git_repo_dir):
     try:
-        terminal.print_info('Fetching from %s to %s' % (git_repo_url, git_repo_dir))
+        logger.info('Fetching from %s to %s', git_repo_url, git_repo_dir)
         git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
                   _err=sys.stderr, _fg=True)
     except ErrorReturnCode as e:
@@ -44,4 +48,4 @@ def git_clone_to_source(env_path, git_repo):
     git_repo_dir = os.path.join(env_path, 'source', git_repo)
     git_repo_url = '%s/%s' % (git_url, git_repo)
     git_clone(git_repo_url, git_repo_dir)
-    terminal.print_success('Fetched %s' % git_repo)
+    logger.success('Fetched %s', git_repo)

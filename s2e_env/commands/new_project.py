@@ -83,8 +83,11 @@ class Command(EnvCommand):
         # Need an absolute path for the target in order to simplify
         # symlink creation.
         target_path = options['target'][0]
-        target_path = os.path.abspath(target_path)
-        options['target'] = target_path
+        target_path = os.path.realpath(target_path)
+
+        # Check that the target actually exists
+        if not os.path.isfile(target_path):
+            raise CommandError('Target %s does not exist' % target_path)
 
         magic_checks = [
             (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
@@ -102,6 +105,7 @@ class Command(EnvCommand):
             # If we find a match, create that project. The user instructions
             # are returned
             if matches:
+                options['target'] = target_path
                 options['target_arch'] = arch
                 return call_command(proj_class(), **options)
 
