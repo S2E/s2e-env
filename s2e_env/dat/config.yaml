@@ -66,6 +66,9 @@ dependencies:
         - libglib2.0-dev
         - python-docutils
         - qemu
+
+        # s2e-env dependencies
+        - lcov
     ubuntu_16:
         - libprocps4-dev
     ubuntu_14:

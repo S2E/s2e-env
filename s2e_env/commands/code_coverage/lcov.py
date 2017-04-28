@@ -23,9 +23,11 @@ SOFTWARE.
 
 import logging
 import os
+import sys
 
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf import constants as dwarf_consts
+from sh import genhtml, ErrorReturnCode
 
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
@@ -135,8 +137,19 @@ class LineCoverage(ProjectCommand):
             raise CommandError('No translation block information found')
 
         file_line_info = _get_file_line_coverage(target_path, addr_counts)
+        lcov_info_path = self._save_coverage_info(file_line_info)
 
-        self._save_coverage_info(file_line_info)
+        if options.get('html', False):
+            lcov_html_dir = self.project_path('s2e-last', 'lcov')
+            try:
+                genhtml(lcov_info_path, output_directory=lcov_html_dir,
+                        _out=sys.stdout, _err=sys.stderr, _fg=True)
+            except ErrorReturnCode as e:
+                raise CommandError(e)
+
+            return 'Line coverage saved to %s. An HTML report is available in %s' % (lcov_info_path, lcov_html_dir)
+
+        return 'Line coverage saved to %s' % lcov_info_path
 
     def _get_addr_coverage(self, target_name):
         """
@@ -183,6 +196,9 @@ class LineCoverage(ProjectCommand):
         Args:
             file_line_info: The file line dictionary created by
                             ``_get_file_line_coverage``.
+
+        Returns:
+            The file path where the line coverage information was written to.
         """
         lcov_path = self.project_path('s2e-last', 'coverage.info')
 
@@ -211,4 +227,4 @@ class LineCoverage(ProjectCommand):
                 f.write('LF:%d\n' % num_instrumented_lines)
                 f.write('end_of_record\n')
 
-            logger.success('Line coverage saved to %s', lcov_path)
+        return lcov_path
