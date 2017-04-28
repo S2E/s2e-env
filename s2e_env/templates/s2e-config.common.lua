@@ -56,6 +56,9 @@ add_plugin("ExecutionTracer")
 add_plugin("ModuleTracer")
 
 --------------------------------------------------------
+add_plugin("TranslationBlockCoverage")
+
+--------------------------------------------------------
 add_plugin("ModuleExecutionDetector")
 pluginsConfig.ModuleExecutionDetector = {
     mod_0 = {
