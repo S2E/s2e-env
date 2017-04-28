@@ -195,7 +195,7 @@ class Command(ProjectCommand):
         qmp_socket = ('127.0.0.1', 2014)
 
         args, env = self._setup_env(project_args, cores, qmp_socket)
-        cwd = self._project_dir
+        cwd = self.project_path()
         stdout = os.path.join(cwd, 'stdout.txt')
         stderr = os.path.join(cwd, 'stderr.txt')
 

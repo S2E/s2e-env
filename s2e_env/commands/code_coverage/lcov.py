@@ -158,7 +158,7 @@ class LineCoverage(ProjectCommand):
         """
         logger.info('Generating translation block coverage information')
 
-        tb_coverage_files = get_tb_files(self._project_dir)
+        tb_coverage_files = get_tb_files(self.project_path('s2e-last'))
         addr_counts = {}
 
         # Get the number of times each address was executed by S2E
@@ -184,8 +184,7 @@ class LineCoverage(ProjectCommand):
             file_line_info: The file line dictionary created by
                             ``_get_file_line_coverage``.
         """
-        lcov_path = os.path.join(self._project_dir, 's2e-last',
-                                 'coverage.info')
+        lcov_path = self.project_path('s2e-last', 'coverage.info')
 
         logger.info('Writing line coverage to %s', lcov_path)
 

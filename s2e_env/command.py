@@ -254,7 +254,7 @@ class EnvCommand(BaseCommand):
         """
         return self.env_path('install', *p)
 
-    def project_path(self, *p):
+    def projects_path(self, *p):
         """
         Create a path relative to the S2E projects directory.
         """
@@ -317,3 +317,9 @@ class ProjectCommand(EnvCommand):
         super(ProjectCommand, self).add_arguments(parser)
 
         parser.add_argument('project', help='The name of the project')
+
+    def project_path(self, *p):
+        """
+        Create a path relative to this project directory.
+        """
+        return os.path.join(self._project_dir, *p)

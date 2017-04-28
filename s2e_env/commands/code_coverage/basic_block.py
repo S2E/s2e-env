@@ -207,7 +207,7 @@ class BasicBlockCoverage(ProjectCommand):
         """
         logger.info('Generating translation block coverage information')
 
-        tb_coverage_files = get_tb_files(self._project_dir)
+        tb_coverage_files = get_tb_files(self.project_path('s2e-last'))
         covered_tbs = set()
 
         for tb_coverage_file in tb_coverage_files:
@@ -225,8 +225,8 @@ class BasicBlockCoverage(ProjectCommand):
         """
         Write the basic block coverage information to a JSON file.
         """
-        bb_coverage_file = os.path.join(self._project_dir, 's2e-last',
-                                        'basic_block_coverage.json')
+        bb_coverage_file = self.project_path('s2e-last',
+                                             'basic_block_coverage.json')
 
         logger.info('Saving basic block coverage to %s', bb_coverage_file)
 
