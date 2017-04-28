@@ -45,15 +45,11 @@ class Command(ProjectCommand):
         subparsers = parser.add_subparsers(help='Coverage report type',
                                            dest='command')
 
-        lcov_parser = subparsers.add_parser('lcov', cmd=self._lcov,
-                                            help='Generate a line coverage '
-                                                 'report')
-        lcov_parser.add_argument('-b', '--build', required=True,
-                                 help='Path to the target\'s build directory')
+        subparsers.add_parser('lcov', cmd=self._lcov,
+                              help='Generate a line coverage report')
 
         subparsers.add_parser('basic_block', cmd=self._basic_block,
                               help='Generate a basic block report')
-        # Basic block coverage does not require any additional arguments
 
         super(Command, self).add_arguments(parser)
 

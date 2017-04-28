@@ -74,20 +74,13 @@ def _get_file_line_coverage(target_path, addr_counts):
         #   https://github.com/eliben/pyelftools/blob/master/scripts/readelf.py
         for cu in dwarf_info.iter_CUs():
             line_program = dwarf_info.line_program_for_CU(cu)
-
-            cu_filepath = line_program['file_entry'][0].name
+            cu_filepath = cu.get_top_DIE().get_full_path()
 
             if line_program['include_directory']:
-                dir_index = line_program['file_entry'][0].dir_index
-                if dir_index > 0:
-                    dir_ = line_program['include_directory'][dir_index - 1]
-                else:
-                    dir_ = '.'
-                cu_filepath = os.path.join(dir_, cu_filepath)
-
                 # The actual source path depends on the DWARF line info state
                 # machine
                 src_path = cu_filepath
+                src_dir = os.path.dirname(src_path)
                 for entry in line_program.get_entries():
                     state = entry.state
 
@@ -95,28 +88,26 @@ def _get_file_line_coverage(target_path, addr_counts):
                         # Special handling for commands that don't set a new
                         # state
                         if entry.command == dwarf_consts.DW_LNS_set_file:
-                            file_entry = \
-                                line_program['file_entry'][entry.args[0] - 1]
+                            file_entry = line_program['file_entry'][entry.args[0] - 1]
                             if file_entry.dir_index == 0:
                                 # Current directory
-                                src_path = os.path.join('.', file_entry.name)
+                                src_path = os.path.join(src_dir, file_entry.name)
                             else:
                                 include_dir = line_program['include_directory']
-                                src_path = os.path.join(\
-                                        include_dir[file_entry.dir_index - 1],
-                                        file_entry.name)
+                                src_path = os.path.join(src_dir, include_dir[file_entry.dir_index - 1],
+                                                        file_entry.name)
                         elif entry.command == dwarf_consts.DW_LNE_define_file:
                             include_dir = line_program['include_directory']
-                            src_path = include_dir[entry.args[0].dir_index]
+                            src_path = os.path.join(src_dir, include_dir[entry.args[0].dir_index])
                     elif not state.end_sequence:
                         # If this address is one that we executed in S2E, save
                         # the number of times that it was executed into the
                         # dictionary. Otherwise set it to 0
                         if src_path not in file_line_info:
+                            src_path = os.path.realpath(src_path)
                             file_line_info[src_path] = {}
 
-                        file_line_info[src_path][state.line] = \
-                                addr_counts.get(state.address, 0)
+                        file_line_info[src_path][state.line] = addr_counts.get(state.address, 0)
 
         return file_line_info
 
@@ -135,11 +126,6 @@ class LineCoverage(ProjectCommand):
            'available'
 
     def handle(self, *args, **options):
-        build_dir = options['build']
-        if not os.path.isdir(build_dir):
-            raise CommandError('Build directory \'%s\' is not valid' %
-                               build_dir)
-
         target_path = self._project_desc['target']
         target_name = os.path.basename(target_path)
 
@@ -150,7 +136,7 @@ class LineCoverage(ProjectCommand):
 
         file_line_info = _get_file_line_coverage(target_path, addr_counts)
 
-        self._save_coverage_info(build_dir, file_line_info)
+        self._save_coverage_info(file_line_info)
 
     def _get_addr_coverage(self, target_name):
         """
@@ -187,7 +173,7 @@ class LineCoverage(ProjectCommand):
 
         return addr_counts
 
-    def _save_coverage_info(self, build_dir, file_line_info):
+    def _save_coverage_info(self, file_line_info):
         """
         Save the line coverage information in lcov format.
 
@@ -195,7 +181,6 @@ class LineCoverage(ProjectCommand):
         http://ltp.sourceforge.net/coverage/lcov/geninfo.1.php
 
         Args:
-            build_dir: The target's build directory.
             file_line_info: The file line dictionary created by
                             ``_get_file_line_coverage``.
         """
@@ -207,8 +192,7 @@ class LineCoverage(ProjectCommand):
         with open(lcov_path, 'w') as f:
             f.write('TN:\n')
             for src_file in file_line_info.keys():
-                abs_src_path = os.path.realpath(os.path.join(build_dir,
-                                                             src_file))
+                abs_src_path = os.path.realpath(src_file)
                 if not os.path.isfile(abs_src_path):
                     logger.warning('Cannot find source file \'%s\'. '
                                    'Skipping...', abs_src_path)
