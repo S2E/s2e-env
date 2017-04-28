@@ -1,23 +1,12 @@
-{% include 'bootstrap.header.sh' %}
+# This function executes the target program.
+# You can customize it if your program needs special invocation,
+# custom symbolic arguments, etc.
+function execute_target {
+    local TARGET
+    TARGET="$1"
 
-# Execute the target
-function execute {
-    TARGET=$1
-
-    # Make sure that the target is executable
-    chmod +x ${TARGET}
-
-    {% if use_symb_input_file == true %}
-    # Create a symbolic file of size 256 bytes
-    SYMB_FILE="/tmp/input"
-    truncate -s 256 ${SYMB_FILE}
-
-    if [ $? -ne 0 ]; then
-        ./s2ecmd kill 1 "Failed to create symbolic file"
-        exit 1
-    fi
-
-    ./s2ecmd symbfile ${SYMB_FILE}
+    {% if use_symb_input_file %}
+    SYMB_FILE="$(prepare_inputs)"
     {% endif %}
 
     {% if dynamically_linked == true %}
@@ -26,14 +15,36 @@ function execute {
     # using the ``S2E_SYM_ARGS`` environment variable as required
     LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }}
     {% else %}
-    ./${TARGET} {{ target_args | join(' ') }}
+    ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% endif %}
 }
 
-###############################################
-# Bootstrap script starts executing from here #
-###############################################
+# Executes the target with a seed file as input.
+# You can customize this function if you need to do special processing
+# on the seeds, tweak arguments, etc.
+function execute_target_with_seed {
+    local TARGET
+    local SEED_FILE
+    local SYMB_FILE
 
-update_guest_tools
+    TARGET="$1"
+    SEED_FILE="$2"
 
-{% include 'bootstrap.common.sh' %}
+    ./s2eget "${SEED_FILE}"
+
+    SYMB_FILE="$(prepare_inputs \"$SEED_FILE\")"
+
+    # Make the seed file concolic and submit it to the cb-test application
+    ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+}
+
+# Nothing more to initialize on Linux
+function target_init {
+    # Dummy instruction
+    echo -n
+}
+
+# Returns Linux-specific tools
+function target_tools {
+    echo "s2e.so"
+}

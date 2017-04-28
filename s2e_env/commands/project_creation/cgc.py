@@ -71,10 +71,11 @@ class CGCProject(BaseProject):
             'current_time': datetime.datetime.now(),
             'target': os.path.basename(self._target_path),
             'use_seeds': self._use_seeds,
+            'target_bootstrap_template': 'bootstrap.cgc.sh'
         }
 
         output_path = os.path.join(self._project_path, 'bootstrap.sh')
-        self._render_template(context, 'bootstrap.cgc.sh', output_path,
+        self._render_template(context, 'bootstrap.sh', output_path,
                               executable=True)
 
     def _create_config(self):

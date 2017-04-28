@@ -113,10 +113,7 @@ class LinuxProject(BaseProject):
         use_symb_input_file = False
         parsed_args = []
 
-        if self._use_seeds:
-            input_file_substitution = '${SEED_FILE}'
-        else:
-            input_file_substitution = '${SYMB_FILE}'
+        input_file_substitution = '${SYMB_FILE}'
 
         for arg in self._target_args:
             if arg == '@@':
@@ -159,10 +156,11 @@ class LinuxProject(BaseProject):
             'use_symb_input_file': use_symb_input_file,
             'dynamically_linked': self._dynamically_linked,
             'use_seeds': self._use_seeds,
+            'target_bootstrap_template': 'bootstrap.linux.sh'
         }
 
         output_path = os.path.join(self._project_path, 'bootstrap.sh')
-        self._render_template(context, 'bootstrap.linux.sh', output_path,
+        self._render_template(context, 'bootstrap.sh', output_path,
                               executable=True)
 
     def _create_config(self):
