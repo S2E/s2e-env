@@ -178,6 +178,10 @@ class LinuxProject(BaseProject):
         output_path = os.path.join(self._project_path, 's2e-config.lua')
         self._render_template(context, 's2e-config.linux.lua', output_path)
 
+        for f in ('models.lua', 'library.lua'):
+            output_path = os.path.join(self._project_path, f)
+            self._render_template(context, f, output_path)
+
     def _create_instructions(self):
         intro = 'Here are some hints to get started with your Linux project:'
 

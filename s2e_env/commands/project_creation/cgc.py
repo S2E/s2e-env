@@ -89,6 +89,10 @@ class CGCProject(BaseProject):
         output_path = os.path.join(self._project_path, 's2e-config.lua')
         self._render_template(context, 's2e-config.cgc.lua', output_path)
 
+        for f in ('models.lua', 'library.lua'):
+            output_path = os.path.join(self._project_path, f)
+            self._render_template(context, f, output_path)
+
     def _create_dirs(self):
         recipes_path = self.install_path('share', 'decree-recipes')
         seeds_path = os.path.join(self._project_path, 'seeds')
