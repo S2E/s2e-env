@@ -11,10 +11,10 @@ g_function_models["{{ target }}"][0x1234] = {
     type="crc32"
 }
 
-Function models assume specific calling conventions and function arguments. They may
-not work with different variations of the implementation of the original function.
-For example, the CRC32 model only supports functions one type of CRC32 algorithm and
-only for functions with the following signature:
+Function models assume specific calling conventions and function arguments.
+They may not work with different variations of the implementation of the
+original function. For example, the CRC32 model only supports one type of
+CRC32 algorithm and only functions that have the following signature:
 
     uint32 crc32(uint8_t *buf, unsigned size)
 
