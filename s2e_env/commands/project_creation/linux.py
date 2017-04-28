@@ -173,12 +173,10 @@ class LinuxProject(BaseProject):
             'target': os.path.basename(self._target_path),
             'function_models': len(self._modelled_functions) > 0,
             'use_seeds': self._use_seeds,
+            'target_lua_template': 's2e-config.linux.lua'
         }
 
-        output_path = os.path.join(self._project_path, 's2e-config.lua')
-        self._render_template(context, 's2e-config.linux.lua', output_path)
-
-        for f in ('models.lua', 'library.lua'):
+        for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
             output_path = os.path.join(self._project_path, f)
             self._render_template(context, f, output_path)
 

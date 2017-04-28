@@ -1,5 +1,25 @@
+--
+-- This file was automatically generatd by s2e-env at
+-- {{ current_time | datetimefilter }}
+--
+-- Changes can be made by the user where appropriate
+--
+
+s2e = {
+    logging = {
+        console = "debug",
+        logLevel = "debug",
+    },
+    kleeArgs = {
+    },
+}
+
+plugins = {}
+pluginsConfig = {}
+
 dofile('library.lua')
 
+--------------------------------------------------------
 add_plugin("BaseInstructions")
 
 --------------------------------------------------------
@@ -44,6 +64,13 @@ pluginsConfig.ModuleExecutionDetector = {
         moduleName = "{{ target }}",
         kernelMode = false,
     },
+}
+
+--------------------------------------------------------
+add_plugin("ForkLimiter")
+pluginsConfig.ForkLimiter = {
+    maxForkCount = -1,
+    processForkDelay = 5,
 }
 
 --------------------------------------------------------
@@ -94,3 +121,7 @@ pluginsConfig.StaticFunctionModels = {
 g_function_models = {}
 safe_load('models.lua')
 pluginsConfig.StaticFunctionModels.modules = g_function_models
+
+
+--------------------------------------------------------
+{% include '%s' % target_lua_template %}
