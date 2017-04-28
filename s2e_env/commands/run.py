@@ -33,10 +33,11 @@ import threading
 from threading import Thread
 import time
 
-from s2e_env import server
 from s2e_env.command import ProjectCommand
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
+from s2e_env.server.collector_threads import CollectorThreads
+from s2e_env.server.threads import terminating, terminate
 from s2e_env.tui.tui import Tui
 from s2e_env.utils import terminal
 
@@ -67,7 +68,7 @@ def _has_s2e_processes(pid):
 
 
 def terminate_s2e():
-    server.queueprocessor.terminate()
+    terminate()
 
     # First, send SIGTERM to S2E process group
     if not s2e_main_process:
@@ -131,7 +132,7 @@ class S2EThread(Thread):
         self._stderr.close()
         self._stdout.close()
 
-        server.queueprocessor.terminate()
+        terminate()
         terminal.print_info('S2E terminated with code %d' % returncode)
         return returncode
 
@@ -142,6 +143,7 @@ class Command(ProjectCommand):
     _legend = {
         'binaries': 'Binary name(s)',
         'run_time': 'Run time (s)',
+        'core_count': '# instances (current/max)',
         'states': 'Number of states',
         'completed_states': 'Number of states completed',
         'completed_seeds': 'Completed seeds',
@@ -154,6 +156,7 @@ class Command(ProjectCommand):
     _layout = [
         'binaries',
         'run_time',
+        'core_count',
         'states',
         'completed_states',
         'completed_seeds',
@@ -166,6 +169,7 @@ class Command(ProjectCommand):
     def __init__(self):
         super(Command, self).__init__()
         self._start_time = None
+        self._cgc = False
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -198,16 +202,13 @@ class Command(ProjectCommand):
 
         self._start_time = datetime.datetime.now()
 
-        if 'cgc' not in self._project_desc['image']['os_name']:
-            self.warn('Real time statistics only supported for CGC binaries for now.')
-            self.warn('The UI will be empty.')
-            time.sleep(3)
+        self._cgc = 'cgc' in self._project_desc['image']['os_name']
 
         qmp_server = None
 
         try:
             self.info('Starting service threads')
-            CGCInterfacePlugin.start_threads()
+            CollectorThreads.start_threads()
             qmp_server = QMPTCPServer(qmp_socket, QMPConnectionHandler)
             qmp_server.analysis = analysis
             qmp_server_thread = threading.Thread(
@@ -224,7 +225,7 @@ class Command(ProjectCommand):
             thr = S2EThread(args, env, cwd, fpo, fpe)
             thr.start()
 
-            while not s2e_main_process and not server.queueprocessor.terminating():
+            while not s2e_main_process and not terminating():
                 self.info('Waiting for S2E to start...')
                 time.sleep(1)
 
@@ -233,7 +234,7 @@ class Command(ProjectCommand):
                 tui = Tui()
                 tui.run(self.tui_cb)
             else:
-                while not server.queueprocessor.terminating():
+                while not terminating():
                     print(self._get_data())
                     time.sleep(1)
 
@@ -274,24 +275,33 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ", ".join(CGCInterfacePlugin.coverage.get_tb_coverage().keys())
+        binaries = ", ".join(CollectorThreads.coverage.tb_coverage.keys())
         if not binaries:
             binaries = "Waiting for analysis to start..."
+
+        gs = CollectorThreads.stats.global_stats
+        cov = CollectorThreads.coverage.summary
 
         data = {
             'binaries': binaries,
             'run_time': elapsed_time,
-            'completed_states': CGCInterfacePlugin.stats.get_global_stats().get('completed_paths', 0),
-            'completed_seeds': CGCInterfacePlugin.stats.get_global_stats().get('completed_seeds', 0),
-            'covered_bbs': CGCInterfacePlugin.coverage.get_summary().get('covered_tbs_total', 0),
-            'num_crashes': CGCInterfacePlugin.crash_count,
-            'pov1': CGCInterfacePlugin.pov1_count,
-            'pov2': CGCInterfacePlugin.pov2_count,
+            'core_count': '%d/%d' % (gs.get('instance_current_count', 0), gs.get('instance_max_count', 0)),
+            'states': gs.get('state_highest_id', 0) - gs.get('state_completed_count', 0),
+            'completed_states': gs.get('state_completed_count', 0),
+            'completed_seeds': gs.get('seeds_completed', 0),
         }
+
+        if self._cgc:
+            data['covered_bbs'] = cov.get('covered_tbs_total', 0)
+            data['num_crashes'] = CGCInterfacePlugin.crash_count
+            data['pov1'] = CGCInterfacePlugin.pov1_count
+            data['pov2'] = CGCInterfacePlugin.pov2_count
+        else:
+            data['num_crashes'] = gs.get('segfault_count', 0)
 
         return data
 
     def tui_cb(self, tui):
         data = self._get_data()
         tui.set_content(data, Command._legend, Command._layout)
-        return not server.queueprocessor.terminating()
+        return not terminating()

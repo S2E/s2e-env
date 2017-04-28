@@ -24,7 +24,8 @@ import json
 import logging
 import os
 
-from .queueprocessor import QueueProcessor, terminating
+from .threads import terminating
+from .queueprocessor import QueueProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -168,11 +169,10 @@ class Coverage(QueueProcessor):
         item = (analysis, coverage_file, coverage_type, cb)
         self._queue.put(item)
 
-    def get_tb_coverage(self):
+    @property
+    def tb_coverage(self):
         return self._tb_coverage
 
-    def get_summary(self):
+    @property
+    def summary(self):
         return self._summary
-
-    def get_global_stats(self):
-        return self.get_global_stats()

@@ -9,7 +9,7 @@ function execute {
 
     {% if use_symb_input_file == true %}
     # Create a symbolic file of size 256 bytes
-    SYMB_FILE="/tmp/SYMB_FILE"
+    SYMB_FILE="/tmp/input"
     truncate -s 256 ${SYMB_FILE}
 
     if [ $? -ne 0 ]; then
