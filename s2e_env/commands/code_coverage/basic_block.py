@@ -30,7 +30,7 @@ import shutil
 import sh
 from sh import ErrorReturnCode
 
-from s2e_env import CONSTANTS, YAML_CONFIG_PATH
+from s2e_env import CONSTANTS, GLOBAL_CONFIG_PATH
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
 
@@ -119,7 +119,7 @@ class BasicBlockCoverage(ProjectCommand):
         if not ida_dir:
             raise CommandError('No path to IDA has been given in %s. IDA is '
                                'required to generate a basic block coverage '
-                               'report' % YAML_CONFIG_PATH)
+                               'report' % GLOBAL_CONFIG_PATH)
 
         project_arch = self._project_desc['arch']
         if project_arch == 'i386':

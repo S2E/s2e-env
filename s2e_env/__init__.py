@@ -29,14 +29,14 @@ from s2e_env.utils.memoize import memoize
 
 
 # Paths
-YAML_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
-                                'config.yaml')
+GLOBAL_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
+                                  'config.yaml')
 
 
 @memoize
-def _load_constants():
-    with open(YAML_CONFIG_PATH, 'r') as f:
+def _load_global_config(path=GLOBAL_CONFIG_PATH):
+    with open(path, 'r') as f:
         return yaml.load(f)
 
 
-CONSTANTS = _load_constants()
+CONSTANTS = _load_global_config()
