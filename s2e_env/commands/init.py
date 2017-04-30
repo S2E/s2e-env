@@ -35,6 +35,7 @@ from sh.contrib import sudo
 from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
+from s2e_env.utils.templates import render_template
 
 
 logger = logging.getLogger('init')
@@ -188,6 +189,16 @@ def _download_repo(repo_path):
     os.chmod(repo_path, st.st_mode | stat.S_IEXEC)
 
 
+def _create_config(env_path):
+    """
+    Create the YAML config file for the new environment.
+    """
+    s2e_yaml = 's2e.yaml'
+    context = {}
+
+    render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
+
+
 class Command(BaseCommand):
     """
     Initializes a new S2E environment.
@@ -243,9 +254,8 @@ class Command(BaseCommand):
         for dir_ in CONSTANTS['dirs']:
             os.mkdir(os.path.join(env_path, dir_))
 
-        # Create marker file to recognize s2e environment folder
-        with open(os.path.join(env_path, '.s2eenv'), 'w'):
-            pass
+        # Create the YAML config for the environment
+        _create_config(env_path)
 
         prefix = options['use_existing_install']
         if prefix is not None:
@@ -260,5 +270,6 @@ class Command(BaseCommand):
             _get_s2e_sources(env_path)
             _get_img_sources(env_path)
 
-            return ('Environment created in %s. Now run ``s2e build`` to build'
-                    % env_path)
+            return ('Environment created in %s. You may wish to modify your '
+                    'environment\'s s2e.yaml config file. Run ``s2e build`` '
+                    'to build S2E' % env_path)

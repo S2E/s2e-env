@@ -36,6 +36,8 @@ import logging
 import os
 import sys
 
+import yaml
+
 
 class CommandError(Exception):
     """
@@ -214,6 +216,7 @@ class EnvCommand(BaseCommand):
         super(EnvCommand, self).__init__()
 
         self._env_dir = None
+        self._config = None
 
     def handle_common_args(self, **options):
         """
@@ -225,16 +228,24 @@ class EnvCommand(BaseCommand):
         options.pop('env', ())
 
         try:
-            with open(self.s2eenv_path()):
-                pass
+            with open(self.env_path('s2e.yaml'), 'r') as f:
+                self._config = yaml.load(f)
         except IOError:
-            raise CommandError('This does not look like an S2E environment')
+            raise CommandError('This does not look like an S2E environment - '
+                               'it does not contain an s2e.yaml configuration file')
 
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
+
+    @property
+    def config(self):
+        """
+        Get the configuration dictionary.
+        """
+        return self._config
 
     def s2eenv_path(self):
         """

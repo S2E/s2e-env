@@ -29,14 +29,21 @@ pip.
 
 # Configuring
 
-`s2e-env` can be configured via a YAML configuration file. This configuration
-file is located in `s2e_env/dat/config.yaml`. If you wish to customize your
-`s2e-env` install you can edit this file before running `pip install`.
+`s2e-env` is configurable in two ways. Firstly, there is a global YAML
+configuration file located in `s2e_env/dat/config.yaml`. This configuration
+file controls how *all* environments are created. You are not normally required
+to modify the settings in this file. If you wish to customize how environments
+are created, you should edit this file **before** running `pip install` to
+install `s2e-env`.
 
 For example, you may want to clone the S2E source repos via SSH rather than
 HTTPS, in which case you would set the `repos`, `url` option to
-`git@github.com:S2E`. If you want to generate basic block coverage, you will
-also have to set the `ida`, `path` option.
+`git@github.com:S2E`.
+
+A second YAML configuration file, `s2e.yaml`, is created in each S2E
+environment. This contains settings that are local to each S2E environment. For
+example, if you want to generate basic block coverage, you will also have to
+set the `ida`, `path` option.
 
 # Usage
 
@@ -95,17 +102,20 @@ To grab the latest changes from the git repositories, run `s2e update`.
 
 ```
 .
-├── build
-├── images
-├── install
-├── projects
-├── source
+├── build/
+├── images/
+├── install/
+├── projects/
+├── s2e.yaml
+├── source/
 ```
 
 * `build`: Staging directory for builds
 * `images`: Images created with `s2e image_build` go here
 * `install`: Installed executables, libraries, header files, etc.
 * `projects`: Analysis projects created with `s2e new_project` go here
+* `s2e.yaml`: A per-environment configuration file. This file is also used to
+  "mark" the directory as an S2E environment, so please do not delete it!
 * `source`: Source code repositories
 
 # Extending
