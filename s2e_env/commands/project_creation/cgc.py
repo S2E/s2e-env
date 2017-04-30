@@ -21,11 +21,11 @@ SOFTWARE.
 """
 
 
-import datetime
 import logging
 import os
 
 from s2e_env.command import CommandError
+from s2e_env.utils.templates import render_template
 from . import BaseProject
 
 
@@ -68,20 +68,18 @@ class CGCProject(BaseProject):
     def _create_bootstrap(self):
         # Render the bootstrap script
         context = {
-            'current_time': datetime.datetime.now(),
             'target': os.path.basename(self._target_path),
             'use_seeds': self._use_seeds,
             'target_bootstrap_template': 'bootstrap.cgc.sh'
         }
 
         output_path = os.path.join(self._project_path, 'bootstrap.sh')
-        self._render_template(context, 'bootstrap.sh', output_path,
-                              executable=True)
+        render_template(context, 'bootstrap.sh', output_path,
+                        executable=True)
 
     def _create_config(self):
         # Render the config file
         context = {
-            'current_time': datetime.datetime.now(),
             'project_dir': self._project_path,
             'target': os.path.basename(self._target_path),
             'use_seeds': self._use_seeds,
@@ -90,7 +88,7 @@ class CGCProject(BaseProject):
 
         for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
             output_path = os.path.join(self._project_path, f)
-            self._render_template(context, f, output_path)
+            render_template(context, f, output_path)
 
     def _create_dirs(self):
         recipes_path = self.install_path('share', 'decree-recipes')

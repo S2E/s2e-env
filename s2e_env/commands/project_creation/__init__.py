@@ -26,27 +26,15 @@ import json
 import logging
 import os
 import shutil
-import stat
 import time
 
-from jinja2 import Environment, FileSystemLoader
-
+from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.image_build import get_image_templates, ImageDownloaderMixin
-from s2e_env import CONSTANTS
+from s2e_env.utils.templates import render_template
 
 
 logger = logging.getLogger('new_project')
-
-FILE_DIR = os.path.dirname(__file__)
-TEMPLATES_DIR = os.path.join(FILE_DIR, '..', '..', 'templates')
-
-
-def datetimefilter(value, format_='%H:%M %d-%m-%Y'):
-    """
-    Jinja2 filter.
-    """
-    return value.strftime(format_)
 
 
 class BaseProject(EnvCommand, ImageDownloaderMixin):
@@ -73,12 +61,6 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         self._project_path = None
         self._img_json = None
         self._use_seeds = None
-
-        # Initialize the jinja2 template environment
-        self._template_env = \
-            Environment(loader=FileSystemLoader(TEMPLATES_DIR),
-                        autoescape=False)
-        self._template_env.filters['datetimefilter'] = datetimefilter
 
     def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
@@ -294,18 +276,6 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         os.symlink(guest_tools_path,
                    os.path.join(self._project_path, 'guest-tools'))
 
-    def _render_template(self, context, template, path, executable=False):
-        """
-        Renders the ``template`` template with the given ``context``. The
-        result is written to ``path``.
-        """
-        with open(path, 'w') as f:
-            data = self._template_env.get_template(template).render(context)
-            f.write(data)
-            if executable:
-                st = os.stat(path)
-                os.chmod(path, st.st_mode | stat.S_IEXEC)
-
     def _create_launch_script(self):
         """
         Create the S2E launch script.
@@ -313,7 +283,6 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         # Render the launch scripts
         for template in CONSTANTS['templates']['launch_scripts']:
             context = {
-                'current_time': datetime.datetime.now(),
                 'env_dir': self.env_path(),
                 'install_dir': self.install_path(),
                 'build_dir': self.build_path(),
@@ -325,8 +294,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
             }
 
             script_path = os.path.join(self._project_path, template)
-            self._render_template(context, template, script_path,
-                                  executable=True)
+            render_template(context, template, script_path, executable=True)
 
     def _analyze(self):
         """
