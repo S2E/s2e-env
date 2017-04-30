@@ -50,7 +50,7 @@ class TemporaryDirectory(object):
         self.name = tempfile.mkdtemp(suffix, prefix, dir_)
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.name)
+        return '<{} {!r}>'.format(self.__class__.__name__, self.name)
 
     def __enter__(self):
         return self.name

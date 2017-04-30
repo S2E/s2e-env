@@ -20,16 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from __future__ import print_function
 
 import argparse
 import ctypes.util
 import datetime
+import logging
 import os
 import shlex
 import signal
 import subprocess
-import threading
 from threading import Thread
 import time
 
@@ -39,8 +40,9 @@ from s2e_env.server import QMPTCPServer, QMPConnectionHandler
 from s2e_env.server.collector_threads import CollectorThreads
 from s2e_env.server.threads import terminating, terminate
 from s2e_env.tui.tui import Tui
-from s2e_env.utils import terminal
 
+
+logger = logging.getLogger('run')
 libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
 s2e_main_process = None
@@ -74,7 +76,7 @@ def terminate_s2e():
     if not s2e_main_process:
         return
 
-    terminal.print_warn('Sending SIGTERM to S2E process group')
+    logger.warning('Sending SIGTERM to S2E process group')
 
     try:
         os.killpg(s2e_main_process.pid, signal.SIGTERM)
@@ -84,21 +86,21 @@ def terminate_s2e():
     s2e_main_process.poll()
 
     # Give S2E time to quit
-    terminal.print_warn('Waiting for S2E processes to quit...')
+    logger.warning('Waiting for S2E processes to quit...')
     for _ in xrange(15):
         if not _has_s2e_processes(s2e_main_process.pid):
-            terminal.print_warn('All S2E processes terminated, exiting.')
+            logger.warning('All S2E processes terminated, exiting.')
             return
         time.sleep(1)
 
     # Second, kill s2e process group and all processes in its cgroup
-    terminal.print_warn('Sending SIGKILL to S2E process group')
+    logger.warning('Sending SIGKILL to S2E process group')
     os.killpg(s2e_main_process.pid, signal.SIGKILL)
     s2e_main_process.wait()
 
 
 def sigterm_handler(signum=None, _=None):
-    terminal.print_warn('Got signal %s, terminating S2E' % signum)
+    logger.warning('Got signal %s, terminating S2E', signum)
     terminate_s2e()
 
 
@@ -133,7 +135,8 @@ class S2EThread(Thread):
         self._stdout.close()
 
         terminate()
-        terminal.print_info('S2E terminated with code %d' % returncode)
+        logger.info('S2E terminated with code %d', returncode)
+
         return returncode
 
 
@@ -176,11 +179,9 @@ class Command(ProjectCommand):
 
         parser.add_argument('project_args', nargs=argparse.REMAINDER,
                             help='Optional arguments to the S2E launcher script')
-
         parser.add_argument('-c', '--cores', required=False, default=1,
                             type=int,
                             help='Number of cores to run S2E on')
-
         parser.add_argument('-n', '--no-tui', required=False, default=False,
                             action='store_true',
                             help='Disable text UI')
@@ -194,7 +195,7 @@ class Command(ProjectCommand):
         qmp_socket = ('127.0.0.1', 2014)
 
         args, env = self._setup_env(project_args, cores, qmp_socket)
-        cwd = self._project_dir
+        cwd = self.project_path()
         stdout = os.path.join(cwd, 'stdout.txt')
         stderr = os.path.join(cwd, 'stderr.txt')
 
@@ -207,12 +208,12 @@ class Command(ProjectCommand):
         qmp_server = None
 
         try:
-            self.info('Starting service threads')
+            logger.info('Starting service threads')
             CollectorThreads.start_threads()
             qmp_server = QMPTCPServer(qmp_socket, QMPConnectionHandler)
             qmp_server.analysis = analysis
-            qmp_server_thread = threading.Thread(
-                target=qmp_server.serve_forever, name='QMPServerThread')
+            qmp_server_thread = Thread(target=qmp_server.serve_forever,
+                                       name='QMPServerThread')
             qmp_server_thread.start()
 
             for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
@@ -221,16 +222,16 @@ class Command(ProjectCommand):
             fpo = open(stdout, 'w')
             fpe = open(stderr, 'w')
 
-            self.info('Launching S2E')
+            logger.info('Launching S2E')
             thr = S2EThread(args, env, cwd, fpo, fpe)
             thr.start()
 
             while not s2e_main_process and not terminating():
-                self.info('Waiting for S2E to start...')
+                logger.info('Waiting for S2E to start...')
                 time.sleep(1)
 
             if not no_tui:
-                self.info('Starting TUI')
+                logger.info('Starting TUI')
                 tui = Tui()
                 tui.run(self.tui_cb)
             else:
@@ -238,7 +239,7 @@ class Command(ProjectCommand):
                     print(self._get_data())
                     time.sleep(1)
 
-            self.info('Terminating S2E')
+            logger.info('Terminating S2E')
             terminate_s2e()
         finally:
             if qmp_server:
@@ -246,8 +247,10 @@ class Command(ProjectCommand):
                 qmp_server.server_close()
 
     def _setup_env(self, project_args, cores, qmp_socket):
-        qemu = self.install_path('bin', 'qemu-system-%s' % self._project_desc['arch'])
-        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % self._project_desc['arch'])
+        qemu = self.install_path('bin',
+                                 'qemu-system-%s' % self._project_desc['arch'])
+        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' %
+                                   self._project_desc['arch'])
 
         env = {
             'S2E_MAX_PROCESSES': str(cores),
@@ -275,9 +278,9 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ", ".join(CollectorThreads.coverage.tb_coverage.keys())
+        binaries = ', '.join(CollectorThreads.coverage.tb_coverage.keys())
         if not binaries:
-            binaries = "Waiting for analysis to start..."
+            binaries = 'Waiting for analysis to start...'
 
         gs = CollectorThreads.stats.global_stats
         cov = CollectorThreads.coverage.summary

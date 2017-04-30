@@ -29,9 +29,10 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from s2e_env.commands.projects.cgc import CGCProject
-from s2e_env.commands.projects.linux import LinuxProject
-from s2e_env.commands.projects.windows import WindowsProject
+from s2e_env.commands.project_creation.cgc import CGCProject
+from s2e_env.commands.project_creation.linux import LinuxProject
+from s2e_env.commands.project_creation.windows import WindowsProject
+
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -45,9 +46,6 @@ PE32_REGEX = re.compile(r'^PE executable')
 PE64_REGEX = re.compile(r'^PE\+ executable')
 
 
-#
-# The actual command class to execute from the command line
-#
 class Command(EnvCommand):
     """
     Initialize a new analysis project.
@@ -67,9 +65,9 @@ class Command(EnvCommand):
                                  'name of the target program.')
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
-                                 'directory. If missing, the image will be guessed '
-                                 'based on the type of the binary')
-        parser.add_argument('-d', '--download-image', required=False, default=False,
+                                 'directory. If missing, the image will be '
+                                 'guessed based on the type of the binary')
+        parser.add_argument('-d', '--download-image', required=False,
                             action='store_true',
                             help='Download a suitable image if it is not available')
         parser.add_argument('-s', '--use-seeds', action='store_true',
@@ -85,8 +83,11 @@ class Command(EnvCommand):
         # Need an absolute path for the target in order to simplify
         # symlink creation.
         target_path = options['target'][0]
-        target_path = os.path.abspath(target_path)
-        options['target'] = target_path
+        target_path = os.path.realpath(target_path)
+
+        # Check that the target actually exists
+        if not os.path.isfile(target_path):
+            raise CommandError('Target %s does not exist' % target_path)
 
         magic_checks = [
             (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
@@ -104,6 +105,7 @@ class Command(EnvCommand):
             # If we find a match, create that project. The user instructions
             # are returned
             if matches:
+                options['target'] = target_path
                 options['target_arch'] = arch
                 return call_command(proj_class(), **options)
 

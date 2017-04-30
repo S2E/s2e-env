@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import logging
 import os
 import shutil
 import stat
@@ -35,6 +36,162 @@ from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
 
+
+logger = logging.getLogger('init')
+
+
+def _get_img_sources(env_path):
+    """
+    Download the S2E image repositories.
+    """
+    git_repos = CONSTANTS['repos']['images'].values()
+
+    for git_repo in git_repos:
+        repos.git_clone_to_source(env_path, git_repo)
+
+
+def _install_binary_dist(env_path, prefix):
+    # We must use an absolute path because of symlinks
+    prefix = os.path.abspath(prefix)
+
+    logger.info('Using S2E installation in %s', prefix)
+    install = os.path.join(env_path, 'install')
+    shutil.rmtree(install, True)
+    os.symlink(prefix, install)
+
+    # We still need to clone guest-images repo, because it contains info about
+    # the location of images
+    guest_images_repo = CONSTANTS['repos']['images']['build']
+    repos.git_clone_to_source(env_path, guest_images_repo)
+
+
+def _install_dependencies():
+    """
+    Install S2E's dependencies.
+
+    Only apt-get is supported for now.
+    """
+    logger.info('Installing S2E dependencies')
+
+    ubuntu_ver = _get_ubuntu_version()
+    if not ubuntu_ver:
+        return
+
+    install_packages = CONSTANTS['dependencies']['common'] + \
+                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver]
+
+    # Check for IDA Pro. If it has been specified, we will install its
+    # packages too
+    if CONSTANTS['ida']['dir']:
+        install_packages += CONSTANTS['dependencies']['ida']
+
+    try:
+        apt_get = sudo.bake('apt-get', _fg=True)
+
+        # Perform apt-get install
+        apt_get.install(install_packages)
+    except ErrorReturnCode as e:
+        raise CommandError(e)
+
+
+def _get_ubuntu_version():
+    """
+    Gets the "major" Ubuntu version.
+
+    If an unsupported OS/Ubuntu version is found a warning is printed and
+    ``None`` is returned.
+    """
+    import platform
+
+    distname, version, _ = platform.dist()
+
+    if distname.lower() != 'ubuntu':
+        logger.warning('You are running on a non-Ubuntu system. Skipping S2E '
+                       'dependencies - please install them manually')
+        return None
+
+    major_version = int(version.split('.')[0])
+
+    if major_version < 14:
+        logger.warning('You are running an unsupported version of Ubuntu. '
+                       'Skipping S2E dependencies  - please install them '
+                       'manually')
+        return None
+
+    return major_version
+
+
+def _get_s2e_sources(env_path):
+    """
+    Download the S2E manifest repository and initialize all of the S2E
+    repositories with repo.
+    """
+    # Download repo
+    repo = _get_repo(env_path)
+
+    s2e_source_path = os.path.join(env_path, 'source', 's2e')
+
+    # Create the S2E source directory and cd to it to run repo
+    os.mkdir(s2e_source_path)
+    orig_dir = os.getcwd()
+    os.chdir(s2e_source_path)
+
+    git_url = CONSTANTS['repos']['url']
+    git_s2e_repo = CONSTANTS['repos']['s2e']
+
+    try:
+        # Now use repo to initialize all the repositories
+        logger.info('Fetching %s from %s', git_s2e_repo, git_url)
+        repo.init(u='%s/%s' % (git_url, git_s2e_repo), _out=sys.stdout,
+                  _err=sys.stderr, _fg=True)
+        repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
+    except ErrorReturnCode as e:
+        # Clean up - remove the half-created S2E environment
+        shutil.rmtree(env_path)
+        raise CommandError(e)
+    finally:
+        # Change back to the original directory
+        os.chdir(orig_dir)
+
+    # Success!
+    logger.success('Fetched %s', git_s2e_repo)
+
+
+def _get_repo(env_path):
+    """
+    Create the repo command.
+
+    If the repo binary does not exist, download it.
+    """
+    repo_path = os.path.join(env_path, 'install', 'bin', 'repo')
+    if not os.path.isfile(repo_path):
+        _download_repo(repo_path)
+
+    return sh.Command(repo_path)
+
+
+def _download_repo(repo_path):
+    """
+    Download repo.
+    """
+    logger.info('Fetching repo')
+
+    repo_url = CONSTANTS['repo']['url']
+    response = requests.get(repo_url)
+
+    if response.status_code != 200:
+        raise CommandError('Unable to download repo from %s' % repo_url)
+
+    with open(repo_path, 'wb') as f:
+        f.write(response.content)
+
+    logger.success('Fetched repo')
+
+    # Ensure that the repo binary is executable
+    st = os.stat(repo_path)
+    os.chmod(repo_path, st.st_mode | stat.S_IEXEC)
+
+
 class Command(BaseCommand):
     """
     Initializes a new S2E environment.
@@ -48,27 +205,15 @@ class Command(BaseCommand):
         parser.add_argument('dir', help='The environment directory')
         parser.add_argument('-s', '--skip-dependencies', action='store_true',
                             help='Skip the dependency install via apt')
-        parser.add_argument('-b', '--use-existing-install', required=False, default=None,
-                            help='Do not fetch sources but instead use existing S2E installation '
-                                 'whose prefix is specified by this parameter (e.g., /opt/s2e)')
+        parser.add_argument('-b', '--use-existing-install', required=False,
+                            default=None,
+                            help='Do not fetch sources but instead use an '
+                                 'existing S2E installation whose prefix is '
+                                 'specified by this parameter (e.g., /opt/s2e)')
         parser.add_argument('-f', '--force', action='store_true',
                             help='Use this flag to force environment creation '
                                  'even if an environment already exists at '
                                  'this location')
-
-    def install_binary_dist(self, env_path, prefix):
-        # We must use an absolute path because of symlinks
-        prefix = os.path.abspath(prefix)
-
-        self.info('Using S2E installation in %s' % prefix)
-        install = os.path.join(env_path, 'install')
-        shutil.rmtree(install, True)
-        os.symlink(prefix, install)
-
-        # We still need to clone guest-images repo, because it contains
-        # info about location of the images
-        guest_images_repo = CONSTANTS['repos']['images']['build']
-        repos.git_clone_to_source(env_path, guest_images_repo)
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -83,7 +228,7 @@ class Command(BaseCommand):
         # Then check if something already exists at the environment directory
         if os.path.isdir(env_path) and not os.listdir(env_path) == []:
             if force:
-                self.info('%s already exists - removing' % env_path)
+                logger.info('%s already exists - removing', env_path)
                 shutil.rmtree(env_path)
             else:
                 raise CommandError('Something already exists at \'%s\'. '
@@ -96,7 +241,7 @@ class Command(BaseCommand):
 
 
         # Create environment if it doesn't exist
-        self.info('Creating environment in %s' % env_path)
+        logger.info('Creating environment in %s', env_path)
         if not os.path.isdir(env_path):
             os.mkdir(env_path)
 
@@ -109,141 +254,16 @@ class Command(BaseCommand):
             pass
 
         if prefix is not None:
-            self.install_binary_dist(env_path, prefix)
+            _install_binary_dist(env_path, prefix)
             return 'Environment created in %s.' % env_path
         else:
             # Install S2E's dependencies via apt-get
             if not options['skip_dependencies']:
-                self._install_dependencies()
+                _install_dependencies()
 
             # Get the source repositories
-            self._get_s2e_sources(env_path)
-            self._get_img_sources(env_path)
+            _get_s2e_sources(env_path)
+            _get_img_sources(env_path)
 
-            return 'Environment created in %s. Now run ``s2e build`` to build' % env_path
-
-    def _install_dependencies(self):
-        """
-        Install S2E's dependencies.
-
-        Only apt-get is supported for now.
-        """
-        self.info('Installing S2E dependencies')
-
-        ubuntu_ver = self._get_ubuntu_version()
-        if not ubuntu_ver:
-            return
-
-        install_packages = CONSTANTS['dependencies']['common'] + \
-                           CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver]
-
-        try:
-            apt_get = sudo.bake('apt-get', _fg=True)
-
-            # Perform apt-get install
-            apt_get.install(install_packages)
-        except ErrorReturnCode as e:
-            raise CommandError(e)
-
-    def _get_ubuntu_version(self):
-        """
-        Gets the "major" Ubuntu version.
-
-        If an unsupported OS/Ubuntu version is found a warning is printed and
-        ``None`` is returned.
-        """
-        import platform
-
-        distname, version, _ = platform.dist()
-
-        if distname.lower() != 'ubuntu':
-            self.warn('You are running on a non-Ubuntu system. Skipping S2E '
-                      'dependencies - please install them manually')
-            return None
-
-        major_version = int(version.split('.')[0])
-
-        if major_version < 14:
-            self.warn('You are running an unsupported version of Ubuntu. '
-                      'Skipping S2E dependencies  - please install them '
-                      'manually')
-            return None
-
-        return major_version
-
-    def _get_s2e_sources(self, env_path):
-        """
-        Download the S2E manifest repository and initialize all of the S2E
-        repositories with repo.
-        """
-        # Download repo
-        repo = self._get_repo(env_path)
-
-        s2e_source_path = os.path.join(env_path, 'source', 's2e')
-
-        # Create the S2E source directory and cd to it to run repo
-        os.mkdir(s2e_source_path)
-        orig_dir = os.getcwd()
-        os.chdir(s2e_source_path)
-
-        git_url = CONSTANTS['repos']['url']
-        git_s2e_repo = CONSTANTS['repos']['s2e']
-
-        try:
-            # Now use repo to initialize all the repositories
-            self.info('Fetching %s from %s' % (git_s2e_repo, git_url))
-            repo.init(u='%s/%s' % (git_url, git_s2e_repo), _out=sys.stdout,
-                      _err=sys.stderr, _fg=True)
-            repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
-        except ErrorReturnCode as e:
-            # Clean up - remove the half-created S2E environment
-            shutil.rmtree(env_path)
-            raise CommandError(e)
-        finally:
-            # Change back to the original directory
-            os.chdir(orig_dir)
-
-        # Success!
-        self.success('Fetched %s' % git_s2e_repo)
-
-    def _get_img_sources(self, env_path):
-        """
-        Download the S2E image repositories.
-        """
-        git_repos = CONSTANTS['repos']['images'].values()
-
-        for git_repo in git_repos:
-            repos.git_clone_to_source(env_path, git_repo)
-
-    def _get_repo(self, env_path):
-        """
-        Create the repo command.
-
-        If the repo binary does not exist, download it.
-        """
-        repo_path = os.path.join(env_path, 'install', 'bin', 'repo')
-        if not os.path.isfile(repo_path):
-            self._download_repo(repo_path)
-
-        return sh.Command(repo_path)
-
-    def _download_repo(self, repo_path):
-        """
-        Download repo.
-        """
-        self.info('Fetching repo')
-
-        repo_url = CONSTANTS['repo']['url']
-        response = requests.get(repo_url)
-
-        if response.status_code != 200:
-            raise CommandError('Unable to download repo from %s' % repo_url)
-
-        with open(repo_path, 'wb') as f:
-            f.write(response.content)
-
-        self.success('Fetched repo')
-
-        # Ensure that the repo binary is executable
-        st = os.stat(repo_path)
-        os.chmod(repo_path, st.st_mode | stat.S_IEXEC)
+            return ('Environment created in %s. Now run ``s2e build`` to build'
+                    % env_path)

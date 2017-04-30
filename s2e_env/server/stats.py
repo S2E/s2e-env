@@ -20,10 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import logging
 from threading import Thread
 from Queue import Queue
 from .threads import terminating
+
 
 logger = logging.getLogger(__name__)
 
@@ -42,29 +44,40 @@ class CGCStats(Thread):
             upd = self._stats.get(module, {})
             upd['called_random'] = upd.get('called_random', False) or mdata.get('called_random', False)
             upd['random_branches_pc'] = list(
-                set(upd.get('random_branches_pc', [])).union(mdata.get('random_branches_pc', []))
-            )
+                set(upd.get('random_branches_pc', [])).union(mdata.get('random_branches_pc', [])))
             self._stats[module] = upd
 
         # Update global stats
         gs = data.get('global_stats', {})
 
-        self._global_stats['states'] = self._global_stats.get('states', 0) + gs.get('states_delta', 0)
+        self._global_stats['states'] = self._global_stats.get('states', 0) + \
+            gs.get('states_delta', 0)
 
         max_stats = [
-            'state_highest_id', 'state_max_completed_depth', 'state_max_depth', 'seeds_used',
-            'recipe_count', 'invalid_recipe_count', 'cfg_bb_count', 'model_count',
-            'instance_max_count', 'instance_current_count'
+            'state_highest_id',
+            'state_max_completed_depth',
+            'state_max_depth',
+            'seeds_used',
+            'recipe_count',
+            'invalid_recipe_count',
+            'cfg_bb_count',
+            'model_count',
+            'instance_max_count',
+            'instance_current_count',
         ]
 
         for s in max_stats:
-            self._global_stats[s] = max(self._global_stats.get(s, 0), gs.get(s, 0))
+            self._global_stats[s] = max(self._global_stats.get(s, 0),
+                                        gs.get(s, 0))
 
         aggregated_stats = [
-            'state_completed_count', 'seeds_completed',
-            'recipe_invalid_count', 'recipe_failed_tries',
-            'recipe_successful_tries', 'recipe_count',
-            'segfault_count'
+            'state_completed_count',
+            'seeds_completed',
+            'recipe_invalid_count',
+            'recipe_failed_tries',
+            'recipe_successful_tries',
+            'recipe_count',
+            'segfault_count',
         ]
 
         for s in aggregated_stats:

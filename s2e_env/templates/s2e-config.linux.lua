@@ -38,3 +38,7 @@ pluginsConfig.TestCaseGenerator = {
     generateOnStateKill = true,
     generateOnSegfault = true
 }
+
+pluginsConfig.TranslationBlockCoverage = {
+    writeCoverageOnStateKill = true,
+}

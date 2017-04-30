@@ -20,13 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from __future__ import print_function
 
 import curses
 import time
 
-import logging
-logger = logging.getLogger(__name__)
 
 _s_screen = None
 
@@ -150,8 +149,8 @@ class Form(object):
 
 class Label(Form):
     def __init__(self, parent, x, y, text):
-        super(Label, self).__init__(parent, x, y, len(text)+2, 1)
-        self._text = ' ' + text
+        super(Label, self).__init__(parent, x, y, len(text) + 2, 1)
+        self._text = ' %s' % text
 
     def do_draw(self, ax, ay):
         self._wnd.mvwin(ay, ax)
@@ -250,7 +249,8 @@ class Tui(object):
         self._exitmsg = Label(self._stats, 0, 17, 'Press q to exit')
         self._exitmsg.set_centering(True, False)
 
-        self._table = Table(self._stats, 2, 2, self._data, self._legend, self._layout)
+        self._table = Table(self._stats, 2, 2, self._data, self._legend,
+                            self._layout)
         self._table.set_centering(True, True)
 
     def _cleanup(self):
@@ -278,7 +278,6 @@ class Tui(object):
             return
 
         self._redraw()
-
         self._desktop.window.nodelay(True)
 
         while True:
@@ -303,8 +302,8 @@ class Tui(object):
             self._run(callback)
         except Exception:
             self._cleanup()
-            # Print message only after screen is restored, otherwise
-            # we might get unreadable garbage.
+            # Print message only after screen is restored, otherwise we might
+            # get unreadable garbage.
             raise
         finally:
             self._cleanup()

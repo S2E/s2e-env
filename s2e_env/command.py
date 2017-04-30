@@ -32,13 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from argparse import ArgumentParser
 import json
+import logging
 import os
 import sys
-
-from s2e_env.utils.terminal import print_info
-from s2e_env.utils.terminal import print_success
-from s2e_env.utils.terminal import print_warn
-from s2e_env.utils.terminal import print_error
 
 
 class CommandError(Exception):
@@ -170,12 +166,13 @@ class BaseCommand(object):
             if not isinstance(e, CommandError):
                 raise
 
-            self.error(e)
+            logger = logging.getLogger(self.name)
+            logger.error(e)
             sys.exit(1)
 
         return output
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Handle any common command options here and remove them from the options
         dict given to the command.
@@ -187,43 +184,16 @@ class BaseCommand(object):
         """
         Try to execute the command.
         """
-        self.handle_common_args(options)
+        self.handle_common_args(**options)
 
         success_msg = self.handle(*args, **options)
         if success_msg:
-            self.success(success_msg)
+            logger = logging.getLogger(self.name)
+            logger.success(success_msg)
 
     @property
     def name(self):
         return self.__module__.split('.')[-1]
-
-    def info(self, msg):
-        """
-        Print an info message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_info('[%s] %s' % (self.name, msg))
-
-    def success(self, msg):
-        """
-        Print a success message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_success('[%s] %s' % (self.name, msg))
-
-    def warn(self, msg):
-        """
-        Print a warning message to stdout.
-        """
-        if self._verbosity >= 1:
-            print_warn('[%s] %s' % (self.name, msg))
-
-    def error(self, msg):
-        """
-        Print an error message to stderr.
-        """
-        # Always print errors regardless of verbosity
-        print_error('[%s] %s' % (self.name, msg))
 
     def handle(self, *args, **options):
         """
@@ -245,11 +215,11 @@ class EnvCommand(BaseCommand):
 
         self._env_dir = None
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Adds the environment directory as a class member.
         """
-        super(EnvCommand, self).handle_common_args(options)
+        super(EnvCommand, self).handle_common_args(**options)
 
         self._env_dir = options['env']
         options.pop('env', ())
@@ -258,9 +228,10 @@ class EnvCommand(BaseCommand):
             with open(self.s2eenv_path()):
                 pass
         except IOError:
-            raise CommandError('This does not look like an S2E environment directory.')
+            raise CommandError('This does not look like an S2E environment')
 
     def add_arguments(self, parser):
+        super(EnvCommand, self).add_arguments(parser)
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
@@ -283,7 +254,7 @@ class EnvCommand(BaseCommand):
         """
         return self.env_path('install', *p)
 
-    def project_path(self, *p):
+    def projects_path(self, *p):
         """
         Create a path relative to the S2E projects directory.
         """
@@ -322,11 +293,11 @@ class ProjectCommand(EnvCommand):
         self._project_desc = None
         self._project_name = None
 
-    def handle_common_args(self, options):
+    def handle_common_args(self, **options):
         """
         Adds the project directory as a class member.
         """
-        super(ProjectCommand, self).handle_common_args(options)
+        super(ProjectCommand, self).handle_common_args(**options)
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
@@ -346,3 +317,9 @@ class ProjectCommand(EnvCommand):
         super(ProjectCommand, self).add_arguments(parser)
 
         parser.add_argument('project', help='The name of the project')
+
+    def project_path(self, *p):
+        """
+        Create a path relative to this project directory.
+        """
+        return os.path.join(self._project_dir, *p)

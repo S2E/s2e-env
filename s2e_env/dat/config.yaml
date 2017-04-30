@@ -66,10 +66,20 @@ dependencies:
         - libglib2.0-dev
         - python-docutils
         - qemu
+
+        # s2e-env dependencies
+        - lcov
     ubuntu_16:
         - libprocps4-dev
     ubuntu_14:
         - libprocps3-dev
+    ida:
+        # IDA Pro dependencies
+        - lib32ncurses5
+        - lib32ncurses5-dev
+        - libncurses5-dev
+        - libx32ncurses5-dev
+        - libncurses5-dev:i386
 
 # S2E Git repos
 repos:
@@ -84,6 +94,10 @@ repos:
 # Repo. Used for managing the S2E git repositories
 repo:
     url: https://storage.googleapis.com/git-repo-downloads/repo
+
+# Path to the IDA Pro directory
+ida:
+    dir: /opt/ida-6.8
 
 # Directories that will automatically be built when running ``s2e init``
 dirs:

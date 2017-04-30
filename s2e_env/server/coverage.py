@@ -20,12 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import json
 import logging
 import os
 
 from .threads import terminating
 from .queueprocessor import QueueProcessor
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ class Coverage(QueueProcessor):
             'available_bbs_total': bb_static_aggregate
         }
 
-        logger.info('Updating coverage summary %s', str(coverage))
+        logger.info('Updating coverage summary %s', coverage)
 
         self._summary = coverage
         self._summary_updated = True
@@ -93,7 +95,6 @@ class Coverage(QueueProcessor):
 
             for bb in cdata:
                 # Both BB and TB coverage data items begin with start_pc and end_pc
-                # (start_pc, end_pc)
                 t = (bb[0], bb[1])
                 data_set.add(t)
 
@@ -115,9 +116,9 @@ class Coverage(QueueProcessor):
 
         diff = self.compute_bb_diff(data, coverage_type == TB_COVERAGE)
 
-        logger.info('Processing coverage data diff: %s', str(diff))
+        logger.info('Processing coverage data diff: %s', diff)
         for module, coverage in diff.iteritems():
-            logger.info('module: %s coverage: %s ', module, str(coverage))
+            logger.info('module: %s coverage: %s ', module, coverage)
 
             for bb in coverage:
                 # In principle, we could have a diff over the union of bbs
@@ -125,7 +126,7 @@ class Coverage(QueueProcessor):
                 if self.is_covered(module, bb):
                     continue
 
-                logger.info("Found new bb: %s %x:%x", module, bb[0], bb[1])
+                logger.info('Found new bb: %s %x:%x', module, bb[0], bb[1])
 
                 self._summary_updated = False
 
@@ -165,7 +166,7 @@ class Coverage(QueueProcessor):
         logger.info('Terminating coverage thread')
 
     def queue_coverage(self, analysis, coverage_file, coverage_type, cb):
-        logger.info('Queuing coverage file ' + coverage_file)
+        logger.info('Queuing coverage file %s', coverage_file)
         item = (analysis, coverage_file, coverage_type, cb)
         self._queue.put(item)
 

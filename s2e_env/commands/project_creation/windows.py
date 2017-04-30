@@ -20,9 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from s2e_env.command import CommandError
 
-from .base import BaseProject
+from . import BaseProject
 
 
 class WindowsProject(BaseProject):

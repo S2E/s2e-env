@@ -20,8 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import datetime
 import json
+import logging
 import os
 import shutil
 import stat
@@ -32,6 +34,9 @@ from jinja2 import Environment, FileSystemLoader
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.image_build import get_image_templates, ImageDownloaderMixin
 from s2e_env import CONSTANTS
+
+
+logger = logging.getLogger('new_project')
 
 FILE_DIR = os.path.dirname(__file__)
 TEMPLATES_DIR = os.path.join(FILE_DIR, '..', '..', 'templates')
@@ -77,7 +82,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
     def _validate_binary(self, target_arch, os_name, os_arch, os_binary_formats):
         if target_arch == 'x86_64' and os_arch != 'x86_64':
-            raise CommandError('Binary is x86_64 while VM image is %s. Please choose another image.' % os_arch)
+            raise CommandError('Binary is x86_64 while VM image is %s. Please '
+                               'choose another image.' % os_arch)
 
     def _guess_image(self, target_arch):
         """
@@ -87,17 +93,20 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
 
+        logger.info('No image was specified (-i option). Attempting to guess '
+                    'a suitable image for a %s binary', target_arch)
+
         for k, v in templates.iteritems():
             try:
                 self._validate_binary(target_arch, v['os_name'], v['os_arch'], v['os_binary_formats'])
-                self.warn('No image was specified (-i option).')
-                self.warn('Found %s, which looks suitable for this binary.' % k)
-                self.warn('Please use -i if you want to use another one.')
+                logger.warning('Found %s, which looks suitable for this '
+                               'binary. Please use -i if you want to use '
+                               'another image', k)
                 return k
             except Exception:
                 pass
 
-        raise CommandError('No suitable image available for this binary.')
+        raise CommandError('No suitable image available for this binary')
 
     def _get_or_download_image(self, image, download):
         try:
@@ -106,7 +115,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
             if not download:
                 raise
 
-        self.info('Image %s missing, attempting to download...' % image)
+        logger.info('Image %s missing, attempting to download...', image)
         self.download_images(image)
         return self._load_image_json(image)
 
@@ -133,7 +142,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         if image is None:
             image = self._guess_image(options['target_arch'])
 
-        self._img_json = self._get_or_download_image(image, options['download_image'])
+        self._img_json = self._get_or_download_image(image,
+                                                     options['download_image'])
 
         # Check architecture consistency
         self._validate_binary(
@@ -159,13 +169,13 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         self._analyze()
 
         # Render the templates
-        self.info('Creating launch scripts')
-        self._create_launch_scripts()
+        logger.info('Creating launch script')
+        self._create_launch_script()
 
-        self.info('Creating bootstrap script')
+        logger.info('Creating bootstrap script')
         self._create_bootstrap()
 
-        self.info('Creating S2E config')
+        logger.info('Creating S2E config')
         self._create_config()
 
         # Create misc. directories required by the project
@@ -210,8 +220,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                 return ret
         except Exception:
             raise CommandError('Unable to open image description %s\n'
-                               'Check that the image exists, was built, or downloaded' %
-                               img_json_path)
+                               'Check that the image exists, was built, or '
+                               'downloaded' % img_json_path)
 
     def _check_project_dir(self, force=False):
         """
@@ -224,8 +234,8 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         # only continue if the ``force`` flag has been specified
         if os.path.isdir(self._project_path):
             if force:
-                self.info('\'%s\' already exists - removing' %
-                          os.path.basename(self._project_path))
+                logger.info('\'%s\' already exists - removing',
+                            os.path.basename(self._project_path))
                 shutil.rmtree(self._project_path)
             else:
                 raise CommandError('\'%s\' already exists. Either remove this '
@@ -238,7 +248,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
         This information can be used by other commands.
         """
-        self.info('Creating JSON description')
+        logger.info('Creating JSON description')
 
         project_desc_path = os.path.join(self._project_path, 'project.json')
 
@@ -265,7 +275,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         """
         Create a symlink to the target program.
         """
-        self.info('Creating a symlink to %s' % self._target_path)
+        logger.info('Creating a symlink to %s', self._target_path)
 
         target_file = os.path.basename(self._target_path)
         os.symlink(self._target_path,
@@ -279,7 +289,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
             'bin', CONSTANTS['guest_tools'][self._arch]
         )
 
-        self.info('Creating a symlink to %s' % guest_tools_path)
+        logger.info('Creating a symlink to %s', guest_tools_path)
 
         os.symlink(guest_tools_path,
                    os.path.join(self._project_path, 'guest-tools'))
@@ -296,9 +306,9 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                 st = os.stat(path)
                 os.chmod(path, st.st_mode | stat.S_IEXEC)
 
-    def _create_launch_scripts(self):
+    def _create_launch_script(self):
         """
-        Create the S2E launch scripts.
+        Create the S2E launch script.
         """
         # Render the launch scripts
         for template in CONSTANTS['templates']['launch_scripts']:

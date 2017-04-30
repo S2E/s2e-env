@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import logging
 import os
 import sys
 
@@ -29,6 +30,9 @@ from sh import git, ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
+
+
+logger = logging.getLogger('update')
 
 
 class Command(EnvCommand):
@@ -48,15 +52,14 @@ class Command(EnvCommand):
         """
         Update all of the S2E repositories with repo.
         """
-        s2e_source_path = self.env_path('source', 's2e')
-        repo = sh.Command(self.env_path('bin', 'repo'))
+        repo = sh.Command(self.install_path('bin', 'repo'))
 
         # cd into the S2E source directory
         orig_dir = os.getcwd()
-        os.chdir(s2e_source_path)
+        os.chdir(self.source_path('s2e'))
 
         try:
-            self.info('Updating s2e')
+            logger.info('Updating S2E')
             repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
         except ErrorReturnCode as e:
             raise CommandError(e)
@@ -65,7 +68,7 @@ class Command(EnvCommand):
             os.chdir(orig_dir)
 
         # Success!
-        self.success('Updated s2e')
+        logger.success('Updated S2E')
 
     def _update_img_sources(self):
         """
@@ -77,15 +80,15 @@ class Command(EnvCommand):
             git_repo_dir = self.env_path('source', git_repo)
 
             if not os.path.isdir(git_repo_dir):
-                self.warn('%s does not exist. Skipping' % git_repo)
+                logger.warning('%s does not exist. Skipping', git_repo)
                 continue
 
             try:
-                self.info('Updating %s' % git_repo)
+                logger.info('Updating %s', git_repo)
                 git.bake(C=git_repo_dir).pull(_out=sys.stdout, _err=sys.stderr,
                                               _fg=True)
             except ErrorReturnCode as e:
                 raise CommandError(e)
 
             # Success!
-            self.success('Updated %s' % git_repo)
+            logger.info('Updated %s', git_repo)

@@ -16,15 +16,14 @@ setup(
         'pygments',
 
         # s2e-env requirements
-        'docutils',
         'jinja2',
+        'psutil',
         'pyelftools',
         'python-magic',
         'pyyaml',
         'requests',
         'sh',
         'termcolor',
-        'psutil'
     ],
     packages=find_packages(),
     include_package_data=True,

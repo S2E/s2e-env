@@ -20,16 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+import logging
+import sys
 import urlparse
+
 import requests
 
-from . import terminal
+
+logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 32768
 
 # Inspired from:
 # http://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive
-
 
 def _get_confirm_token(response):
     for key, value in response.cookies.items():
@@ -42,7 +46,7 @@ def _get_confirm_token(response):
 def _save_response_content(response, destination):
     bytes_count = 0
     next_count = 0
-    with open(destination, "wb") as f:
+    with open(destination, 'wb') as f:
         for chunk in response.iter_content(CHUNK_SIZE):
             # filter out keep-alive new chunks
             if chunk:
@@ -51,23 +55,22 @@ def _save_response_content(response, destination):
                 f.write(chunk)
 
             if next_count > 1024 * 1024 * 10:
-                terminal.print_info('Downloaded %d bytes\r' % bytes_count, new_line=False, flush=True)
+                sys.stdout.write('Downloaded %d bytes\r' % bytes_count)
+                sys.stdout.flush()
                 next_count = 0
-
-        terminal.print_info('')
 
 
 def _download(docid, destination):
-    url = "https://docs.google.com/uc?export=download"
+    url = 'https://docs.google.com/uc?export=download'
 
     session = requests.Session()
 
-    terminal.print_info('Requesting %s with id=%s' % (url, docid))
+    logger.info('Requesting %s with id=%s', url, docid)
     response = session.get(url, params={'id': docid}, stream=True)
     token = _get_confirm_token(response)
 
     if token:
-        terminal.print_info('Sending confirmation token')
+        logger.info('Sending confirmation token')
         params = {'id': docid, 'confirm': token}
         response = session.get(url, params=params, stream=True)
 
