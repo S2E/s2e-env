@@ -40,6 +40,7 @@ from s2e_env.server import QMPTCPServer, QMPConnectionHandler
 from s2e_env.server.collector_threads import CollectorThreads
 from s2e_env.server.threads import terminating, terminate
 from s2e_env.tui.tui import Tui
+from s2e_env.utils.log import log_to_file
 
 
 logger = logging.getLogger('run')
@@ -232,6 +233,16 @@ class Command(ProjectCommand):
 
             if not no_tui:
                 logger.info('Starting TUI')
+
+                # We don't want the log messages to be sent to stdout when the
+                # TUI is up. Ideally, we'd have a small window on the dashboard
+                # to display logs in addition to writing them to a file.
+                #
+                # TODO: to put the console log into S2E last, we'll have to create s2e-out*
+                # folders ourselves.
+                log_file = self.project_path('log.txt')
+                log_to_file(log_file)
+
                 tui = Tui()
                 tui.run(self.tui_cb)
             else:
