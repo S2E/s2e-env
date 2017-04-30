@@ -35,6 +35,21 @@ def success(self, msg, *args, **kwargs):
         self._log(SUCCESS, msg, args, **kwargs)
 
 
+def log_to_file(log_file):
+    """
+    Switches logging to a file.
+    The file contains color codes and can be viewed with less -r.
+    """
+    fileh = logging.FileHandler(log_file, 'w')
+    fileh.setFormatter(ColoredFormatter())
+
+    # Reset the root logger in order to replace the default console one
+    log = logging.getLogger()
+    for hdlr in log.handlers:
+        log.removeHandler(hdlr)
+    log.addHandler(fileh)
+
+
 class ColoredFormatter(logging.Formatter):
     """
     Prints log messages in color.

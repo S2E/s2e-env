@@ -192,9 +192,7 @@ class QMPConnectionHandler(LineRequestHandler):
 
         for k in data.keys():
             if k in PLUGINS:
-                plugin_processed = PLUGINS[k].process(data[k], analysis)
-                if not plugin_processed:
-                    processed = False
+                PLUGINS[k].process(data[k], analysis)
             else:
                 processed = False
 

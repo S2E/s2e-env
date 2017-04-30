@@ -167,6 +167,8 @@ class BasicBlockCoverage(ProjectCommand):
                 # Run the IDA Pro extractBasicBlocks script
                 env_vars = os.environ.copy()
                 env_vars['TVHEADLESS'] = '1'
+                # This is required if s2e-env runs inside screen
+                env_vars['TERM'] = 'xterm'
 
                 ida = sh.Command(ida_path)
                 ida('-A', '-B',

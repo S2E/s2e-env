@@ -71,10 +71,11 @@ class CGCProject(BaseProject):
             'current_time': datetime.datetime.now(),
             'target': os.path.basename(self._target_path),
             'use_seeds': self._use_seeds,
+            'target_bootstrap_template': 'bootstrap.cgc.sh'
         }
 
         output_path = os.path.join(self._project_path, 'bootstrap.sh')
-        self._render_template(context, 'bootstrap.cgc.sh', output_path,
+        self._render_template(context, 'bootstrap.sh', output_path,
                               executable=True)
 
     def _create_config(self):
@@ -84,10 +85,12 @@ class CGCProject(BaseProject):
             'project_dir': self._project_path,
             'target': os.path.basename(self._target_path),
             'use_seeds': self._use_seeds,
+            'target_lua_template': 's2e-config.cgc.lua'
         }
 
-        output_path = os.path.join(self._project_path, 's2e-config.lua')
-        self._render_template(context, 's2e-config.cgc.lua', output_path)
+        for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
+            output_path = os.path.join(self._project_path, f)
+            self._render_template(context, f, output_path)
 
     def _create_dirs(self):
         recipes_path = self.install_path('share', 'decree-recipes')

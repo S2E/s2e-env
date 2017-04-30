@@ -74,12 +74,15 @@ dependencies:
     ubuntu_14:
         - libprocps3-dev
     ida:
-        # IDA Pro dependencies
+        # IDA Pro TUI dependencies
         - lib32ncurses5
         - lib32ncurses5-dev
         - libncurses5-dev
         - libx32ncurses5-dev
         - libncurses5-dev:i386
+
+        # IDA Pro GUI dependencies
+        - libglib2.0-0:i386
 
 # S2E Git repos
 repos:
