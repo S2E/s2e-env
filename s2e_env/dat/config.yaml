@@ -38,7 +38,6 @@ dependencies:
         - python-pip
         - xz-utils
         - docker.io
-        - p7zip
         - p7zip-full
 
         # S2E dependencies
