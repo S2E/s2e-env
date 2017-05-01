@@ -27,7 +27,6 @@ import sys
 
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf import constants as dwarf_consts
-from sh import genhtml, ErrorReturnCode
 
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
@@ -140,13 +139,7 @@ class LineCoverage(ProjectCommand):
         lcov_info_path = self._save_coverage_info(file_line_info)
 
         if options.get('html', False):
-            lcov_html_dir = self.project_path('s2e-last', 'lcov')
-            try:
-                genhtml(lcov_info_path, output_directory=lcov_html_dir,
-                        _out=sys.stdout, _err=sys.stderr, _fg=True)
-            except ErrorReturnCode as e:
-                raise CommandError(e)
-
+            lcov_html_dir = self._gen_html(lcov_info_path)
             return 'Line coverage saved to %s. An HTML report is available in %s' % (lcov_info_path, lcov_html_dir)
 
         return 'Line coverage saved to %s' % lcov_info_path
@@ -228,3 +221,20 @@ class LineCoverage(ProjectCommand):
                 f.write('end_of_record\n')
 
         return lcov_path
+
+    def _gen_html(self, lcov_info_path):
+        """
+        Generate an LCOV HTML report.
+
+        Returns the directory containing the HTML report.
+        """
+        from sh import genhtml, ErrorReturnCode
+
+        lcov_html_dir = self.project_path('s2e-last', 'lcov')
+        try:
+            genhtml(lcov_info_path, output_directory=lcov_html_dir,
+                    _out=sys.stdout, _err=sys.stderr, _fg=True)
+        except ErrorReturnCode as e:
+            raise CommandError(e)
+
+        return lcov_html_dir
