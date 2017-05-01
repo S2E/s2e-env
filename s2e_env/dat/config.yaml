@@ -113,11 +113,6 @@ dirs:
     - projects
     - source
 
-# Templates used for project creation
-templates:
-    launch_scripts:
-        - launch-s2e.sh
-
 # Mapping of architecture to guest tools directory
 guest_tools:
     i386: guest-tools32

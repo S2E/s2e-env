@@ -280,21 +280,20 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         """
         Create the S2E launch script.
         """
-        # Render the launch scripts
-        for template in CONSTANTS['templates']['launch_scripts']:
-            context = {
-                'env_dir': self.env_path(),
-                'install_dir': self.install_path(),
-                'build_dir': self.build_path(),
-                'arch': self._arch,
-                'image_path': self._img_json['path'],
-                'memory': self._img_json['memory'],
-                'snapshot': self._img_json['snapshot'],
-                'qemu_extra_flags': self._img_json['qemu_extra_flags'],
-            }
+        template = 'launch-s2e.sh'
+        script_path = os.path.join(self._project_path, template)
+        context = {
+            'env_dir': self.env_path(),
+            'install_dir': self.install_path(),
+            'build_dir': self.build_path(),
+            'arch': self._arch,
+            'image_path': self._img_json['path'],
+            'memory': self._img_json['memory'],
+            'snapshot': self._img_json['snapshot'],
+            'qemu_extra_flags': self._img_json['qemu_extra_flags'],
+        }
 
-            script_path = os.path.join(self._project_path, template)
-            render_template(context, template, script_path, executable=True)
+        render_template(context, template, script_path, executable=True)
 
     def _analyze(self):
         """
