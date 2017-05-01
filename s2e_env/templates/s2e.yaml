@@ -6,6 +6,12 @@
 # The s2e-env version
 version: {{ version }}
 
+logging:
+    # One of the Python logging levels - debug, info, warning, error, critical
+    level: info
+    # Use colored output for logs
+    color: true
+
 ida:
     # Path to the IDA Pro directory
     dir: /opt/ida-6.8

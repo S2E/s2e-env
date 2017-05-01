@@ -38,6 +38,29 @@ import sys
 
 import yaml
 
+from s2e_env.utils import log
+from s2e_env.utils.log import ColoredFormatter
+
+
+def _configure_logging(level=logging.INFO, use_color=True):
+    """
+    Configure te global logging settings.
+    """
+    # Add a 'SUCCESS' level to the logger
+    logging.addLevelName(log.SUCCESS, 'SUCCESS')
+    logging.Logger.success = log.success
+
+    # Configure colored logging
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    # Only add a handler if the logger does not have any existing handlers (to
+    # prevent duplication on output)
+    if not logger.handlers:
+        colored_handler = logging.StreamHandler()
+        colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
+        logger.addHandler(colored_handler)
+
 
 class CommandError(Exception):
     """
@@ -100,19 +123,19 @@ class BaseCommand(object):
     implemented in the ``add_arguments()`` method. For specifying a short
     description of the command, which will be printed in help messages, the
     ``help`` class attribute should be specified.
-
-    When writting new commands, the author may use one of ``info()``,
-    ``warn()`` or ``error()`` to print out messages. Note that whether these
-    messages are displayed is dependent on the verbosity level set.
     """
+
     # Metadata about this command
     help = ''
 
     # Configuration shortcuts that alter various logic.
     called_from_command_line = False
 
-    def __init__(self):
-        self._verbosity = 1
+    def _init_logging(self):
+        """
+        Initialize logging.
+        """
+        _configure_logging()
 
     def create_parser(self, prog_name, subcommand):
         """
@@ -124,10 +147,6 @@ class BaseCommand(object):
             description=self.help or None)
 
         # Add any arguments that all commands should accept here
-        parser.add_argument('-v', '--verbosity', type=int, default=1,
-                            choices=[0, 1, 2],
-                            help='Verbosity level; 0=minimal output, '
-                                 '1=normal output, 2=verbose output')
         self.add_arguments(parser)
 
         return parser
@@ -179,8 +198,9 @@ class BaseCommand(object):
         Handle any common command options here and remove them from the options
         dict given to the command.
         """
-        self._verbosity = options['verbosity']
-        options.pop('verbosity', ())
+        # Logging is initialized here, rather than the constructor, so that
+        # the EnvCommand subclass has access to the S2E environment's path
+        self._init_logging()
 
     def execute(self, *args, **options):
         """
@@ -213,17 +233,25 @@ class EnvCommand(BaseCommand):
     """
 
     def __init__(self):
-        super(EnvCommand, self).__init__()
-
         self._env_dir = None
         self._config = None
+
+    def _init_logging(self):
+        # Reinitialize logging with settings from the environment's config
+        config_lvl = self.config.get('logging', {}).get('level', 'info')
+        color = self._config.get('logging', {}).get('color', True)
+
+        level = logging.getLevelName(config_lvl.upper())
+        if not isinstance(level, int):
+            raise CommandError('Invalid logging level \'%s\' in s2e.yaml' %
+                               config_lvl)
+
+        _configure_logging(level, color)
 
     def handle_common_args(self, **options):
         """
         Adds the environment directory as a class member.
         """
-        super(EnvCommand, self).handle_common_args(**options)
-
         self._env_dir = options['env']
         options.pop('env', ())
 
@@ -233,6 +261,10 @@ class EnvCommand(BaseCommand):
         except IOError:
             raise CommandError('This does not look like an S2E environment - '
                                'it does not contain an s2e.yaml configuration file')
+
+        # Handle all the environment-specific args before handling the base
+        # class's args
+        super(EnvCommand, self).handle_common_args(**options)
 
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
