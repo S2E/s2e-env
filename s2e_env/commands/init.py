@@ -194,7 +194,11 @@ def _create_config(env_path):
     Create the YAML config file for the new environment.
     """
     s2e_yaml = 's2e.yaml'
-    context = {}
+    version_path = os.path.join(os.path.dirname(__file__), '..', 'dat', 'VERSION')
+
+    context = {
+        'version': open(version_path, 'r').read().strip(),
+    }
 
     render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
 

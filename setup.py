@@ -1,13 +1,15 @@
+import os
+
 from setuptools import setup, find_packages
 
 
 setup(
     name='s2e-env',
     description='A command-line tool for administering S2E environments',
-    long_description=open('README.md').read(),
+    long_description=open('README.md', 'r').read(),
     author='Adrian Herrera',
     author_email='adrian.herrera@epfl.ch',
-    version='0.10',
+    version=open(os.path.join('s2e_env', 'dat', 'VERSION'), 'r').read().strip(),
     url='http://s2e.epfl.ch',
     download_url='https://github.com/S2E/s2e-env.git',
     install_requires=[

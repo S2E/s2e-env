@@ -3,6 +3,9 @@
 # Changes can be made by the user where appropriate
 #
 
+# The s2e-env version
+version: {{ version }}
+
 ida:
     # Path to the IDA Pro directory
     dir: /opt/ida-6.8
