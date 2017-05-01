@@ -77,13 +77,9 @@ def _install_dependencies():
     if not ubuntu_ver:
         return
 
-    install_packages = CONSTANTS['dependencies']['common'] + \
-                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver]
-
-    # Check for IDA Pro. If it has been specified, we will install its
-    # packages too
-    if CONSTANTS['ida']['dir']:
-        install_packages += CONSTANTS['dependencies']['ida']
+    install_packages = CONSTANTS['dependencies']['common'] +                    \
+                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver] +    \
+                       CONSTANTS['dependencies']['ida']
 
     try:
         apt_get = sudo.bake('apt-get', _fg=True)
@@ -217,8 +213,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
-        force = options['force']
-        prefix = options['use_existing_install']
 
         # First check if we are already in the environment directory
         if os.path.realpath(env_path) == os.path.realpath(os.getcwd()):
@@ -227,7 +221,7 @@ class Command(BaseCommand):
 
         # Then check if something already exists at the environment directory
         if os.path.isdir(env_path) and not os.listdir(env_path) == []:
-            if force:
+            if options['force']:
                 logger.info('%s already exists - removing', env_path)
                 shutil.rmtree(env_path)
             else:
@@ -253,6 +247,7 @@ class Command(BaseCommand):
         with open(os.path.join(env_path, '.s2eenv'), 'w'):
             pass
 
+        prefix = options['use_existing_install']
         if prefix is not None:
             _install_binary_dist(env_path, prefix)
             return 'Environment created in %s.' % env_path
