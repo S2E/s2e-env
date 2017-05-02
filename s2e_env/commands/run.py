@@ -31,6 +31,7 @@ import os
 import shlex
 import signal
 import subprocess
+import sys
 from threading import Thread
 import time
 
@@ -132,8 +133,10 @@ class S2EThread(Thread):
                 break
             time.sleep(1)
 
-        self._stderr.close()
-        self._stdout.close()
+        if self._stdout != sys.stdout:
+            self._stdout.close()
+        if self._stderr != sys.stderr:
+            self._stderr.close()
 
         terminate()
         logger.info('S2E terminated with code %d', returncode)
@@ -196,16 +199,9 @@ class Command(ProjectCommand):
         qmp_socket = ('127.0.0.1', 2014)
 
         args, env = self._setup_env(project_args, cores, qmp_socket)
-        cwd = self.project_path()
-        stdout = os.path.join(cwd, 'stdout.txt')
-        stderr = os.path.join(cwd, 'stderr.txt')
-
-        analysis = {'output_path': cwd}
-
+        analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
-
         self._cgc = 'cgc' in self._project_desc['image']['os_name']
-
         qmp_server = None
 
         try:
@@ -220,11 +216,15 @@ class Command(ProjectCommand):
             for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
                 signal.signal(s, sigterm_handler)
 
-            fpo = open(stdout, 'w')
-            fpe = open(stderr, 'w')
+            if not no_tui:
+                stdout = open(self.project_path('stdout.txt'), 'w')
+                stderr = open(self.project_path('stderr.txt'), 'w')
+            else:
+                stdout = sys.stdout
+                stderr = sys.stderr
 
             logger.info('Launching S2E')
-            thr = S2EThread(args, env, cwd, fpo, fpe)
+            thr = S2EThread(args, env, self.project_path(), stdout, stderr)
             thr.start()
 
             while not s2e_main_process and not terminating():
@@ -247,7 +247,6 @@ class Command(ProjectCommand):
                 tui.run(self.tui_cb)
             else:
                 while not terminating():
-                    print(self._get_data())
                     time.sleep(1)
 
             logger.info('Terminating S2E')
