@@ -50,10 +50,6 @@ libc = ctypes.CDLL(ctypes.util.find_library('c'))
 s2e_main_process = None
 
 
-def _kill_s2e(pid):
-    os.kill(pid, signal.SIGTERM)
-
-
 def _s2e_preexec():
     # Collect core dumps for S2E
     # resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
