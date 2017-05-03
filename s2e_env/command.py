@@ -54,12 +54,13 @@ def _configure_logging(level=logging.INFO, use_color=True):
     logger = logging.getLogger()
     logger.setLevel(level)
 
-    # Only add a handler if the logger does not have any existing handlers (to
-    # prevent duplication on output)
-    if not logger.handlers:
-        colored_handler = logging.StreamHandler()
-        colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
-        logger.addHandler(colored_handler)
+    # Overwrite any existing handlers
+    if logger.handlers:
+        logger.handlers = []
+
+    colored_handler = logging.StreamHandler()
+    colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
+    logger.addHandler(colored_handler)
 
 
 class CommandError(Exception):
@@ -131,10 +132,8 @@ class BaseCommand(object):
     # Configuration shortcuts that alter various logic.
     called_from_command_line = False
 
-    def _init_logging(self):
-        """
-        Initialize logging.
-        """
+    def __init__(self):
+        # Initialize the default logger
         _configure_logging()
 
     def create_parser(self, prog_name, subcommand):
@@ -198,9 +197,7 @@ class BaseCommand(object):
         Handle any common command options here and remove them from the options
         dict given to the command.
         """
-        # Logging is initialized here, rather than the constructor, so that
-        # the EnvCommand subclass has access to the S2E environment's path
-        self._init_logging()
+        pass
 
     def execute(self, *args, **options):
         """
@@ -233,13 +230,14 @@ class EnvCommand(BaseCommand):
     """
 
     def __init__(self):
+        super(EnvCommand, self).__init__()
+
         self._env_dir = None
         self._config = None
 
     def _init_logging(self):
-        # Reinitialize logging with settings from the environment's config
         config_lvl = self.config.get('logging', {}).get('level', 'info')
-        color = self._config.get('logging', {}).get('color', True)
+        color = self.config.get('logging', {}).get('color', True)
 
         level = logging.getLevelName(config_lvl.upper())
         if not isinstance(level, int):
@@ -262,12 +260,12 @@ class EnvCommand(BaseCommand):
             raise CommandError('This does not look like an S2E environment - '
                                'it does not contain an s2e.yaml configuration file')
 
-        # Handle all the environment-specific args before handling the base
-        # class's args
-        super(EnvCommand, self).handle_common_args(**options)
+        # Reinitialize logging with settings from the environment's config
+        self._init_logging()
 
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
+
         parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
                             help='The S2E development environment. Defaults '
                                  'to the current working directory')
