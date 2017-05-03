@@ -279,12 +279,6 @@ class EnvCommand(BaseCommand):
         """
         return self._config
 
-    def s2eenv_path(self):
-        """
-        Get the path to the .s2eenv file.
-        """
-        return self.env_path('.s2eenv')
-
     def env_path(self, *p):
         """
         Create a path relative to the environment directory.
