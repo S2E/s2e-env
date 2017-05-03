@@ -35,6 +35,7 @@ from sh.contrib import sudo
 from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
+from s2e_env.utils.templates import render_template
 
 
 logger = logging.getLogger('init')
@@ -77,13 +78,9 @@ def _install_dependencies():
     if not ubuntu_ver:
         return
 
-    install_packages = CONSTANTS['dependencies']['common'] + \
-                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver]
-
-    # Check for IDA Pro. If it has been specified, we will install its
-    # packages too
-    if CONSTANTS['ida']['dir']:
-        install_packages += CONSTANTS['dependencies']['ida']
+    install_packages = CONSTANTS['dependencies']['common'] +                    \
+                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver] +    \
+                       CONSTANTS['dependencies']['ida']
 
     try:
         apt_get = sudo.bake('apt-get', _fg=True)
@@ -192,6 +189,20 @@ def _download_repo(repo_path):
     os.chmod(repo_path, st.st_mode | stat.S_IEXEC)
 
 
+def _create_config(env_path):
+    """
+    Create the YAML config file for the new environment.
+    """
+    s2e_yaml = 's2e.yaml'
+    version_path = os.path.join(os.path.dirname(__file__), '..', 'dat', 'VERSION')
+
+    context = {
+        'version': open(version_path, 'r').read().strip(),
+    }
+
+    render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
+
+
 class Command(BaseCommand):
     """
     Initializes a new S2E environment.
@@ -217,8 +228,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
-        force = options['force']
-        prefix = options['use_existing_install']
 
         # First check if we are already in the environment directory
         if os.path.realpath(env_path) == os.path.realpath(os.getcwd()):
@@ -227,7 +236,7 @@ class Command(BaseCommand):
 
         # Then check if something already exists at the environment directory
         if os.path.isdir(env_path) and not os.listdir(env_path) == []:
-            if force:
+            if options['force']:
                 logger.info('%s already exists - removing', env_path)
                 shutil.rmtree(env_path)
             else:
@@ -249,10 +258,10 @@ class Command(BaseCommand):
         for dir_ in CONSTANTS['dirs']:
             os.mkdir(os.path.join(env_path, dir_))
 
-        # Create marker file to recognize s2e environment folder
-        with open(os.path.join(env_path, '.s2eenv'), 'w'):
-            pass
+        # Create the YAML config for the environment
+        _create_config(env_path)
 
+        prefix = options['use_existing_install']
         if prefix is not None:
             _install_binary_dist(env_path, prefix)
             return 'Environment created in %s.' % env_path
@@ -265,5 +274,6 @@ class Command(BaseCommand):
             _get_s2e_sources(env_path)
             _get_img_sources(env_path)
 
-            return ('Environment created in %s. Now run ``s2e build`` to build'
-                    % env_path)
+            return ('Environment created in %s. You may wish to modify your '
+                    'environment\'s s2e.yaml config file. Run ``s2e build`` '
+                    'to build S2E' % env_path)

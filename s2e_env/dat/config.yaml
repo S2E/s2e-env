@@ -19,6 +19,12 @@
 # SOFTWARE.
 
 
+# This is the global configuration file for s2e-env. It describes how all
+# environments are created. Normally a user would not be required to modify
+# the settings in this file. Instead, a separate configuration file is
+# generated for each environment. Users should modify the per-environment
+# configuration file instead.
+
 # apt-get dependencies
 dependencies:
     common:
@@ -98,10 +104,6 @@ repos:
 repo:
     url: https://storage.googleapis.com/git-repo-downloads/repo
 
-# Path to the IDA Pro directory
-ida:
-    dir: /opt/ida-6.8
-
 # Directories that will automatically be built when running ``s2e init``
 dirs:
     - build
@@ -110,11 +112,6 @@ dirs:
     - install/bin
     - projects
     - source
-
-# Templates used for project creation
-templates:
-    launch_scripts:
-        - launch-s2e.sh
 
 # Mapping of architecture to guest tools directory
 guest_tools:

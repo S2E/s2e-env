@@ -30,14 +30,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import logging
 import os
 import pkgutil
 import importlib
 import sys
 
 from s2e_env.command import BaseCommand, CommandError, CommandParser
-from s2e_env.utils import log
 
 
 COMMANDS_DIR = os.path.join(os.path.dirname(__file__), 'commands')
@@ -52,19 +50,6 @@ def find_commands():
     """
     return [name for _, name, ispkg in pkgutil.iter_modules([COMMANDS_DIR])
             if not ispkg and not name.startswith('_')]
-
-
-def _init_logging():
-    # Add a 'SUCCESS' level to the logger
-    logging.addLevelName(log.SUCCESS, 'SUCCESS')
-    logging.Logger.success = log.success
-
-    # Configure colored logging
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    colored_handler = logging.StreamHandler()
-    colored_handler.setFormatter(log.ColoredFormatter())
-    logger.addHandler(colored_handler)
 
 
 def load_command_class(name):
@@ -118,7 +103,6 @@ class CommandManager(object):
     def __init__(self, argv):
         self._argv = argv
         self._prog_name = os.path.basename(self._argv[0])
-        _init_logging()
 
     def main_help_text(self, commands_only=False):
         """

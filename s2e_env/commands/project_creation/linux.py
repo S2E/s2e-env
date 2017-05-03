@@ -21,12 +21,12 @@ SOFTWARE.
 """
 
 
-import datetime
 import logging
 import os
 
 from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
+from s2e_env.utils.templates import render_template
 from . import BaseProject
 
 
@@ -150,7 +150,6 @@ class LinuxProject(BaseProject):
 
         # Render the bootstrap script
         context = {
-            'current_time': datetime.datetime.now(),
             'target': os.path.basename(self._target_path),
             'target_args': parsed_args,
             'use_symb_input_file': use_symb_input_file,
@@ -160,13 +159,12 @@ class LinuxProject(BaseProject):
         }
 
         output_path = os.path.join(self._project_path, 'bootstrap.sh')
-        self._render_template(context, 'bootstrap.sh', output_path,
-                              executable=True)
+        render_template(context, 'bootstrap.sh', output_path,
+                        executable=True)
 
     def _create_config(self):
         # Render the config file
         context = {
-            'current_time': datetime.datetime.now(),
             'project_dir': self._project_path,
             'target': os.path.basename(self._target_path),
             'function_models': len(self._modelled_functions) > 0,
@@ -176,7 +174,7 @@ class LinuxProject(BaseProject):
 
         for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
             output_path = os.path.join(self._project_path, f)
-            self._render_template(context, f, output_path)
+            render_template(context, f, output_path)
 
     def _create_instructions(self):
         intro = 'Here are some hints to get started with your Linux project:'
