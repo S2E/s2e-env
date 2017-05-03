@@ -64,7 +64,9 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         'as necessary.\n\n'                                                 \
         'Once you have done so, you are ready to run S2E. To start the '    \
         'analysis ``cd {project_dir}`` and run ``./launch-s2e.sh``. The '   \
-        'results of the analysis can be found in the ``s2e-last`` directory.'
+        'results of the analysis can be found in the ``s2e-last`` '         \
+        'directory. Alternatively, if you have built S2E in debug mode '    \
+        'you can run ``./launch-s2e.sh debug`` to debug in GDB.'
 
     def __init__(self):
         super(BaseProject, self).__init__()
