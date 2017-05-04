@@ -166,15 +166,6 @@ class ImageDownloaderMixin(object):
         _decompress(dest_file)
 
 
-def _check_ram_size(value):
-    """
-    Ensure that the amount of RAM is sensible.
-    """
-    if value <= 0 or value > 2 * 1024:
-        logger.warning('The specified memory size for the image looks too '
-                       'high. Less than 2GB is recommended for best '
-                       'performance')
-
 def _check_core_num(value):
     """
     Ensure that the number of CPU cores is sensible.
@@ -205,10 +196,6 @@ class Command(EnvCommand, ImageDownloaderMixin):
         parser.add_argument('-g', '--headless', action='store_true',
                             help='Build the image in headless mode (i.e. '
                                  'without a GUI)')
-        parser.add_argument('-m', '--memory', required=False, default=256,
-                            type=int,
-                            help='Amount of RAM allocated to the image. '
-                                 'Defaults to 256 MB')
         parser.add_argument('-c', '--cores', required=False, default=2,
                             type=int,
                             help='The number of cores used when building the '
@@ -231,9 +218,6 @@ class Command(EnvCommand, ImageDownloaderMixin):
         if not image_name:
             self._print_image_list()
             return
-
-        memory = options['memory']
-        _check_ram_size(memory)
 
         num_cores = options['cores']
         _check_core_num(num_cores)
@@ -278,7 +262,6 @@ class Command(EnvCommand, ImageDownloaderMixin):
         env['S2E_LINUX_KERNELS_ROOT'] = \
             self.source_path(CONSTANTS['repos']['images']['linux'])
         env['OUTPUT_DIR'] = self.image_path()
-        env['SNAPSHOT_MEMORY'] = str(memory)
 
         if not self._headless:
             env['GRAPHICS'] = ''
