@@ -21,6 +21,8 @@ SOFTWARE.
 """
 
 
+from __future__ import division
+
 from collections import namedtuple
 import json
 import logging
@@ -75,6 +77,7 @@ def _basic_block_coverage(basic_blocks, translation_blocks):
 
     return list(covered_bbs)
 
+
 class BasicBlockCoverage(ProjectCommand):
     """
     Generate a basic block coverage report.
@@ -83,6 +86,12 @@ class BasicBlockCoverage(ProjectCommand):
     """
 
     help = 'Generate a basic block coverage report. This requires IDA Pro.'
+
+    RESULTS = 'Basic block coverage saved to {bb_file}\n\n'             \
+              'Statistics\n'                                            \
+              '==========\n\n'                                          \
+              'Total basic blocks: {num_bbs}\n'                         \
+              'Covered basic blocks: {num_covered_bbs} ({percent:.1%})'
 
     def handle(self, *args, **options):
         # Determine the IDA Pro path and check that it is valid
@@ -104,7 +113,16 @@ class BasicBlockCoverage(ProjectCommand):
         bb_coverage = _basic_block_coverage(bbs, tbs)
 
         # Write the basic block information to a JSON file
-        self._save_basic_block_coverage(bb_coverage)
+        bb_coverage_file = self._save_basic_block_coverage(bb_coverage)
+
+        # Calculate some statistics
+        total_bbs = len(bbs)
+        covered_bbs = len(bb_coverage)
+
+        return self.RESULTS.format(bb_file=bb_coverage_file,
+                                   num_bbs=total_bbs,
+                                   num_covered_bbs=covered_bbs,
+                                   percent=covered_bbs / total_bbs)
 
     def _get_ida_path(self):
         """
@@ -225,6 +243,8 @@ class BasicBlockCoverage(ProjectCommand):
     def _save_basic_block_coverage(self, basic_blocks):
         """
         Write the basic block coverage information to a JSON file.
+
+        Returns the path of the JSON file.
         """
         bb_coverage_file = self.project_path('s2e-last',
                                              'basic_block_coverage.json')
@@ -239,4 +259,4 @@ class BasicBlockCoverage(ProjectCommand):
         with open(bb_coverage_file, 'w') as f:
             json.dump(bbs_json, f)
 
-        logger.success('Basic block coverage saved to %s', bb_coverage_file)
+        return bb_coverage_file
