@@ -67,7 +67,7 @@ def _get_file_line_coverage(target_path, addr_counts):
         elf = ELFFile(f)
 
         if not elf.has_dwarf_info():
-            raise CommandError('%s has no DWARF info' % target_path)
+            raise CommandError('%s has no DWARF info. Please recompile with ``-g``' % target_path)
 
         dwarf_info = elf.get_dwarf_info()
 
