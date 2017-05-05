@@ -42,8 +42,9 @@ CGC_MAGIC = os.path.join(FILE_DIR, '..', 'dat', 'cgc.magic')
 CGC_REGEX = re.compile(r'^CGC 32-bit')
 ELF32_REGEX = re.compile(r'^ELF 32-bit')
 ELF64_REGEX = re.compile(r'^ELF 64-bit')
-PE32_REGEX = re.compile(r'^PE executable')
-PE64_REGEX = re.compile(r'^PE\+ executable')
+PE32_REGEX = re.compile(r'^PE32 executable')
+PE64_REGEX = re.compile(r'^PE32\+ executable')
+MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 
 
 class Command(EnvCommand):
@@ -95,6 +96,7 @@ class Command(EnvCommand):
             (Magic(), ELF64_REGEX, LinuxProject, 'x86_64'),
             (Magic(), PE32_REGEX, WindowsProject, 'i386'),
             (Magic(), PE64_REGEX, WindowsProject, 'x86_64'),
+            (Magic(), MSDOS_REGEX, WindowsProject, 'i386'),
         ]
 
         # Check the target program against the valid file types
