@@ -131,6 +131,8 @@ pluginsConfig.TranslationBlockCoverage = {
 -- typically the modules under analysis. This plugin filters out all core
 -- events that do not concern the modules under analysis. This simplifies
 -- code instrumentation.
+-- Instead of listing individual modules, you can also track all modules by
+-- setting configureAllModules = true
 
 add_plugin("ModuleExecutionDetector")
 pluginsConfig.ModuleExecutionDetector = {
