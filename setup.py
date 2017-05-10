@@ -41,6 +41,7 @@ setup(
         'pygments',
 
         # s2e-env requirements
+        'enum34',
         'jinja2',
         'pefile',
         'psutil',

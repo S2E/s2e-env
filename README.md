@@ -98,7 +98,8 @@ A typical workflow is therefore:
 6. Change into the project directory and run the S2E analysis with the
    `launch-s2e.sh` script.
 7. After your analysis has finished, a number of subcommands exist to analyze
-   and summarize your results, e.g. the ``coverage`` subcommand, etc.
+   and summarize your results, e.g. the ``coverage`` and ``execution_trace``
+   subcommands.
 
 Other useful commands:
 
