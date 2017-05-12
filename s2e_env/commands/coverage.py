@@ -60,6 +60,6 @@ class Command(ProjectCommand):
         command = options.pop('command', ())
 
         if command == 'basic_block':
-            return call_command(self._basic_block, [], **options)
+            return call_command(self._basic_block, args, **options)
         elif command == 'lcov':
-            return call_command(self._lcov, [], **options)
+            return call_command(self._lcov, args, **options)
