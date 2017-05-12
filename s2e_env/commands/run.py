@@ -183,6 +183,10 @@ class Command(ProjectCommand):
                             type=int, help='Number of cores to run S2E on')
         parser.add_argument('-n', '--no-tui', required=False,
                             action='store_true', help='Disable text UI')
+        parser.add_argument('-t', '--timeout', required=False, default=None,
+                            type=int, help='Terminate S2E after the timeout '
+                                           '(in minutes) expires. This option '
+                                           'has no effect when the TUI is enabled')
 
     def handle(self, *args, **options):
         no_tui = options['no_tui']
@@ -238,8 +242,15 @@ class Command(ProjectCommand):
                 tui = Tui()
                 tui.run(self.tui_cb)
             else:
+                # If a timeout is provided, sleep for that amount. Otherwise
+                # loop indefinitely
+                timeout = options['timeout']
                 while not terminating():
-                    time.sleep(1)
+                    if timeout:
+                        time.sleep(timeout * 60)
+                        break
+                    else:
+                        time.sleep(1)
 
             logger.info('Terminating S2E')
             _terminate_s2e()
