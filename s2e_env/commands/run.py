@@ -67,7 +67,7 @@ def _has_s2e_processes(pid):
         return False
 
 
-def terminate_s2e():
+def _terminate_s2e():
     terminate()
 
     # First, send SIGTERM to S2E process group
@@ -97,9 +97,9 @@ def terminate_s2e():
     s2e_main_process.wait()
 
 
-def sigterm_handler(signum=None, _=None):
+def _sigterm_handler(signum=None, _=None):
     logger.warning('Got signal %s, terminating S2E', signum)
-    terminate_s2e()
+    _terminate_s2e()
 
 
 class S2EThread(Thread):
@@ -180,21 +180,17 @@ class Command(ProjectCommand):
         parser.add_argument('project_args', nargs=argparse.REMAINDER,
                             help='Optional arguments to the S2E launcher script')
         parser.add_argument('-c', '--cores', required=False, default=1,
-                            type=int,
-                            help='Number of cores to run S2E on')
-        parser.add_argument('-n', '--no-tui', required=False, default=False,
-                            action='store_true',
-                            help='Disable text UI')
+                            type=int, help='Number of cores to run S2E on')
+        parser.add_argument('-n', '--no-tui', required=False,
+                            action='store_true', help='Disable text UI')
 
     def handle(self, *args, **options):
-        project_args = options['project_args']
-        cores = options['cores']
         no_tui = options['no_tui']
 
         # TODO: automatic allocation
         qmp_socket = ('127.0.0.1', 2014)
 
-        args, env = self._setup_env(project_args, cores, qmp_socket)
+        args, env = self._setup_env(options['project_args'], options['cores'], qmp_socket)
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
         self._cgc = 'cgc' in self._project_desc['image']['os_name']
@@ -210,7 +206,7 @@ class Command(ProjectCommand):
             qmp_server_thread.start()
 
             for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
-                signal.signal(s, sigterm_handler)
+                signal.signal(s, _sigterm_handler)
 
             if not no_tui:
                 stdout = open(self.project_path('stdout.txt'), 'w')
@@ -246,7 +242,7 @@ class Command(ProjectCommand):
                     time.sleep(1)
 
             logger.info('Terminating S2E')
-            terminate_s2e()
+            _terminate_s2e()
         finally:
             if qmp_server:
                 qmp_server.shutdown()
