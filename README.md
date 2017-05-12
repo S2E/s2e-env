@@ -154,3 +154,20 @@ For example, to create a command `foo`:
 5. On error, an `s2e_env.command.CommandError` should be raised
 6. Use the `logging` module for printing messages. When calling
    `logging.getLogger` the command name should be provided as the logger name.
+
+# Running commands from your code
+
+Like Django's command subsystem (see
+[here](https://docs.djangoproject.com/en/1.10/ref/django-admin/#running-management-commands-from-your-code)),
+`s2e-env` also allows you to call commands programatically
+via the `call_command` function.
+
+Example:
+
+```python
+from s2e_env.manage import call_command
+from s2e_env.commands.new_project import Command as NewProjectCommand
+
+def create_s2e_project(target_path, s2e_env_path):
+    call_command(NewProjectCommand(), target_path, env=s2e_env_path, force=True)
+```
