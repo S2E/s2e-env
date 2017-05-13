@@ -31,15 +31,6 @@ import os
 from s2e_env.command import EnvCommand
 
 
-def _make_date_human_readable(timestamp):
-    """
-    Make a Unix timestamp human-readable.
-    """
-    fmt = '%H:%M, %a %d %B %Y'
-
-    return datetime.datetime.fromtimestamp(timestamp).strftime(fmt)
-
-
 class Command(EnvCommand):
     """
     Displays a summary of the S2E environment.
@@ -70,8 +61,7 @@ class Command(EnvCommand):
 
                 # Make creation timestamp human-readable
                 create_time = projects[project]['creation_time']
-                projects[project]['creation_time'] = \
-                    _make_date_human_readable(create_time)
+                projects[project]['creation_time'] = create_time
 
         output = {
             'env_path': self._env_dir,
