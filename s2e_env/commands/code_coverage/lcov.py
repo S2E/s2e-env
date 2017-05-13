@@ -127,8 +127,8 @@ class LineCoverage(ProjectCommand):
            'available'
 
     def handle(self, *args, **options):
-        target_path = self._project_desc['target']
-        target_name = os.path.basename(target_path)
+        target_path = self._project_desc['target_path']
+        target_name = self._project_desc['target']
 
         # Get the translation block coverage information
         addr_counts = self._get_addr_coverage(target_name)
