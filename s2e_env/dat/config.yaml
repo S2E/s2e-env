@@ -104,6 +104,10 @@ repos:
         linux: s2e-linux-kernel
         build: guest-images
 
+required_versions:
+    # images.json must have this version
+    guest_images: 2
+
 # Repo. Used for managing the S2E git repositories
 repo:
     url: https://storage.googleapis.com/git-repo-downloads/repo

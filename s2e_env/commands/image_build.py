@@ -1,4 +1,5 @@
 """
+Copyright (c) 2017 Cyberhaven
 Copyright (c) 2017 Dependable Systems Laboratory, EPFL
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -78,7 +79,7 @@ def _check_groups():
 
 def _check_virtualbox():
     # Adapted from https://github.com/giampaolo/psutil/issues/132#issuecomment-44017679
-    # to avoid race coditions
+    # to avoid race conditions
     for proc in psutil.process_iter():
         try:
             if proc.name == 'VBoxHeadless':
@@ -113,15 +114,47 @@ def _check_vmlinux():
                            'sudo chmod ugo+r /boot/vmlinu*')
 
 
+def _validate_version(descriptor, filename):
+    version = descriptor.get('version')
+    required_version = CONSTANTS['required_versions']['guest_images']
+    if version != required_version:
+        raise CommandError('Need version %s for %s. '
+                           'Make sure that you have the correct revision '
+                           'of the guest-images repository' % (required_version, filename))
+
+
 def get_image_templates(img_build_dir):
     images = os.path.join(img_build_dir, 'images.json')
     try:
         with open(images, 'r') as f:
             template_json = json.load(f)
-            return template_json['images']
     except:
         raise CommandError('Could not parse %s. Something is wrong with the '
                            'environment' % images)
+
+    _validate_version(template_json, images)
+    return template_json['images']
+
+
+def get_image_descriptor(image_dir):
+    """
+    Load the image JSON descriptor.
+
+    Args:
+        image_dir: directory containing the built image
+    """
+    img_json_path = os.path.join(image_dir, 'image.json')
+
+    try:
+        with open(img_json_path, 'r') as f:
+            ret = json.load(f)
+            _validate_version(ret, img_json_path)
+            ret['path'] = os.path.join(image_dir, 'image.raw.s2e')
+            return ret
+    except Exception:
+        raise CommandError('Unable to open image description %s\n'
+                           'Check that the image exists, was built, or '
+                           'downloaded' % img_json_path)
 
 
 def _download(url, path):
@@ -148,21 +181,24 @@ def _decompress(path):
 
 
 class ImageDownloaderMixin(object):
-    def download_images(self, image_name=None):
+    def download_images(self, image_names):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
 
-        if image_name:
-            images = [image_name]
-        else:
-            images = templates.keys()
-
-        for image in images:
+        for image in image_names:
             self._download_image(templates, image)
 
     def _download_image(self, templates, image):
+        image_desc = templates.get(image, None)
+        if not image_desc:
+            raise CommandError('%s is not a valid image name' % image)
+
+        url = templates[image].get('url', '')
+        if not url:
+            raise CommandError('The image %s has no downloadable archive' % image)
+
         dest_file = self.image_path('%s.tar.xz' % image)
-        _download(templates[image]['url'], dest_file)
+        _download(url, dest_file)
         _decompress(dest_file)
 
 
@@ -174,18 +210,20 @@ def _check_core_num(value):
         logger.warning('The specified number of cores seems high. Less than '
                        '10 is recommended for best image building performance')
 
+
 class Command(EnvCommand, ImageDownloaderMixin):
     """
     Builds an image.
     """
 
     help = 'Build an image.'
+    image_groups = ('windows', 'linux')
+    generic_rules = ('all',) + image_groups
 
     def __init__(self):
         super(Command, self).__init__()
 
-        # If we are running without an X session, run QEMU in headless mode
-        self._headless = os.environ.get('DISPLAY') is None
+        self._headless = True
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -193,9 +231,8 @@ class Command(EnvCommand, ImageDownloaderMixin):
         parser.add_argument('name',
                             help='The name of the image to build. If empty,'
                                  ' shows available images', nargs='?')
-        parser.add_argument('-g', '--headless', action='store_true',
-                            help='Build the image in headless mode (i.e. '
-                                 'without a GUI)')
+        parser.add_argument('-g', '--gui', action='store_true',
+                            help='Display QEMU GUI during image build')
         parser.add_argument('-c', '--cores', required=False, default=2,
                             type=int,
                             help='The number of cores used when building the '
@@ -204,20 +241,17 @@ class Command(EnvCommand, ImageDownloaderMixin):
                             help='Deletes all images and rebuild them from '
                                  'scratch')
         parser.add_argument('-a', '--archive', action='store_true',
-                            help='Creates an archive of every supported image')
+                            help='Creates an archive for the specified image')
         parser.add_argument('-d', '--download', action='store_true',
                             help='Download image from the repository instead '
                                  'of building it')
+        parser.add_argument('-i', '--iso-dir',
+                            help='Path to folder that stores ISO files of Windows images')
 
     def handle(self, *args, **options):
         # If DISPLAY is missing, don't use headless mode
-        if options['headless']:
-            self._headless = True
-
-        image_name = options['name']
-        if not image_name:
-            self._print_image_list()
-            return
+        if options['gui']:
+            self._headless = False
 
         num_cores = options['cores']
         _check_core_num(num_cores)
@@ -227,44 +261,78 @@ class Command(EnvCommand, ImageDownloaderMixin):
             os.makedirs(self.image_path())
 
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
+
+        if options['clean']:
+            self._invoke_make(img_build_dir, ['clean'], num_cores)
+            return
+
+        image_name = options['name']
+        if not image_name:
+            self._print_image_list()
+            return
+
         templates = get_image_templates(img_build_dir)
 
-        if image_name != 'all' and image_name not in templates:
-            raise CommandError('Invalid image image_name %s' % image_name)
+        image_names = self._translate_image_name(templates, image_name)
+        logger.info('The following images will be built:')
+        for image in image_names:
+            logger.info(' * %s', image)
 
         if options['download']:
-            if image_name == 'all':
-                self.download_images()
-            else:
-                self.download_images(image_name)
-            return 'Successfully downloaded image %s' % image_name
+            self.download_images(image_names)
+            return 'Successfully downloaded images %s' % image_names
+
+        rule_names = image_names
+
+        if options['archive']:
+            archive_rules = []
+            for r in rule_names:
+                archive_rules.append(os.path.join(self.image_path(), '%s.tar.xz' % r))
+
+            rule_names = archive_rules
+            logger.info('The following archives will be built:')
+            for a in archive_rules:
+                logger.info(' * %s', a)
+
+        # Check for optional product keys and iso directories.
+        # These may or may not be required, depending on the set of images.
+        self._check_product_keys(templates, image_names)
+        self._check_iso(templates, options['iso_dir'], image_names)
 
         _check_kvm()
         _check_groups()
         _check_vmlinux()
         _check_virtualbox()
 
-        rule_name = image_name
-
-        if options['archive']:
-            rule_name = 'archive'
-            if image_name != 'all':
-                rule_name = os.path.join(self.image_path(),
-                                         '%s.tar.xz' % image_name)
-
         # Clone kernel if needed.
         # This is necessary if the s2e env has been initialized with -b flag.
         self._clone_kernel()
 
-        env = os.environ.copy()
+        self._invoke_make(img_build_dir, rule_names, num_cores, options['iso_dir'])
 
+        return 'Built image \'%s\'' % image_name
+
+    def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=''):
+        env = os.environ.copy()
         env['S2E_INSTALL_ROOT'] = self.install_path()
         env['S2E_LINUX_KERNELS_ROOT'] = \
             self.source_path(CONSTANTS['repos']['images']['linux'])
-        env['OUTPUT_DIR'] = self.image_path()
+        env['OUTDIR'] = self.image_path()
+
+        if iso_dir:
+            env['ISODIR'] = iso_dir
+
+        logger.debug('Invoking makefile with:')
+        logger.debug('export S2E_INSTALL_ROOT=%s', env['S2E_INSTALL_ROOT'])
+        logger.debug('export S2E_LINUX_KERNELS_ROOT=%s', env['S2E_LINUX_KERNELS_ROOT'])
+        logger.debug('export OUTDIR=%s', env['OUTDIR'])
+        logger.debug('export ISODIR=%s', env.get('ISODIR', ''))
 
         if not self._headless:
             env['GRAPHICS'] = ''
+        else:
+            logger.warn('Image creation will run in headless mode. '
+                        'Use --gui to see graphic output for debugging.')
 
         try:
             make = sh.Command('make').bake(file=os.path.join(img_build_dir,
@@ -272,15 +340,11 @@ class Command(EnvCommand, ImageDownloaderMixin):
                                            directory=self.image_path(),
                                            _out=sys.stdout, _err=sys.stderr,
                                            _env=env, _fg=True)
-            if options['clean']:
-                make('clean')
 
             make_image = make.bake(j=num_cores)
-            make_image(rule_name)
+            make_image(rule_names)
         except ErrorReturnCode as e:
             raise CommandError(e)
-
-        return 'Built image \'%s\'' % image_name
 
     def _clone_kernel(self):
         kernels_root = self.source_path(CONSTANTS['repos']['images']['linux'])
@@ -293,6 +357,58 @@ class Command(EnvCommand, ImageDownloaderMixin):
         kernels_repo = CONSTANTS['repos']['images']['linux']
         repos.git_clone_to_source(self.env_path(), kernels_repo)
 
+    def _translate_image_name(self, templates, image_name):
+        """
+        Translates a set of user-friendly image names into a set of
+        actual image names that can be sent to the makefile. For example,
+        "all" will be translated to the set of all images, while "windows"
+        and "linux" will be translated to the appropriate subset of
+        Windows or Linux images.
+        """
+        ret = []
+        if image_name == 'all':
+            ret = templates.keys()
+        elif image_name in Command.image_groups:
+            for k, v in templates.iteritems():
+                if v['image_group'] == image_name:
+                    ret.append(k)
+        elif image_name in templates.keys():
+            ret = [image_name]
+        else:
+            raise CommandError('Invalid image name %s' % image_name)
+
+        return ret
+
+    def _check_product_keys(self, templates, image_names):
+        for image in image_names:
+            ios = templates[image].get('os', {})
+            if not 'product_key' in ios:
+                continue
+
+            if not ios['product_key']:
+                raise CommandError('Image %s requires a product key. '
+                                   'Please update images.json.' % image)
+
+    def _check_iso(self, templates, iso_dir, image_names):
+        for image in image_names:
+            iso = templates[image].get('iso', {})
+            if iso.get('url', ''):
+                continue
+
+            name = iso.get('name', '')
+            if not name:
+                continue
+
+            if not iso_dir:
+                raise CommandError(
+                    'Please use the --iso-dir option to specify the path '
+                    'to a folder that contains %s' % name
+                )
+
+            path = os.path.join(iso_dir, name)
+            if not os.path.exists(path):
+                raise CommandError('The image %s requires %s, which could not be found' % (image, path))
+
     def _print_image_list(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
         templates = get_image_templates(img_build_dir)
@@ -304,8 +420,12 @@ class Command(EnvCommand, ImageDownloaderMixin):
 
         print('Available images:')
         print(' * all - Build all images')
+        print(' * linux - Build all Linux images')
+        print(' * windows - Build all Windows images')
+        print('')
         for template, desc in sorted(templates.iteritems()):
             print(' * %s - %s' % (template, desc['name']))
+
         print('\nRun ``s2e image_build <name>`` to build an image. '
               'Note that you must run ``s2e build`` **before** building '
               'an image')
