@@ -11,6 +11,9 @@ INSTALL_DIR="{{ install_dir }}"
 BUILD_DIR="{{ build_dir }}"
 BUILD=debug
 
+# Comment this out to enable QEMU GUI
+GRAPHICS=-nographic
+
 if [ "x$1" = "xdebug" ]; then
   DEBUG=1
   shift
@@ -48,7 +51,7 @@ EOF
 GDB="gdb  --init-command=gdb.ini --args"
 
 $GDB $QEMU $DRIVE \
-    -k en-us -nographic -monitor null -m {{ memory }} -enable-kvm \
+    -k en-us $GRAPHICS -monitor null -m {{ memory }} -enable-kvm \
     -serial file:serial.txt {{ qemu_extra_flags }} \
     -loadvm {{ snapshot }} $*
 
@@ -58,7 +61,7 @@ QEMU="$INSTALL_DIR/bin/qemu-system-{{ arch }}"
 LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ arch }}-s2e.so"
 
 LD_PRELOAD=$LIBS2E $QEMU $DRIVE \
-    -k en-us -nographic -monitor null -m {{ memory }} -enable-kvm \
+    -k en-us $GRAPHICS -monitor null -m {{ memory }} -enable-kvm \
     -serial file:serial.txt {{ qemu_extra_flags }} \
     -loadvm {{ snapshot }} $*
 
