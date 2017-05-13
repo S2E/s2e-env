@@ -91,7 +91,7 @@ pluginsConfig.POVGenerator = {
 
 add_plugin("Recipe")
 pluginsConfig.Recipe = {
-    recipesDir = "{{ project_dir }}/recipes",
+    recipesDir = "{{ recipes_dir }}",
 }
 
 -------------------------------------------------------------------------------
