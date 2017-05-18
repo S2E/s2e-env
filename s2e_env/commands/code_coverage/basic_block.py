@@ -103,6 +103,8 @@ class BasicBlockCoverage(ProjectCommand):
 
         # Get the basic block information
         bbs = self._get_basic_blocks(ida_path, target_path)
+        if not bbs:
+            raise CommandError('No basic block information found by IDA Pro')
 
         # Get translation block coverage information
         tbs = self._get_tb_coverage(os.path.basename(target_path))

@@ -64,6 +64,11 @@ def parse_tb_file(path, module):
             logger.warning('Failed to parse translation block JSON file %s',
                            path)
             return None
+
+    if not tb_coverage_data:
+        logger.warning('Translation block JSON file %s is empty', path)
+        return None
+
     if module not in tb_coverage_data:
         logger.warning('Target %s not found in translation block JSON file %s',
                        module, path)
