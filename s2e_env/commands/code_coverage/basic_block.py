@@ -114,12 +114,13 @@ class BasicBlockCoverage(ProjectCommand):
         # Calculate the basic block coverage information
         bb_coverage = _basic_block_coverage(bbs, tbs)
 
-        # Write the basic block information to a JSON file
-        bb_coverage_file = self._save_basic_block_coverage(bb_coverage)
-
         # Calculate some statistics
         total_bbs = len(bbs)
         covered_bbs = len(bb_coverage)
+
+        # Write the basic block information to a JSON file
+        bb_coverage_file = self._save_basic_block_coverage(bb_coverage,
+                                                           total_bbs)
 
         return self.RESULTS.format(bb_file=bb_coverage_file,
                                    num_bbs=total_bbs,
@@ -242,11 +243,16 @@ class BasicBlockCoverage(ProjectCommand):
 
         return list(covered_tbs)
 
-    def _save_basic_block_coverage(self, basic_blocks):
+    def _save_basic_block_coverage(self, basic_blocks, total_bbs):
         """
         Write the basic block coverage information to a JSON file.
 
-        Returns the path of the JSON file.
+        Args:
+            basic_blocks: Covered basic blocks.
+            total_bbs: The total number of basic blocks in the program.
+
+        Returns:
+            The path of the JSON file.
         """
         bb_coverage_file = self.project_path('s2e-last',
                                              'basic_block_coverage.json')
@@ -256,7 +262,13 @@ class BasicBlockCoverage(ProjectCommand):
         to_dict = lambda bb: {'start_addr': bb.start_addr,
                               'end_addr': bb.end_addr,
                               'function': bb.function}
-        bbs_json = [to_dict(bb) for bb in basic_blocks]
+        bbs_json = {
+            'stats': {
+                'total_basic_blocks': total_bbs,
+                'covered_basic_blocks': len(basic_blocks),
+            },
+            'coverage': [to_dict(bb) for bb in basic_blocks],
+        }
 
         with open(bb_coverage_file, 'w') as f:
             json.dump(bbs_json, f)
