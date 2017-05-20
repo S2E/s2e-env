@@ -272,7 +272,7 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
                 raise
 
         logger.info('Image %s missing, attempting to download...', image)
-        self.download_images(image)
+        self.download_images([image])
         return get_image_descriptor(img_json_path)
 
     def _check_project_dir(self, force=False):
