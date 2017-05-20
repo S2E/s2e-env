@@ -9,14 +9,7 @@ function execute_target {
     SYMB_FILE="$(prepare_inputs)"
     {% endif %}
 
-    {% if dynamically_linked == true %}
-    # {{ target }} is dynamically linked, so s2e.so has been preloaded to
-    # provide symbolic arguments to the target if required. You can do so by
-    # using the ``S2E_SYM_ARGS`` environment variable as required
-    LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
-    {% else %}
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
-    {% endif %}
 }
 
 # Executes the target with a seed file as input.
@@ -37,13 +30,30 @@ function execute_target_with_seed {
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
 }
 
-# Nothing more to initialize on Linux
 function target_init {
-    # Dummy instruction
-    echo -n
+    local PREFIX
+    {% if image.os.arch=='x86_64' %}
+    # The driver must be installed by a 64-bit process, otherwise
+    # its files are copied into syswow64.
+    # We use /c/Windows/sysnative to access 64-bit apps from 32-bit msys.
+    PREFIX=/c/Windows/sysnative/
+    {% else %}
+    PREFIX=
+    {% endif %}
+
+    ${PREFIX}cmd.exe '\/c' 'rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 c:\s2e\s2e.inf'
+    sc start s2e
+    # Create ram disk
+    imdisk -a -s 2M -m X: -p "/fs:fat /q /y"
+    drvctl.exe register_debug
+    drvctl.exe wait
 }
 
-# Returns Linux-specific tools
 function target_tools {
-    echo "s2e.so"
+    echo "s2e.sys s2e.inf drvctl.exe"
 }
+
+cd /c/s2e
+S2EGET=./s2eget.exe
+S2ECMD=./s2ecmd.exe
+COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe"

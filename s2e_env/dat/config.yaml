@@ -45,6 +45,9 @@ dependencies:
         - xz-utils
         - docker.io
         - p7zip-full
+        - pxz
+        - fuse
+        - libhivex-bin
 
         # S2E dependencies
         - libdwarf-dev
@@ -72,6 +75,7 @@ dependencies:
         - libglib2.0-dev
         - python-docutils
         - qemu
+        - mingw-w64
 
         # s2e-env dependencies
         - lcov
@@ -99,6 +103,10 @@ repos:
     images:
         linux: s2e-linux-kernel
         build: guest-images
+
+required_versions:
+    # images.json must have this version
+    guest_images: 2
 
 # Repo. Used for managing the S2E git repositories
 repo:

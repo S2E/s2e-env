@@ -99,7 +99,7 @@ class BasicBlockCoverage(ProjectCommand):
         if not os.path.isfile(ida_path):
             raise CommandError('IDA Pro not found at %s' % ida_path)
 
-        target_path = self._project_desc['target']
+        target_path = self._project_desc['target_path']
 
         # Get the basic block information
         bbs = self._get_basic_blocks(ida_path, target_path)
@@ -138,7 +138,7 @@ class BasicBlockCoverage(ProjectCommand):
                                'IDA is required to generate a basic block '
                                'coverage report')
 
-        project_arch = self._project_desc['arch']
+        project_arch = self._project_desc['target_arch']
         if project_arch == 'i386':
             ida_path = os.path.join(ida_dir, 'idal')
         elif project_arch == 'x86_64':

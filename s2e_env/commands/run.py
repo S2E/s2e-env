@@ -197,7 +197,7 @@ class Command(ProjectCommand):
         args, env = self._setup_env(options['project_args'], options['cores'], qmp_socket)
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
-        self._cgc = 'cgc' in self._project_desc['image']['os_name']
+        self._cgc = 'cgc' in self._project_desc['image']['os']['name']
         qmp_server = None
 
         try:
@@ -260,10 +260,10 @@ class Command(ProjectCommand):
                 qmp_server.server_close()
 
     def _setup_env(self, project_args, cores, qmp_socket):
+        qemu_build = self._project_desc['image']['qemu_build']
         qemu = self.install_path('bin',
-                                 'qemu-system-%s' % self._project_desc['arch'])
-        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' %
-                                   self._project_desc['arch'])
+                                 'qemu-system-%s' % qemu_build)
+        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % qemu_build)
 
         env = {
             'S2E_MAX_PROCESSES': str(cores),

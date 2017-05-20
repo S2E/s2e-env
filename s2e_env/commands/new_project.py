@@ -29,10 +29,9 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from s2e_env.commands.project_creation.cgc import CGCProject
-from s2e_env.commands.project_creation.linux import LinuxProject
-from s2e_env.commands.project_creation.windows import WindowsProject
-
+from s2e_env.commands.project_creation import BaseProject
+from s2e_env.commands.project_creation.config import \
+    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -91,12 +90,12 @@ class Command(EnvCommand):
             raise CommandError('Target %s does not exist' % target_path)
 
         magic_checks = [
-            (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
-            (Magic(), ELF32_REGEX, LinuxProject, 'i386'),
-            (Magic(), ELF64_REGEX, LinuxProject, 'x86_64'),
-            (Magic(), PE32_REGEX, WindowsProject, 'i386'),
-            (Magic(), PE64_REGEX, WindowsProject, 'x86_64'),
-            (Magic(), MSDOS_REGEX, WindowsProject, 'i386'),
+            (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
+            (Magic(), ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
+            (Magic(), ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
+            (Magic(), PE32_REGEX, WindowsProjectConfiguration, 'i386'),
+            (Magic(), PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
+            (Magic(), MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
         ]
 
         # Check the target program against the valid file types
@@ -109,7 +108,7 @@ class Command(EnvCommand):
             if matches:
                 options['target'] = target_path
                 options['target_arch'] = arch
-                return call_command(proj_class(), **options)
+                return call_command(BaseProject(proj_class), **options)
 
         # Otherwise no valid file type was found
         raise CommandError('%s is not a valid target for S2E analysis' %

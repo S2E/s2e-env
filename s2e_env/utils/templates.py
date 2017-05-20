@@ -21,7 +21,6 @@ SOFTWARE.
 """
 
 
-import datetime
 import os
 import stat
 
@@ -53,17 +52,21 @@ def _init_template_env(templates_dir=TEMPLATES_DIR):
     return env
 
 
-def render_template(context, template, path, executable=False):
+def render_template(context, template, path=None, executable=False):
     """
     Renders the ``template`` template with the given ``context``. The result is
-    written to ``path``.
+    written to ``path``. If ``path`` is not specified, the result is
+    returned as a string
     """
-    context['current_time'] = datetime.datetime.now()
+    env = _init_template_env()
+    data = env.get_template(template).render(context)
+
+    if not path:
+        return data
 
     with open(path, 'w') as f:
-        env = _init_template_env()
-        data = env.get_template(template).render(context)
         f.write(data)
-        if executable:
-            st = os.stat(path)
-            os.chmod(path, st.st_mode | stat.S_IEXEC)
+
+    if executable:
+        st = os.stat(path)
+        os.chmod(path, st.st_mode | stat.S_IEXEC)
