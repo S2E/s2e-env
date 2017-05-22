@@ -20,17 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 import logging
 from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
+
 
 logger = logging.getLogger('new_project')
 
 
 class ProjectConfiguration(object):
-    def __init__(self):
-        pass
-
     def validate_binary(self, target_arch, os_desc):
         if target_arch == 'x86_64' and os_desc['arch'] != 'x86_64':
             raise CommandError('Binary is x86_64 while VM image is %s. Please '
@@ -48,9 +47,6 @@ class WindowsProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
-    def __init__(self):
-        super(WindowsProjectConfiguration, self).__init__()
-
     def validate_binary(self, target_arch, os_desc):
         if 'pe' not in os_desc['binary_formats']:
             raise CommandError('Please use a Windows image for this binary')
@@ -63,9 +59,6 @@ class LinuxProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.linux.sh'
     LUA_TEMPLATE = 's2e-config.linux.lua'
     PROJECT_TYPE = 'linux'
-
-    def __init__(self):
-        super(LinuxProjectConfiguration, self).__init__()
 
     def validate_binary(self, target_arch, os_desc):
         if 'elf' not in os_desc['binary_formats']:
@@ -81,9 +74,6 @@ class CGCProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.cgc.sh'
     LUA_TEMPLATE = 's2e-config.cgc.lua'
     PROJECT_TYPE = 'cgc'
-
-    def __init__(self):
-        super(CGCProjectConfiguration, self).__init__()
 
     def validate_binary(self, target_arch, os_desc):
         if 'decree' not in os_desc['binary_formats']:

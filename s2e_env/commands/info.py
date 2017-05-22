@@ -23,7 +23,6 @@ SOFTWARE.
 
 from __future__ import print_function
 
-import datetime
 import glob
 import json
 import os

@@ -46,17 +46,27 @@ logger = logging.getLogger('image_build')
 
 
 def _get_user_groups(user_name):
+    """
+    Get a list of groups for the user ``user_name``.
+    """
     groups = [g.gr_name for g in grp.getgrall() if user_name in g.gr_mem]
     gid = pwd.getpwnam(user_name).pw_gid
     groups.append(grp.getgrgid(gid).gr_name)
+
     return groups
 
 
 def _get_user_name():
+    """
+    Get the current user.
+    """
     return pwd.getpwuid(os.getuid())[0]
 
 
 def _user_belongs_to(group_name):
+    """
+    Check that the current user belongs to the ``group_name`` group.
+    """
     user_name = _get_user_name()
     groups = _get_user_groups(user_name)
     return group_name in groups
@@ -70,6 +80,10 @@ def _raise_group_error(group_name):
 
 
 def _check_groups():
+    """
+    Check that the current user belongs to the required groups to both run S2E
+    and build S2E images.
+    """
     if not _user_belongs_to('docker'):
         _raise_group_error('docker')
 
@@ -78,6 +92,12 @@ def _check_groups():
 
 
 def _check_virtualbox():
+    """
+    Check if VirtualBox is running.
+
+    VirtualBox conflicts with S2E's requirement for KVM, so VirtualBox must
+    *not* be running together with S2E.
+    """
     # Adapted from https://github.com/giampaolo/psutil/issues/132#issuecomment-44017679
     # to avoid race conditions
     for proc in psutil.process_iter():
@@ -92,6 +112,11 @@ def _check_virtualbox():
 
 
 def _check_kvm():
+    """
+    Check that the KVM interface exists.
+
+    This is required by libs2e to communicate with QEMU.
+    """
     if not os.path.exists(os.path.join(os.sep, 'dev', 'kvm')):
         raise CommandError('KVM is required to build images. Check that '
                            '/dev/kvm exists. Alternatively, you can also '
@@ -100,8 +125,8 @@ def _check_kvm():
 
 def _check_vmlinux():
     """
-    Check that /boot/vmlinux* files are readable.
-    This is important for guestfish.
+    Check that /boot/vmlinux* files are readable. This is important for
+    guestfish.
     """
     try:
         for f in glob.glob(os.path.join(os.sep, 'boot', 'vmlinu*')):
@@ -118,9 +143,9 @@ def _validate_version(descriptor, filename):
     version = descriptor.get('version')
     required_version = CONSTANTS['required_versions']['guest_images']
     if version != required_version:
-        raise CommandError('Need version %s for %s. '
-                           'Make sure that you have the correct revision '
-                           'of the guest-images repository' % (required_version, filename))
+        raise CommandError('Need version %s for %s. Make sure that you have '
+                           'the correct revision of the guest-images '
+                           'repository' % (required_version, filename))
 
 
 def get_image_templates(img_build_dir):
@@ -211,6 +236,61 @@ def _check_core_num(value):
                        '10 is recommended for best image building performance')
 
 
+def _translate_image_name(templates, image_name):
+    """
+    Translates a set of user-friendly image names into a set of actual image
+    names that can be sent to the makefile. For example, "all" will be
+    translated to the set of all images, while "windows" and "linux" will be
+    translated to the appropriate subset of Windows or Linux images.
+    """
+    ret = []
+    if image_name == 'all':
+        ret = templates.keys()
+    elif image_name in Command.image_groups:
+        for k, v in templates.iteritems():
+            if v['image_group'] == image_name:
+                ret.append(k)
+    elif image_name in templates.keys():
+        ret = [image_name]
+    else:
+        raise CommandError('Invalid image name: %s. Run ``s2e image_build`` '
+                           'to list available images' % image_name)
+
+    return ret
+
+
+def _check_product_keys(templates, image_names):
+    for image in image_names:
+        ios = templates[image].get('os', {})
+        if not 'product_key' in ios:
+            continue
+
+        if not ios['product_key']:
+            raise CommandError('Image %s requires a product key. '
+                               'Please update images.json.' % image)
+
+
+def _check_iso(templates, iso_dir, image_names):
+    for image in image_names:
+        iso = templates[image].get('iso', {})
+        if iso.get('url', ''):
+            continue
+
+        name = iso.get('name', '')
+        if not name:
+            continue
+
+        if not iso_dir:
+            raise CommandError(
+                'Please use the --iso-dir option to specify the path '
+                'to a folder that contains %s' % name
+            )
+
+        path = os.path.join(iso_dir, name)
+        if not os.path.exists(path):
+            raise CommandError('The image %s requires %s, which could not be found' % (image, path))
+
+
 class Command(EnvCommand, ImageDownloaderMixin):
     """
     Builds an image.
@@ -273,7 +353,7 @@ class Command(EnvCommand, ImageDownloaderMixin):
 
         templates = get_image_templates(img_build_dir)
 
-        image_names = self._translate_image_name(templates, image_name)
+        image_names = _translate_image_name(templates, image_name)
         logger.info('The following images will be built:')
         for image in image_names:
             logger.info(' * %s', image)
@@ -296,8 +376,8 @@ class Command(EnvCommand, ImageDownloaderMixin):
 
         # Check for optional product keys and iso directories.
         # These may or may not be required, depending on the set of images.
-        self._check_product_keys(templates, image_names)
-        self._check_iso(templates, options['iso_dir'], image_names)
+        _check_product_keys(templates, image_names)
+        _check_iso(templates, options['iso_dir'], image_names)
 
         _check_kvm()
         _check_groups()
@@ -356,58 +436,6 @@ class Command(EnvCommand, ImageDownloaderMixin):
 
         kernels_repo = CONSTANTS['repos']['images']['linux']
         repos.git_clone_to_source(self.env_path(), kernels_repo)
-
-    def _translate_image_name(self, templates, image_name):
-        """
-        Translates a set of user-friendly image names into a set of
-        actual image names that can be sent to the makefile. For example,
-        "all" will be translated to the set of all images, while "windows"
-        and "linux" will be translated to the appropriate subset of
-        Windows or Linux images.
-        """
-        ret = []
-        if image_name == 'all':
-            ret = templates.keys()
-        elif image_name in Command.image_groups:
-            for k, v in templates.iteritems():
-                if v['image_group'] == image_name:
-                    ret.append(k)
-        elif image_name in templates.keys():
-            ret = [image_name]
-        else:
-            raise CommandError('Invalid image name %s' % image_name)
-
-        return ret
-
-    def _check_product_keys(self, templates, image_names):
-        for image in image_names:
-            ios = templates[image].get('os', {})
-            if not 'product_key' in ios:
-                continue
-
-            if not ios['product_key']:
-                raise CommandError('Image %s requires a product key. '
-                                   'Please update images.json.' % image)
-
-    def _check_iso(self, templates, iso_dir, image_names):
-        for image in image_names:
-            iso = templates[image].get('iso', {})
-            if iso.get('url', ''):
-                continue
-
-            name = iso.get('name', '')
-            if not name:
-                continue
-
-            if not iso_dir:
-                raise CommandError(
-                    'Please use the --iso-dir option to specify the path '
-                    'to a folder that contains %s' % name
-                )
-
-            path = os.path.join(iso_dir, name)
-            if not os.path.exists(path):
-                raise CommandError('The image %s requires %s, which could not be found' % (image, path))
 
     def _print_image_list(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
