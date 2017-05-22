@@ -42,7 +42,7 @@ _PLUGINS = {
 class QMPTCPServer(SocketServer.TCPServer):
     def __init__(self, server_address, RequestHandlerClass):
         # SocketServer is an "old style class"
-        SocketServer.TCPServer.__init__(self,server_address, RequestHandlerClass)
+        SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
 
         self._daemon_threads = False
         self._stopped = False
