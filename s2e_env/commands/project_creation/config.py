@@ -48,6 +48,7 @@ class WindowsProjectConfiguration(ProjectConfiguration):
     PROJECT_TYPE = 'windows'
 
     def validate_binary(self, target_arch, os_desc):
+        super(WindowsProjectConfiguration, self).validate_binary(taret_arch, os_desc)
         if 'pe' not in os_desc['binary_formats']:
             raise CommandError('Please use a Windows image for this binary')
 
@@ -61,6 +62,7 @@ class LinuxProjectConfiguration(ProjectConfiguration):
     PROJECT_TYPE = 'linux'
 
     def validate_binary(self, target_arch, os_desc):
+        super(LinuxProjectConfiguration, self).validate_binary(target_arch, os_desc)
         if 'elf' not in os_desc['binary_formats']:
             raise CommandError('Please use a Linux image for this binary')
 
@@ -76,6 +78,7 @@ class CGCProjectConfiguration(ProjectConfiguration):
     PROJECT_TYPE = 'cgc'
 
     def validate_binary(self, target_arch, os_desc):
+        super(CGCProjectConfiguration, self).validate_binary(target_arch, os_desc)
         if 'decree' not in os_desc['binary_formats']:
             raise CommandError('Please use a CGC image for this binary')
 
