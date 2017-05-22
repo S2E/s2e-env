@@ -33,30 +33,26 @@ from .web_service_interface import WebServiceInterfacePlugin
 
 logger = logging.getLogger(__name__)
 
-PLUGINS = {
+_PLUGINS = {
     'CGCInterface': CGCInterfacePlugin(),
-    'WebServiceInterface': WebServiceInterfacePlugin()
+    'WebServiceInterface': WebServiceInterfacePlugin(),
 }
 
 
-class ThreadingMixIn2(object):
-    """Mix-in class to handle each request in a new thread."""
+class QMPTCPServer(SocketServer.TCPServer):
+    def __init__(self, server_address, RequestHandlerClass):
+        # SocketServer is an "old style class"
+        SocketServer.TCPServer.__init__(self,server_address, RequestHandlerClass)
 
-    # Decides how threads will act upon termination of the
-    # main process
-    daemon_threads = False
-
-    # Thread name prefix
-    thread_name = 'RequestHandlingThread-'
-
-    def __init__(self):
-        self.threads = []
+        self._daemon_threads = False
+        self._stopped = False
+        self._threads = []
 
     def process_request_thread(self, request, client_address):
-        """Same as in BaseServer but as a thread.
+        """
+        Same as in BaseServer but as a thread.
 
         In addition, exception handling is done here.
-
         """
         try:
             self.finish_request(request, client_address)
@@ -66,19 +62,21 @@ class ThreadingMixIn2(object):
             self.shutdown_request(request)
 
     def process_request(self, request, client_address):
-        """Start a new thread to process the request."""
-        thread_name = self.thread_name + str(len(self.threads))
+        """
+        Start a new thread to process the request.
+        """
+        thread_name = 'RequestHandlingThread-%d' % len(self._threads)
         logger.info('Starting thread "%s"', thread_name)
         t = threading.Thread(target=self.process_request_thread,
                              args=(request, client_address),
                              name=thread_name)
-        t.daemon = self.daemon_threads
+        t.daemon = self._daemon_threads
         t.start()
-        self.threads.append(t)
+        self._threads.append(t)
 
     def wait_threads(self):
         logger.info('Waiting for unfinished threads')
-        for t in self.threads:
+        for t in self._threads:
             logger.info('Waiting for thread "%s"', t.name)
             try:
                 t.join()
@@ -87,22 +85,14 @@ class ThreadingMixIn2(object):
                 # started thread
                 pass
 
-
-class QMPTCPServer(ThreadingMixIn2, SocketServer.TCPServer):
-    allow_reuse_address = True
-    timeout = 5
-    queue = None
-
-    def __init__(self, server_address, RequestHandlerClass):
-        SocketServer.TCPServer.__init__(self, server_address,
-                                        RequestHandlerClass)
-        ThreadingMixIn2.__init__(self)
-        self.stopped = False
-
     def shutdown(self):
-        self.stopped = True
+        self._stopped = True
         SocketServer.TCPServer.shutdown(self)
-        ThreadingMixIn2.wait_threads(self)
+        self.wait_threads()
+
+    @property
+    def stopped(self):
+        return self._stopped
 
 
 class LineRequestHandler(SocketServer.BaseRequestHandler):
@@ -135,13 +125,15 @@ class LineRequestHandler(SocketServer.BaseRequestHandler):
         self.callback(None)
 
         self.request.close()
-        logger.debug('Socket closed.')
+        logger.debug('Socket closed')
 
     def send(self, data):
         self.request.sendall(data)
 
     def flush(self):
-        """Empty the buffer, calling callback on content if required"""
+        """
+        Empty the buffer, calling callback on content if required.
+        """
         if self.buf:
             self.callback(self.buf)
         self.buf = ''
@@ -155,7 +147,9 @@ class QMPConnectionHandler(LineRequestHandler):
         LineRequestHandler.__init__(self, *args, **kwargs)
 
     def callback(self, line):
-        """What to do when QMP data comes"""
+        """
+        What to do when QMP data comes.
+        """
         if line is None:
             logger.debug('Connection closed')
             return
@@ -177,11 +171,12 @@ class QMPConnectionHandler(LineRequestHandler):
 
     @staticmethod
     def handle_qmp(message, analysis):
-        """Handle a QMP message.
+        """
+        Handle a QMP message.
 
         Returns:
-        - True if the message was processed (no need to log directly)
-        - False otherwise
+            ``True`` if the message was processed (no need to log directly), or
+            ``False`` otherwise.
         """
 
         if 's2e-event' not in message:
@@ -191,8 +186,8 @@ class QMPConnectionHandler(LineRequestHandler):
         data = message['s2e-event']
 
         for k in data.keys():
-            if k in PLUGINS:
-                PLUGINS[k].process(data[k], analysis)
+            if k in _PLUGINS:
+                _PLUGINS[k].process(data[k], analysis)
             else:
                 processed = False
 
