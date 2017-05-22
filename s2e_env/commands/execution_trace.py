@@ -23,10 +23,10 @@ SOFTWARE.
 
 import json
 import logging
-import os
+from operator import itemgetter
 
 from s2e_env.command import ProjectCommand, CommandError
-from s2e_env.execution_trace import parse as parse_execution_trace
+from s2e_env.execution_trace import get_trace_files, parse as parse_execution_trace
 
 
 logger = logging.getLogger('execution_trace')
@@ -67,17 +67,25 @@ class Command(ProjectCommand):
     help = 'Parse an S2E execution trace into JSON.'
 
     def handle(self, *args, **options):
-        # Get the ExecutionTrace.dat file from s2e-last
-        execution_trace_path = self.project_path('s2e-last', 'ExecutionTracer.dat')
-        if not os.path.isfile(execution_trace_path):
-            raise CommandError('No \'ExecutionTrace.dat\' file found in s2e-last. '
-                               'Did you enable any trace plugins in s2e-config.lua?')
+        # Get all the execution trace files and construct a single list of JSON
+        # data
+        complete_trace = []
+        for trace_file_path in get_trace_files(self.project_path('s2e-last')):
+            with open(trace_file_path, 'r') as trace_file:
+                trace_data = parse_execution_trace(trace_file)
+                trace_data_json = [_make_json_entry(header, item) for header, item in trace_data]
 
-        # Parse ExecutionTrace.dat and collect the results.
-        with open(execution_trace_path, 'r') as trace_file:
-            results = parse_execution_trace(trace_file)
+                complete_trace.extend(trace_data_json)
 
-        json_trace_file = self._save_execution_trace(results)
+        if not complete_trace:
+            raise CommandError('The execution trace is empty')
+
+        # Sort the complete trace by timestamp
+        complete_trace.sort(key=itemgetter('timestamp'))
+
+        json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
+        with open(json_trace_file, 'w') as f:
+            json.dump(complete_trace, f)
 
         return 'Execution trace saved to %s' % json_trace_file
 

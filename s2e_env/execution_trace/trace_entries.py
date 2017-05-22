@@ -25,6 +25,10 @@ import struct
 
 from enum import Enum
 
+#
+# The following code is a Python adaption of the C++ code in
+# libs2eplugins/src/s2e/Plugins/ExecutionTracers/TraceEntries.h
+#
 
 class TraceEntryType(Enum):
     """
@@ -80,12 +84,14 @@ class TraceEntry(object):
     The static trace entry format is defined in the ``FORMAT`` class attribute
     and its size can be determined using the ``static_size`` class method.
 
-    The dynamic trace entry format is defined in the ``_struct`` object
-    attribute and its size can be determined using the ``len`` function.
+    The dynamic trace entry format is defined in the ``_struct`` attribute
+    and its size can be determined using the ``len`` function.
 
-    Note that ``TraceEntry``'s ``deserialize`` method will only work if the
-    trace entry's format can be determined statically. Otherwise the user must
-    implement their own deserialize routine (as is done for ``TraceFork``).
+    Note that ``TraceEntry``'s default ``deserialize`` method will only work if
+    the trace entry's format can be determined statically. Otherwise the user
+    must implement their own deserialize routine (e.g. as is done in the
+    ``TraceFork`` class). When calling a custom ``deserialize`` method the
+    run-time size of the item **must** be provided.
     """
 
     FORMAT = None
@@ -149,7 +155,7 @@ class TraceItemHeader(TraceEntry):
         super(TraceItemHeader, self).__init__(TraceItemHeader.FORMAT)
         self._timestamp = timestamp
         self._size = size
-        self._type = type_
+        self._type = TraceEntryType(type_)
         self._state_id = state_id
         self._pid = pid
 
@@ -179,7 +185,7 @@ class TraceItemHeader(TraceEntry):
 
     @property
     def type(self):
-        return TraceEntryType(self._type)
+        return self._type
 
     @property
     def state_id(self):
@@ -348,9 +354,8 @@ class TraceFork(TraceEntry):
         if not size:
             raise TraceEntryError('A size must be provided when deserializing '
                                   'a ``TraceFork`` item')
-        num_state_ids = (size - struct.calcsize('QI')) / struct.calcsize('I')
+        num_state_ids = (size - struct.calcsize('<QI')) / struct.calcsize('<I')
         unpacked_data = struct.unpack(TraceFork.FORMAT % num_state_ids, data)
-
 
         return TraceFork(unpacked_data[0], unpacked_data[1:])
 
@@ -463,26 +468,34 @@ class TraceCacheSimParams(TraceEntry):
 
 
 class TraceCacheSimName(TraceEntry):
-    FORMAT = '<BIIs'
+    FORMAT = '<BII%ds'
 
-    def __init__(self, type_, id_, length, name):
-        super(TraceCacheSimName, self).__init__(TraceCacheSimName.FORMAT)
+    def __init__(self, type_, id_, name):
+        super(TraceCacheSimName, self).__init__(TraceCacheSimName.FORMAT % len(name))
         self._type = type_
         self._id = id_
-        self._length = length
         self._name = name
+
+    @classmethod
+    def deserialize(cls, data, size=None):
+        if not size:
+            raise TraceEntryError('A size must be provided when deserializing '
+                                  'a ``TraceCacheSimName`` item')
+        length = (size - struct.calcsize('<BII')) / struct.calcsize('<c')
+        unpacked_data = struct.unpack(TraceCacheSimName.FORMAT % length, data)
+
+        return TraceCacheSimName(*unpacked_data)
 
     def serialize(self):
         return self._struct.pack(self._type,
                                  self._id,
-                                 self._length,
+                                 len(self._name),
                                  self._name)
 
     def as_dict(self):
         return {
             'type': self.type,
             'id': self.id,
-            'length': self.length,
             'name': self.name,
         }
 
@@ -493,10 +506,6 @@ class TraceCacheSimName(TraceEntry):
     @property
     def id(self):
         return self._id
-
-    @property
-    def length(self):
-        return self._length
 
     @property
     def name(self):
@@ -573,6 +582,59 @@ class TraceCacheSimEntry(TraceEntry):
         return self._miss_count
 
 
+class TraceCache(TraceEntry):
+    FORMAT = '<B{params}s%ds{entry}s'.format(params=TraceCacheSimParams.static_size(),
+                                             entry=TraceCacheSimEntry.static_size())
+
+    def __init__(self, type_, params, name, entry):
+        super(TraceCache, self).__init__(TraceCache.FORMAT % len(name))
+        self._type = type_
+        self._params = params
+        self._name = name
+        self._entry = entry
+
+    @classmethod
+    def deserialize(cls, data, size=None):
+        if not size:
+            raise TraceEntryError('A size must be provided when deserializing '
+                                  'a ``TraceCache`` item')
+        name_length = (size - struct.calcsize('<B') - TraceCacheSimParams.static_size() -
+                       TraceCacheSimEntry.static_size()) / struct.calcsize('<c')
+        unpacked_data = struct.unpack(TraceCache.FORMAT % name_length, data)
+
+        params = TraceCacheSimParams.deserialize(unpacked_data[1])
+        name = TraceCacheSimName.deserialize(unpacked_data[2], name_length)
+        entry = TraceCacheSimEntry.deserialize(unpacked_data[3])
+
+        return TraceCache(unpacked_data[0], params, name, entry)
+
+    def serialize(self):
+        return self._struct.pack(self._type,
+                                 self._params.serialize(),
+                                 self._name.serialize(),
+                                 self._entry.serialize())
+
+    def as_dict(self):
+        return {
+            'type': self.type,
+            'params': self.params,
+            'name': self.name,
+            'entry': self.entry,
+        }
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def entry(self):
+        return self._entry
+
+
 class TraceMemChecker(TraceEntry):
     class Flags(Enum):
         GRANT = 1
@@ -582,7 +644,7 @@ class TraceMemChecker(TraceEntry):
         EXECUTE = 16
         RESOURCE = 32
 
-    FORMAT = '<QIIIs'
+    FORMAT = '<QIII%ds'
 
     def __init__(self, start, size, flags, name):
         super(TraceMemChecker, self).__init__(TraceMemChecker.FORMAT)
@@ -590,6 +652,16 @@ class TraceMemChecker(TraceEntry):
         self._size = size
         self._flags = flags
         self._name = name
+
+    @classmethod
+    def deserialize(cls, data, size=None):
+        if not size:
+            raise TraceEntryError('A size must be provided when deserializing '
+                                  'a ``TraceMemChecker`` item')
+        name_length = (size - struct.calcsize('<QIII')) / struct.calcsize('<c')
+        unpacked_data = struct.unpack(TraceMemChecker.FORMAT % name_length, data)
+
+        return TraceMemChecker(*unpacked_data)
 
     def serialize(self):
         return self._struct.pack(self._start,
@@ -623,7 +695,46 @@ class TraceMemChecker(TraceEntry):
         return self._name
 
 
-# TODO TraceTestCase
+class TraceTestCase(TraceEntry):
+    FORMAT = '<II%ds%ds'
+
+    def __init__(self, name, data):
+        super(TraceTestCase, self).__init__(TraceTestCase.FORMAT % (len(name), len(data)))
+        self._name = name
+        self._data = data
+
+    @classmethod
+    def deserialize(cls, data, size=None):
+        if not size:
+            raise TraceEntryError('A size must be provided when deserializing '
+                                  'a ``TraceTestCase`` item')
+        name_data_size_struct_fmt = '<II'
+        name_data_size_struct_size = struct.calcsize(name_data_size_struct_fmt)
+        name_size, data_size = struct.unpack(name_data_size_struct_fmt,
+                                             data[:name_data_size_struct_size])
+        unpacked_data = struct.unpack(TraceTestCase.FORMAT % (name_size, data_size), data)
+
+        return TraceTestCase(*unpacked_data[2:])
+
+    def serialize(self):
+        return self._struct.pack(len(self._name),
+                                 len(self._data),
+                                 self._name,
+                                 self._data)
+
+    def as_dict(self):
+        return {
+            'name': self.name,
+            'data': self.data,
+        }
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def data(self):
+        return self._data
 
 
 class TraceMemory(TraceEntry):
