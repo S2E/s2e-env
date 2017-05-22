@@ -29,11 +29,22 @@ from s2e_env.utils.elf import ELFAnalysis
 logger = logging.getLogger('new_project')
 
 
+def is_valid_arch(target_arch, os_desc):
+    """
+    Check that the image's architecture is consistent with the target binary.
+    """
+    return not (target_arch == 'x86_64' and os_desc['arch'] != 'x86_64')
+
+
 class ProjectConfiguration(object):
-    def validate_binary(self, target_arch, os_desc):
-        if target_arch == 'x86_64' and os_desc['arch'] != 'x86_64':
-            raise CommandError('Binary is x86_64 while VM image is %s. Please '
-                               'choose another image.' % os_desc['arch'])
+    def is_valid_binary(self, target_arch, os_desc):
+        """
+        Validate a binary against a particular image description.
+
+        This validation may vary depending on the binary and image type.
+        Returns ``True`` if the binary is valid and ``False`` otherwise.
+        """
+        pass
 
     def validate_configuration(self, config):
         pass
@@ -47,13 +58,8 @@ class WindowsProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
-    def validate_binary(self, target_arch, os_desc):
-        super(WindowsProjectConfiguration, self).validate_binary(taret_arch, os_desc)
-        if 'pe' not in os_desc['binary_formats']:
-            raise CommandError('Please use a Windows image for this binary')
-
-    def validate_configuration(self, config):
-        pass
+    def is_valid_binary(self, target_arch, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
 
 class LinuxProjectConfiguration(ProjectConfiguration):
@@ -61,10 +67,8 @@ class LinuxProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.linux.lua'
     PROJECT_TYPE = 'linux'
 
-    def validate_binary(self, target_arch, os_desc):
-        super(LinuxProjectConfiguration, self).validate_binary(target_arch, os_desc)
-        if 'elf' not in os_desc['binary_formats']:
-            raise CommandError('Please use a Linux image for this binary')
+    def is_valid_binary(self, target_arch, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'elf' in os_desc['binary_formats']
 
     def analyze(self, config):
         with ELFAnalysis(config['target_path']) as elf:
@@ -77,10 +81,8 @@ class CGCProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.cgc.lua'
     PROJECT_TYPE = 'cgc'
 
-    def validate_binary(self, target_arch, os_desc):
-        super(CGCProjectConfiguration, self).validate_binary(target_arch, os_desc)
-        if 'decree' not in os_desc['binary_formats']:
-            raise CommandError('Please use a CGC image for this binary')
+    def is_valid_binary(self, target_arch, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'decree' in os_desc['binary_formats']
 
     def validate_configuration(self, config):
         args = config.get('target_args', [])

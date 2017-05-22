@@ -34,6 +34,7 @@ from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.image_build import get_image_templates, get_image_descriptor
 from s2e_env.utils.image_download import ImageDownloader
 from s2e_env.utils.templates import render_template
+from .config import is_valid_arch
 
 
 logger = logging.getLogger('new_project')
@@ -69,6 +70,13 @@ def _parse_target_args(target_args):
             parsed_args.append(arg)
 
     return use_symb_input_file, parsed_args
+
+
+def _create_instructions(context):
+    ret = render_template(context, 'instructions.txt')
+    # Due to how templates work, there may be many useless new lines, remove
+    # them here
+    return re.sub(r'([\r\n][\r\n])+', r'\n\n', ret)
 
 
 class BaseProject(EnvCommand):
@@ -168,13 +176,7 @@ class BaseProject(EnvCommand):
         self._save_json_description(context)
 
         # Return the instructions to the user
-        return self._create_instructions(context)
-
-    def _create_instructions(self, context):
-        ret = render_template(context, 'instructions.txt')
-        # Due to how templates work, there may be many useless new lines,
-        # remove them here.
-        return re.sub(r'([\r\n][\r\n])+', r'\n\n', ret)
+        return _create_instructions(context)
 
     def _create_config(self, context):
         context['target_bootstrap_template'] = self._configurator.BOOTSTRAP_TEMPLATE
@@ -231,8 +233,9 @@ class BaseProject(EnvCommand):
         self._img_json = self._get_or_download_image(templates, image, options['download_image'])
 
         # Check architecture consistency
-        ios = self._img_json['os']
-        self._configurator.validate_binary(options['target_arch'], ios)
+        if not is_valid_arch(options['target_arch'], self._img_json['os']):
+            raise CommandError('Binary is x86_64 while VM image is %s. Please '
+                               'choose another image' % self._img_json['os']['arch'])
 
         # Check if the project dir already exists
         # Do this after all checks have completed
@@ -251,14 +254,11 @@ class BaseProject(EnvCommand):
                     'a suitable image for a %s binary', target_arch)
 
         for k, v in templates.iteritems():
-            try:
-                self._configurator.validate_binary(target_arch, v['os'])
+            if self._configurator.is_valid_binary(target_arch, v['os']):
                 logger.warning('Found %s, which looks suitable for this '
                                'binary. Please use -i if you want to use '
                                'another image', k)
                 return k
-            except:
-                pass
 
         raise CommandError('No suitable image available for this binary')
 
@@ -267,7 +267,7 @@ class BaseProject(EnvCommand):
 
         try:
             return get_image_descriptor(img_json_path)
-        except:
+        except CommandError:
             if not do_download:
                 raise
 
