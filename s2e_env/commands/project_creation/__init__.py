@@ -31,9 +31,8 @@ import shutil
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.image_build import \
-      get_image_templates, get_image_descriptor, ImageDownloaderMixin
-
+from s2e_env.commands.image_build import get_image_templates, get_image_descriptor
+from s2e_env.utils.image_download import ImageDownloader
 from s2e_env.utils.templates import render_template
 
 
@@ -72,7 +71,7 @@ def _parse_target_args(target_args):
     return use_symb_input_file, parsed_args
 
 
-class BaseProject(EnvCommand, ImageDownloaderMixin):
+class BaseProject(EnvCommand):
     """
     The base class for the different projects that the ``new_project`` command
     can create.
@@ -221,12 +220,15 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
         self._project_dir = self.env_path('projects', project_name)
 
-        # Load the image JSON description
+        # Load the image JSON description. If it is not given, guess the image
         image = options['image']
-        if not image:
-            image = self._guess_image(options['target_arch'])
+        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
+        templates = get_image_templates(img_build_dir)
 
-        self._img_json = self._get_or_download_image(image, options['download_image'])
+        if not image:
+            image = self._guess_image(templates, options['target_arch'])
+
+        self._img_json = self._get_or_download_image(templates, image, options['download_image'])
 
         # Check architecture consistency
         ios = self._img_json['os']
@@ -239,14 +241,12 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
         # Create the project directory
         os.mkdir(self._project_dir)
 
-    def _guess_image(self, target_arch):
+    def _guess_image(self, templates, target_arch):
         """
         At this stage, images may not exist, so we get the list of images
-        from images.json rather than from the images folder.
+        from images.json (in the guest-images repo) rather than from the images
+        folder.
         """
-        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        templates = get_image_templates(img_build_dir)
-
         logger.info('No image was specified (-i option). Attempting to guess '
                     'a suitable image for a %s binary', target_arch)
 
@@ -262,17 +262,19 @@ class BaseProject(EnvCommand, ImageDownloaderMixin):
 
         raise CommandError('No suitable image available for this binary')
 
-    def _get_or_download_image(self, image, download):
+    def _get_or_download_image(self, templates, image, do_download=True):
         img_json_path = self.image_path(image)
 
         try:
             return get_image_descriptor(img_json_path)
         except:
-            if not download:
+            if not do_download:
                 raise
 
         logger.info('Image %s missing, attempting to download...', image)
-        self.download_images([image])
+        image_downloader = ImageDownloader(templates)
+        image_downloader.download_images([image], self.image_path())
+
         return get_image_descriptor(img_json_path)
 
     def _check_project_dir(self, force=False):
