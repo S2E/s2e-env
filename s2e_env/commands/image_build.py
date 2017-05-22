@@ -35,11 +35,12 @@ import sys
 import psutil
 from psutil import NoSuchProcess
 import sh
-from sh import tar, ErrorReturnCode
+from sh import ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils import google, repos
+from s2e_env.utils import repos
+from s2e_env.utils.image_download import ImageDownloader
 
 
 logger = logging.getLogger('image_build')
@@ -166,7 +167,7 @@ def get_image_descriptor(image_dir):
     Load the image JSON descriptor.
 
     Args:
-        image_dir: directory containing the built image
+        image_dir: directory containing the built image.
     """
     img_json_path = os.path.join(image_dir, 'image.json')
 
@@ -175,56 +176,11 @@ def get_image_descriptor(image_dir):
             ret = json.load(f)
             _validate_version(ret, img_json_path)
             ret['path'] = os.path.join(image_dir, 'image.raw.s2e')
+
             return ret
     except Exception:
-        raise CommandError('Unable to open image description %s\n'
-                           'Check that the image exists, was built, or '
-                           'downloaded' % img_json_path)
-
-
-def _download(url, path):
-    """
-    Download a file from the Google drive and save it at the given ``path``.
-    """
-    logger.info('Downloading %s', url)
-    google.download(url, path)
-
-
-def _decompress(path):
-    """
-    Decompress a .tar.xz file at the given path.
-
-    The decompressed data will be located in the same directory as ``path``.
-    """
-    logger.info('Decompressing %s', path)
-    try:
-        tar(extract=True, xz=True, verbose=True, file=path,
-            directory=os.path.dirname(path), _fg=True, _out=sys.stdout,
-            _err=sys.stderr)
-    except ErrorReturnCode as e:
-        raise CommandError(e)
-
-
-class ImageDownloaderMixin(object):
-    def download_images(self, image_names):
-        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        templates = get_image_templates(img_build_dir)
-
-        for image in image_names:
-            self._download_image(templates, image)
-
-    def _download_image(self, templates, image):
-        image_desc = templates.get(image, None)
-        if not image_desc:
-            raise CommandError('%s is not a valid image name' % image)
-
-        url = templates[image].get('url', '')
-        if not url:
-            raise CommandError('The image %s has no downloadable archive' % image)
-
-        dest_file = self.image_path('%s.tar.xz' % image)
-        _download(url, dest_file)
-        _decompress(dest_file)
+        raise CommandError('Unable to open image description %s. Check that '
+                           'the image exists, was built, or downloaded' % img_json_path)
 
 
 def _check_core_num(value):
@@ -288,10 +244,11 @@ def _check_iso(templates, iso_dir, image_names):
 
         path = os.path.join(iso_dir, name)
         if not os.path.exists(path):
-            raise CommandError('The image %s requires %s, which could not be found' % (image, path))
+            raise CommandError('The image %s requires %s, which could not be '
+                               'found' % (image, path))
 
 
-class Command(EnvCommand, ImageDownloaderMixin):
+class Command(EnvCommand):
     """
     Builds an image.
     """
@@ -359,8 +316,10 @@ class Command(EnvCommand, ImageDownloaderMixin):
             logger.info(' * %s', image)
 
         if options['download']:
-            self.download_images(image_names)
-            return 'Successfully downloaded images %s' % image_names
+            image_downloader = ImageDownloader(templates)
+            image_downloader.download_images(image_names, self.image_path())
+
+            return 'Successfully downloaded images: %s' % ', '.join(image_names)
 
         rule_names = image_names
 
