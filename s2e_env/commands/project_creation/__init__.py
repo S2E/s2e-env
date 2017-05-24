@@ -193,6 +193,7 @@ class BaseProject(EnvCommand):
         template = 'launch-s2e.sh'
         script_path = os.path.join(self._project_dir, template)
         context = {
+            'creation_time': str(datetime.datetime.now()),
             'env_dir': self.env_path(),
             'install_dir': self.install_path(),
             'build_dir': self.build_path(),
