@@ -27,18 +27,9 @@ from collections import namedtuple
 import json
 import logging
 import os
-import shutil
-
-import sh
-from sh import ErrorReturnCode
 
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
-
-try:
-    from tempfile import TemporaryDirectory
-except ImportError:
-    from s2e_env.utils.tempdir import TemporaryDirectory
 
 
 logger = logging.getLogger('basicblock')
@@ -82,10 +73,11 @@ class BasicBlockCoverage(ProjectCommand):
     """
     Generate a basic block coverage report.
 
-    This subcommand requires IDA Pro.
+    This subcommand requires either IDA Pro or Radare2 as a disassembler.
     """
 
-    help = 'Generate a basic block coverage report. This requires IDA Pro.'
+    help = 'Generate a basic block coverage report. This requires either IDA '  \
+           'Pro or Radare2 as a disassembler.'
 
     RESULTS = 'Basic block coverage saved to {bb_file}\n\n'             \
               'Statistics\n'                                            \
@@ -94,19 +86,16 @@ class BasicBlockCoverage(ProjectCommand):
               'Covered basic blocks: {num_covered_bbs} ({percent:.1%})'
 
     def handle(self, *args, **options):
-        # Determine the IDA Pro path and check that it is valid
-        ida_path = self._get_ida_path()
-        if not os.path.isfile(ida_path):
-            raise CommandError('IDA Pro not found at %s' % ida_path)
-
-        target_path = self._project_desc['target_path']
+        # Initialize the backend disassembler
+        self._initialize_disassembler()
 
         # Get the basic block information
-        bbs = self._get_basic_blocks(ida_path, target_path)
+        bbs = self._get_basic_blocks()
         if not bbs:
-            raise CommandError('No basic block information found by IDA Pro')
+            raise CommandError('No basic block information found')
 
         # Get translation block coverage information
+        target_path = self._project_desc['target_path']
         tbs = self._get_tb_coverage(os.path.basename(target_path))
         if not tbs:
             raise CommandError('No translation block coverage information found')
@@ -127,43 +116,16 @@ class BasicBlockCoverage(ProjectCommand):
                                    num_covered_bbs=covered_bbs,
                                    percent=covered_bbs / total_bbs)
 
-    def _get_ida_path(self):
+    def _initialize_disassembler(self):
         """
-        Determine which version of IDA to use based on the project's
-        architecture (32 or 64 bit).
-
-        Returns the path to IDA Pro or raises an exception if it cannot be
-        found.
+        Initialize the backend disassembler.
         """
-        ida_dir = self.config['ida']['dir']
-        if not ida_dir:
-            raise CommandError('No path to IDA has been given in s2e.yaml. '
-                               'IDA is required to generate a basic block '
-                               'coverage report')
+        pass
 
-        project_arch = self._project_desc['target_arch']
-        if project_arch == 'i386':
-            ida_path = os.path.join(ida_dir, 'idal')
-        elif project_arch == 'x86_64':
-            ida_path = os.path.join(ida_dir, 'idal64')
-        else:
-            raise CommandError('Invalid project architecture \'%s\' - unable '
-                               'to determine the version of IDA Pro to use' %
-                               project_arch)
-
-        return ida_path
-
-    def _get_basic_blocks(self, ida_path, target_path):
+    def _get_basic_blocks(self):
         """
-        Extract basic block information from the target binary using S2E's IDA
-        Pro script.
-
-        This extraction is done within a temporary directory so that we don't
-        pollute the file system with temporary idbs and other such things.
-
-        Args:
-            ida_path: Path to the IDA Pro executable.
-            target_path: Path to the analysis target.
+        Extract basic block information from the target binary using one of the
+        disassembler backends (IDA Pro or Radare2).
 
         Returns:
             A list of ``BasicBlock``s, i.e. named tuples containing:
@@ -171,48 +133,8 @@ class BasicBlockCoverage(ProjectCommand):
                 2. Basic block end address
                 3. Name of function that the basic block resides in
         """
-        logger.info('Generating basic block information from IDA Pro')
-
-        try:
-            with TemporaryDirectory() as temp_dir:
-                # Copy the binary to the temporary directory. Because projects
-                # are created with a symlink to the target program, then IDA
-                # Pro will generate the idb and bblist files in the symlinked
-                # target's directory. Which is not what we want
-                target_name = os.path.basename(target_path)
-
-                temp_target_path = os.path.join(temp_dir, target_name)
-                shutil.copyfile(target_path, temp_target_path)
-
-                # Run the IDA Pro extractBasicBlocks script
-                env_vars = os.environ.copy()
-                env_vars['TVHEADLESS'] = '1'
-                # This is required if s2e-env runs inside screen
-                env_vars['TERM'] = 'xterm'
-
-                ida = sh.Command(ida_path)
-                ida('-A', '-B',
-                    '-S%s' % self.install_path('bin', 'extractBasicBlocks.py'),
-                    temp_target_path, _out=os.devnull, _tty_out=False,
-                    _cwd=temp_dir, _env=env_vars)
-
-                # Check that the basic block list file was correctly generated
-                bblist_file = os.path.join(temp_dir, '%s.bblist' % target_name)
-                if not os.path.isfile(bblist_file):
-                    raise CommandError('Failed to generate bblist file for '
-                                       '%s' % target_name)
-
-                # Parse the basic block list file
-                #
-                # to_basic_block takes a 3-tuple read from the bblist file and
-                # converts it to a BasicBlock
-                to_basic_block = lambda tup: BasicBlock(int(tup[0], 16),
-                                                        int(tup[1], 16),
-                                                        tup[2])
-                with open(bblist_file, 'r') as f:
-                    return [to_basic_block(l.rstrip().split(' ')) for l in f]
-        except ErrorReturnCode as e:
-            raise CommandError(e)
+        raise NotImplementedError('subclasses of BasicBlockCoverage must '
+                                  'provide a _get_basic_blocks() method')
 
     def _get_tb_coverage(self, target_name):
         """

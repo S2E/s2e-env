@@ -35,24 +35,19 @@ class Command(ProjectCommand):
     help = 'Analyze S2E code coverage. This includes both basic block and ' \
            'line coverage.'
 
-    def __init__(self):
-        super(Command, self).__init__()
-
-        self._lcov = LineCoverage()
-        self._basic_block = BasicBlockCoverage()
-
     def add_arguments(self, parser):
         subparsers = parser.add_subparsers(help='Coverage report type',
                                            dest='command')
 
-        lcov_parser = subparsers.add_parser('lcov', cmd=self._lcov,
+        lcov_parser = subparsers.add_parser('lcov', cmd=LineCoverage(),
                                             help='Generate a line coverage report')
         lcov_parser.add_argument('--html', action='store_true',
                                  help='Generate an HTML report in s2e-last')
 
-        subparsers.add_parser('basic_block', cmd=self._basic_block,
-                              help='Generate a basic block report')
-        # Basic block coverage takes no additional arguments
+        bb_parser = subparsers.add_parser('basic_block', cmd=BasicBlockCoverage(),
+                                          help='Generate a basic block report')
+        bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2'),
+                               default='ida', help='Disassembler backend to use')
 
         super(Command, self).add_arguments(parser)
 
@@ -60,6 +55,15 @@ class Command(ProjectCommand):
         command = options.pop('command', ())
 
         if command == 'basic_block':
-            return call_command(self._basic_block, args, **options)
+            # Select the disassembler backend
+            disassembler = options.pop('disassembler', ())
+            if disassembler == 'ida':
+                from .code_coverage.ida_basic_block import IDABasicBlockCoverage
+
+                return call_command(IDABasicBlockCoverage(), args, **options)
+            elif disassembler == 'r2':
+                from .code_coverage.r2_basic_block import R2BasicBlockCoverage
+
+                return call_command(R2BasicBlockCoverage(), args, **options)
         elif command == 'lcov':
-            return call_command(self._lcov, args, **options)
+            return call_command(LineCoverage(), args, **options)

@@ -14,6 +14,11 @@ We assume that you are working on Ubuntu 14.04 (or newer) 64-bit OS.
 [Repo](https://code.google.com/p/git-repo/) only works with Python 2.7, so you
 should use Python 2.7 too.
 
+Some commands (such as basic block coverage) require either
+[IDA Pro](https://www.hex-rays.com/products/ida/) or [Radare](https://rada.re/r/)
+for performing static analysis. If you are using Radare, you will also have to
+install `r2pipe` via pip.
+
 # Install
 
 ```
