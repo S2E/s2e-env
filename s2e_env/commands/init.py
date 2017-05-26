@@ -249,31 +249,37 @@ class Command(BaseCommand):
                                    env_path)
 
 
-        # Create environment if it doesn't exist
-        logger.info('Creating environment in %s', env_path)
-        if not os.path.isdir(env_path):
-            os.mkdir(env_path)
+        try:
+            # Create environment if it doesn't exist
+            logger.info('Creating environment in %s', env_path)
+            if not os.path.isdir(env_path):
+                os.mkdir(env_path)
 
-        # Create the directories within the environment
-        for dir_ in CONSTANTS['dirs']:
-            os.mkdir(os.path.join(env_path, dir_))
+            # Create the directories within the environment
+            for dir_ in CONSTANTS['dirs']:
+                os.mkdir(os.path.join(env_path, dir_))
 
-        # Create the YAML config for the environment
-        _create_config(env_path)
+            # Create the YAML config for the environment
+            _create_config(env_path)
 
-        prefix = options['use_existing_install']
-        if prefix is not None:
-            _install_binary_dist(env_path, prefix)
-            return 'Environment created in %s.' % env_path
-        else:
-            # Install S2E's dependencies via apt-get
-            if not options['skip_dependencies']:
-                _install_dependencies()
+            prefix = options['use_existing_install']
+            if prefix is not None:
+                _install_binary_dist(env_path, prefix)
+                return 'Environment created in %s.' % env_path
+            else:
+                # Install S2E's dependencies via apt-get
+                if not options['skip_dependencies']:
+                    _install_dependencies()
 
-            # Get the source repositories
-            _get_s2e_sources(env_path)
-            _get_img_sources(env_path)
+                # Get the source repositories
+                _get_s2e_sources(env_path)
+                _get_img_sources(env_path)
 
-            return ('Environment created in %s. You may wish to modify your '
-                    'environment\'s s2e.yaml config file. Run ``s2e build`` '
-                    'to build S2E' % env_path)
+                return ('Environment created in %s. You may wish to modify '
+                        'your environment\'s s2e.yaml config file. Run ``s2e '
+                        'build`` to build S2E' % env_path)
+        except:
+            # Cleanup on failure
+            if os.path.isdir(env_path):
+                shutil.rmtree(env_path)
+            raise
