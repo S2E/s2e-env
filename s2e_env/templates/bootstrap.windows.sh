@@ -12,6 +12,7 @@ function execute_target {
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
 }
 
+{% if use_seeds %}
 # Executes the target with a seed file as input.
 # You can customize this function if you need to do special processing
 # on the seeds, tweak arguments, etc.
@@ -29,6 +30,7 @@ function execute_target_with_seed {
 
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
 }
+{% endif %}
 
 function target_init {
     local PREFIX

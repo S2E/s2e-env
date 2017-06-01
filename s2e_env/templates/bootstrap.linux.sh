@@ -19,6 +19,7 @@ function execute_target {
     {% endif %}
 }
 
+{% if use_seeds %}
 # Executes the target with a seed file as input.
 # You can customize this function if you need to do special processing
 # on the seeds, tweak arguments, etc.
@@ -43,6 +44,7 @@ function execute_target_with_seed {
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% endif %}
 }
+{% endif %}
 
 # Nothing more to initialize on Linux
 function target_init {

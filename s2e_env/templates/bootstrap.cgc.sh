@@ -3,6 +3,10 @@ function execute_target {
     ./${TARGET} > /tmp/out 2>&1
 }
 
+{% if use_seeds %}
+# Executes the target with a seed file as input.
+# You can customize this function if you need to do special processing
+# on the seeds, tweak arguments, etc.
 function execute_target_with_seed {
     TARGET="$1"
     SEED_FILE="$2"
@@ -16,6 +20,7 @@ function execute_target_with_seed {
     chmod +x ${SEED_FILE}
     cb-test --directory $(pwd) --xml ${SEED_FILE} --cb ${TARGET} --should_core --timeout 3600 2>&1
 }
+{% endif %}
 
 function target_init {
     # Patch cb-test so that it works without core dumps
