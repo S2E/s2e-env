@@ -46,7 +46,7 @@ class Command(ProjectCommand):
 
         bb_parser = subparsers.add_parser('basic_block', cmd=BasicBlockCoverage(),
                                           help='Generate a basic block report')
-        bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2'),
+        bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2', 'binaryninja'),
                                default='ida', help='Disassembler backend to use')
 
         super(Command, self).add_arguments(parser)
@@ -65,5 +65,9 @@ class Command(ProjectCommand):
                 from .code_coverage.r2_basic_block import R2BasicBlockCoverage
 
                 return call_command(R2BasicBlockCoverage(), args, **options)
+            elif disassembler == 'binaryninja':
+                from .code_coverage.binaryninja_basic_block import BinaryNinjaBasicBlockCoverage
+
+                return call_command(BinaryNinjaBasicBlockCoverage(), args, **options)
         elif command == 'lcov':
             return call_command(LineCoverage(), args, **options)

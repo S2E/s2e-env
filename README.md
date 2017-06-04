@@ -14,10 +14,13 @@ We assume that you are working on an Ubuntu 14.04 or 16.04 64-bit OS.
 [Repo](https://code.google.com/p/git-repo/) only works with Python 2.7, so you
 should use Python 2.7 too. You will also need `gcc` and `python-dev` installed.
 
-Some commands (such as basic block coverage) require either
-[IDA Pro](https://www.hex-rays.com/products/ida/) or [Radare](https://rada.re/)
-for performing static analysis. If you are using Radare, you will also have to
-install `r2pipe` via pip.
+Some commands (such as basic block coverage) require a disassembler. Supported
+disassemblers include:
+
+* [IDA Pro](https://www.hex-rays.com/products/ida/)
+* [Radare](https://rada.re/). Requires
+  [r2pipe](https://pypi.python.org/pypi/r2pipe)
+* [Binary Ninja](https://binary.ninja/). Requires GUI-less processing
 
 # Install
 

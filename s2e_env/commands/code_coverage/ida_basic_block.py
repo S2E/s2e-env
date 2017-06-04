@@ -61,7 +61,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
         Sets the ``_ida_path`` attribute or raises an exception if IDA Pro
         cannot be found.
         """
-        ida_dir = self.config['ida']['dir']
+        ida_dir = self.config.get('ida', {}).get('dir')
         if not ida_dir:
             raise CommandError('No path to IDA has been given in s2e.yaml. '
                                'Please add the following to your s2e.yaml '

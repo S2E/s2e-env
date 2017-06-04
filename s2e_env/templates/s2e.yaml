@@ -13,5 +13,9 @@ logging:
     color: true
 
 ida:
-    # Path to the IDA Pro directory
+    # Path to the IDA Pro installation directory
     dir: /opt/ida-6.8
+
+binary_ninja:
+    # Path to the Binary Ninja installation directory
+    dir: ""
