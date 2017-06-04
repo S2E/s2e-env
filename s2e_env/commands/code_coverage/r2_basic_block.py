@@ -78,11 +78,10 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
 
     def _initialize_disassembler(self):
         """
-        Initialize the Radare2 disassembler over r2pipe and perform the
-        initial analysis.
+        Initialize Radare2 with r2pipe and perform the initial analysis.
 
         Sets the ``_r2`` attribute or raises an exception if Radare2/r2pipe
-        cannot be found
+        cannot be found.
         """
         try:
             import r2pipe

@@ -64,8 +64,10 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
         ida_dir = self.config['ida']['dir']
         if not ida_dir:
             raise CommandError('No path to IDA has been given in s2e.yaml. '
-                               'IDA is required to generate a basic block '
-                               'coverage report')
+                               'Please add the following to your s2e.yaml '
+                               'config to use this disassembler backend:\n\n'
+                               'ida:\n'
+                               '\tdir: /path/to/ida')
 
         project_arch = self._project_desc['target_arch']
         if project_arch == 'i386':
