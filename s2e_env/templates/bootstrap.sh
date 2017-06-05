@@ -24,7 +24,7 @@ function update_guest_tools {
 
     GUEST_TOOLS="$COMMON_TOOLS $(target_tools)"
     for TOOL in ${GUEST_TOOLS}; do
-        $S2EGET guest-tools/${TOOL}
+        ${S2EGET} guest-tools/${TOOL}
         chmod +x ${TOOL}
     done
 }
@@ -66,16 +66,16 @@ function prepare_inputs {
         {% endif %}
 
         if [ $? -ne 0 ]; then
-            $S2ECMD kill 1 "Failed to create symbolic file"
+            ${S2ECMD} kill 1 "Failed to create symbolic file"
             exit 1
         fi
     else
-        cp "$SEED_FILE" "$SYMB_FILE"
+        cp ${SEED_FILE} ${SYMB_FILE}
     fi
 
     # Make thie file symbolic
-    $S2ECMD symbfile ${SYMB_FILE}
-    echo $SYMB_FILE
+    ${S2ECMD} symbfile ${SYMB_FILE}
+    echo ${SYMB_FILE}
 }
 
 # This function executes the target program given in arguments.
@@ -89,7 +89,7 @@ function execute {
 
     TARGET=$1
 
-    prepare_target "$TARGET"
+    prepare_target "${TARGET}"
 
     {% if use_seeds %}
     # In seed mode, state 0 runs in an infinite loop trying to fetch and
@@ -99,9 +99,9 @@ function execute {
     # Enable seeds and wait until a seed file is available. If you are not
     # using seeds then this loop will not affect symbolic execution - it will
     # simply never be scheduled.
-    $S2ECMD seedsearcher_enable
+    ${S2ECMD} seedsearcher_enable
     while true; do
-        SEED_FILE=$($S2ECMD get_seed_file)
+        SEED_FILE=$(${S2ECMD} get_seed_file)
 
         if [ $? -eq 1 ]; then
             # Avoid flooding the log with messages if we are the only runnable
@@ -157,10 +157,10 @@ fi
 target_init
 
 # Download the target file to analyze
-$S2EGET "{{ target }}"
+${S2EGET} "{{ target }}"
 
 # Run the analysis
 execute "./{{ target }}"
 
 # Kill states before exiting
-$S2ECMD kill 0 "'{{ target }}' state killed"
+${S2ECMD} kill 0 "'{{ target }}' state killed"

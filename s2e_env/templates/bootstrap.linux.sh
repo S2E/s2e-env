@@ -30,9 +30,9 @@ function execute_target_with_seed {
     TARGET="$1"
     SEED_FILE="$2"
 
-    $S2EGET "${SEED_FILE}"
+    ${S2EGET} "${SEED_FILE}"
 
-    SYMB_FILE="$(prepare_inputs \"$SEED_FILE\")"
+    SYMB_FILE="$(prepare_inputs ${SEED_FILE})"
 
     {% if dynamically_linked == true %}
     # {{ target }} is dynamically linked, so s2e.so has been preloaded to
