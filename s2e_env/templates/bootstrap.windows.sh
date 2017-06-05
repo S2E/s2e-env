@@ -23,9 +23,9 @@ function execute_target_with_seed {
     TARGET="$1"
     SEED_FILE="$2"
 
-    $S2EGET "${SEED_FILE}"
+    ${S2EGET} "${SEED_FILE}"
 
-    SYMB_FILE="$(prepare_inputs \"$SEED_FILE\")"
+    SYMB_FILE="$(prepare_inputs ${SEED_FILE})"
 
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
 }

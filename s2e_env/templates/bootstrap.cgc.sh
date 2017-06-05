@@ -10,7 +10,7 @@ function execute_target_with_seed {
     # Make the seed file concolic and submit it to the cb-test application.
     # Note: CGC files don't need to be in a ram disk, as they will be made
     # symbolic at the syscall level. See DecreeMonitor for details.
-    ./s2eget ${SEED_FILE}
+    ${S2EGET} "${SEED_FILE}"
     ./cgccmd concolic on
 
     chmod +x ${SEED_FILE}
