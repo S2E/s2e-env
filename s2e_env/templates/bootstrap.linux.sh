@@ -34,7 +34,14 @@ function execute_target_with_seed {
 
     SYMB_FILE="$(prepare_inputs \"$SEED_FILE\")"
 
+    {% if dynamically_linked == true %}
+    # {{ target }} is dynamically linked, so s2e.so has been preloaded to
+    # provide symbolic arguments to the target if required. You can do so by
+    # using the ``S2E_SYM_ARGS`` environment variable as required
+    LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    {% else %}
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    {% endif %}
 }
 
 # Nothing more to initialize on Linux
