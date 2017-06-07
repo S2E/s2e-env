@@ -1,6 +1,21 @@
 Here are some hints to get started with your project:
 
 {#############################################################################}
+{% if dll_exports is defined %}
+
+The processed binary is a Windows DLL. The DLL will be loaded with the default
+entry point set to DllEntryPoint.
+
+To change the default entry point please specify DLL_ENTRY_POINT in the
+bootstrap.sh
+
+The list of the detected exported functions is provided below. If name of the
+function is not avaiable its ordinal is printed:
+{{ dll_exports | join(', ') }}
+-------
+{% endif %}
+
+{#############################################################################}
 {% if dynamically_linked and image.group_name == 'linux' %}
 
 s2e.so

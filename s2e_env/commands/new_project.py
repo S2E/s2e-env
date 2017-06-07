@@ -31,7 +31,8 @@ from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.project_creation import BaseProject
 from s2e_env.commands.project_creation.config import \
-    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration
+    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, \
+    WindowsDLLProjectConfiguration
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -44,7 +45,8 @@ ELF64_REGEX = re.compile(r'^ELF 64-bit')
 PE32_REGEX = re.compile(r'^PE32 executable')
 PE64_REGEX = re.compile(r'^PE32\+ executable')
 MSDOS_REGEX = re.compile(r'^MS-DOS executable')
-
+DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
+DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 
 class Command(EnvCommand):
     """
@@ -93,6 +95,8 @@ class Command(EnvCommand):
             (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
             (Magic(), ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
             (Magic(), ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
+            (Magic(), DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
+            (Magic(), DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
             (Magic(), PE32_REGEX, WindowsProjectConfiguration, 'i386'),
             (Magic(), PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
             (Magic(), MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
@@ -108,6 +112,7 @@ class Command(EnvCommand):
             if matches:
                 options['target'] = target_path
                 options['target_arch'] = arch
+
                 return call_command(BaseProject(proj_class), **options)
 
         # Otherwise no valid file type was found
