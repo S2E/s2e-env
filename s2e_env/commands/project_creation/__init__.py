@@ -255,7 +255,7 @@ class BaseProject(EnvCommand):
                     'a suitable image for a %s binary', target_arch)
 
         for k, v in templates.iteritems():
-            if self._configurator.is_valid_binary(target_arch, v['os']):
+            if self._configurator.is_valid_binary(target_arch, self._target_path, v['os']):
                 logger.warning('Found %s, which looks suitable for this '
                                'binary. Please use -i if you want to use '
                                'another image', k)

@@ -24,6 +24,7 @@ SOFTWARE.
 import logging
 from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
+from s2e_env.utils import pe
 
 
 logger = logging.getLogger('new_project')
@@ -37,7 +38,7 @@ def is_valid_arch(target_arch, os_desc):
 
 
 class ProjectConfiguration(object):
-    def is_valid_binary(self, target_arch, os_desc):
+    def is_valid_binary(self, target_arch, target_path, os_desc):
         """
         Validate a binary against a particular image description.
 
@@ -53,12 +54,26 @@ class ProjectConfiguration(object):
         pass
 
 
+class WindowsDLLProjectConfiguration(ProjectConfiguration):
+    BOOTSTRAP_TEMPLATE = 'bootstrap.windows_dll.sh'
+    LUA_TEMPLATE = 's2e-config.windows.lua'
+    PROJECT_TYPE = 'windows'
+
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        if not target_path.endswith('.dll'):
+            raise CommandError('Invalid DLL name - requires .dll extension') 
+
+        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+
+    def analyze(self, config):
+        config['dll_exports'] = pe.get_exports(config['target_path'])
+
 class WindowsProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.windows.sh'
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
-    def is_valid_binary(self, target_arch, os_desc):
+    def is_valid_binary(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
 
@@ -67,7 +82,7 @@ class LinuxProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.linux.lua'
     PROJECT_TYPE = 'linux'
 
-    def is_valid_binary(self, target_arch, os_desc):
+    def is_valid_binary(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'elf' in os_desc['binary_formats']
 
     def analyze(self, config):
@@ -81,7 +96,7 @@ class CGCProjectConfiguration(ProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.cgc.lua'
     PROJECT_TYPE = 'cgc'
 
-    def is_valid_binary(self, target_arch, os_desc):
+    def is_valid_binary(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'decree' in os_desc['binary_formats']
 
     def validate_configuration(self, config):
