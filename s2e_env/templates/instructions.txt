@@ -3,16 +3,19 @@ Here are some hints to get started with your project:
 {#############################################################################}
 {% if dll_exports is defined %}
 
-The processed binary is a Windows DLL. The DLL will be loaded with the default
-entry point set to DllEntryPoint.
+DLL Analysis
+============
 
-To change the default entry point please specify DLL_ENTRY_POINT in the
-bootstrap.sh
+The chosen target is a Windows DLL. The DLL will be loaded with the entry point
+set to {{ target_args[0] }}.
 
-The list of the detected exported functions is provided below. If name of the
-function is not avaiable its ordinal is printed:
-{{ dll_exports | join(', ') }}
--------
+If required, you can change the entry point in bootstrap.sh. For example, some
+of the exported symbols provided by this DLL (out of {{ dll_exports | length}})
+include:
+{% for export in dll_exports[0:5] %}
+    * {{ export }}
+{% endfor %}
+
 {% endif %}
 
 {#############################################################################}
@@ -44,6 +47,7 @@ You can enable it in s2e-config.lua.
 
 {#############################################################################}
 {% if use_seeds %}
+
 Seed Files
 ==========
 
@@ -73,8 +77,8 @@ Examples: t0-1.png, 1-1.jpg, 2-0.elf, etc.
 {% endif %}
 {% endif %}
 
-
 {#############################################################################}
+
 Running S2E
 ===========
 

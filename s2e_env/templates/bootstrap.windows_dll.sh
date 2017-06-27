@@ -1,14 +1,13 @@
 # This function executes the target program.
 # You can customize it if your program needs special invocation,
 # custom symbolic arguments, etc.
-
-DLL_ENTRY_POINT="DllEntryPoint"
-
 function execute_target {
     local TARGET
     TARGET="$1"
 
-    rundll32.exe ${TARGET},${DLL_ENTRY_POINT} {{ target_args | join(' ') }}
+    # The DLL entry point (i.e. the argument directly following the comma) and
+    # its arguments can be modified here
+    rundll32.exe ${TARGET},{{ target_args | join(' ') }}
 }
 
 function target_init {

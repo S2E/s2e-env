@@ -31,8 +31,7 @@ from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.project_creation import BaseProject
 from s2e_env.commands.project_creation.config import \
-    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, \
-    WindowsDLLProjectConfiguration
+    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -47,6 +46,7 @@ PE64_REGEX = re.compile(r'^PE32\+ executable')
 MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
 DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
+
 
 class Command(EnvCommand):
     """
@@ -91,15 +91,16 @@ class Command(EnvCommand):
         if not os.path.isfile(target_path):
             raise CommandError('Target %s does not exist' % target_path)
 
+        default_magic = Magic()
         magic_checks = [
             (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
-            (Magic(), ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
-            (Magic(), ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
-            (Magic(), DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
-            (Magic(), DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
-            (Magic(), PE32_REGEX, WindowsProjectConfiguration, 'i386'),
-            (Magic(), PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
-            (Magic(), MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
+            (default_magic, ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
+            (default_magic, ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
+            (default_magic, DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
+            (default_magic, DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
+            (default_magic, PE32_REGEX, WindowsProjectConfiguration, 'i386'),
+            (default_magic, PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
+            (default_magic, MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
         ]
 
         # Check the target program against the valid file types
