@@ -15,7 +15,7 @@ We assume that you are working on Ubuntu 14.04 (or newer) 64-bit OS.
 should use Python 2.7 too.
 
 Some commands (such as basic block coverage) require either
-[IDA Pro](https://www.hex-rays.com/products/ida/) or [Radare](https://rada.re/r/)
+[IDA Pro](https://www.hex-rays.com/products/ida/) or [Radare](https://rada.re/)
 for performing static analysis. If you are using Radare, you will also have to
 install `r2pipe` via pip.
 
@@ -92,7 +92,9 @@ A typical workflow is therefore:
    previous step. This will create the image in the `images` directory.
 5. Use `s2e new_project` to create a new analysis project. This will create all
    the launch scripts, configuration files and bootstrap scripts necessary to
-   perform the analysis on a given target.
+   perform the analysis on a given target. Currently Linux ELF executables,
+   Decree CGC binaries, Windows PE executables and Windows DLLs can be
+   targeted with the `new_project` command.
 6. Change into the project directory and run the S2E analysis with the
    `launch-s2e.sh` script.
 7. After your analysis has finished, a number of subcommands exist to analyze

@@ -24,14 +24,38 @@ SOFTWARE.
 import pefile
 
 
-def get_exports(target):
-    exports = []
-    pe = pefile.PE(target)
+class PEAnalysis(object):
+    """
+    Support class for doing some simple static analysis on PE files.
+    """
 
-    for export in pe.DIRECTORY_ENTRY_EXPORT.symbols:
-        if export.name:
-            exports.append(export.name)
-        else:
-            export.append(export.ordinal)
+    def __init__(self, pe_path):
+        self._pe_path = pe_path
+        self._pe = None
 
-    return exports
+    def __enter__(self):
+        self._pe = pefile.PE(self._pe_path)
+
+        return self
+
+    def __exit__(self, exec_type, exec_value, traceback):
+        if self._pe:
+            self._pe.close()
+
+    def get_exports(self):
+        """
+        Get a list of exported symbols from the PE file.
+
+        Returns:
+            A list of exported symbol names. If a symbol name is not available,
+            the ordinal number is used instead.
+        """
+        exports = []
+
+        for export in self._pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if export.name:
+                exports.append(export.name)
+            else:
+                export.append('%d' % export.ordinal)
+
+        return exports

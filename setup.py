@@ -42,6 +42,7 @@ setup(
 
         # s2e-env requirements
         'jinja2',
+        'pefile',
         'psutil',
         'pyelftools',
         'python-magic',
@@ -49,7 +50,6 @@ setup(
         'requests',
         'sh',
         'termcolor',
-        'pefile'
     ],
     packages=find_packages(),
     include_package_data=True,

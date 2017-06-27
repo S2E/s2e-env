@@ -24,7 +24,7 @@ SOFTWARE.
 import logging
 from s2e_env.command import CommandError
 from s2e_env.utils.elf import ELFAnalysis
-from s2e_env.utils import pe
+from s2e_env.utils.pe import PEAnalysis
 
 
 logger = logging.getLogger('new_project')
@@ -61,12 +61,23 @@ class WindowsDLLProjectConfiguration(ProjectConfiguration):
 
     def is_valid_binary(self, target_arch, target_path, os_desc):
         if not target_path.endswith('.dll'):
-            raise CommandError('Invalid DLL name - requires .dll extension') 
+            raise CommandError('Invalid DLL name - requires .dll extension')
 
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
+    def validate_configuration(self, config):
+        if config.get('use_seeds', False):
+            logger.warn('Seeds have been enabled, however they are not supported for DLLs. This flag will be ignored')
+            config['use_seeds'] = False
+
+        if not config.get('target_args', []):
+            logger.warn('No DLL entry point provided - defaulting to ``DllEntryPoint``')
+            config['target_args'] = ['DllEntryPoint']
+
     def analyze(self, config):
-        config['dll_exports'] = pe.get_exports(config['target_path'])
+        with PEAnalysis(config['target_path']) as pe:
+            config['dll_exports'] = pe.get_exports()
+
 
 class WindowsProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.windows.sh'
