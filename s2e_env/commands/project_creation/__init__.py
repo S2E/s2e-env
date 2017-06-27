@@ -79,13 +79,13 @@ def _create_instructions(context):
     return re.sub(r'([\r\n][\r\n])+', r'\n\n', ret)
 
 
-class BaseProject(EnvCommand):
+class Project(EnvCommand):
     """
-    The base class for the different projects that the ``new_project`` command
-    can create.
+    Helper class used by the ``new_project`` command to create a specific
+    project.
     """
     def __init__(self, cfg):
-        super(BaseProject, self).__init__()
+        super(Project, self).__init__()
 
         self._configurator = cfg()
         self._target_path = None

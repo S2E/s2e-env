@@ -29,7 +29,7 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from s2e_env.commands.project_creation import BaseProject
+from s2e_env.commands.project_creation import Project
 from s2e_env.commands.project_creation.config import \
     CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration
 
@@ -104,7 +104,7 @@ class Command(EnvCommand):
         ]
 
         # Check the target program against the valid file types
-        for magic_check, regex, proj_class, arch in magic_checks:
+        for magic_check, regex, proj_config_class, arch in magic_checks:
             magic = magic_check.from_file(target_path)
             matches = regex.match(magic)
 
@@ -114,7 +114,7 @@ class Command(EnvCommand):
                 options['target'] = target_path
                 options['target_arch'] = arch
 
-                return call_command(BaseProject(proj_class), **options)
+                return call_command(Project(proj_config_class), **options)
 
         # Otherwise no valid file type was found
         raise CommandError('%s is not a valid target for S2E analysis' %
