@@ -23,8 +23,8 @@ SOFTWARE.
 
 import logging
 from s2e_env.command import CommandError
-from s2e_env.utils.elf import ELFAnalysis
-from s2e_env.utils.pe import PEAnalysis
+from s2e_env.analysis.elf import ELFAnalysis
+from s2e_env.analysis.pe import PEAnalysis
 
 
 logger = logging.getLogger('new_project')
@@ -45,12 +45,24 @@ class ProjectConfiguration(object):
         This validation may vary depending on the binary and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
-        pass
+        return True
 
     def validate_configuration(self, config):
+        """
+        Validate a project's configuration options.
+
+        This method may modify values in the ``config`` dictionary. If an
+        invalid configuration is found, a ``CommandError` should be thrown.
+        """
         pass
 
     def analyze(self, config):
+        """
+        Perform static analysis on the target binary.
+
+        The results of this analysis can be used to add and/or modify values in
+        the ``config`` dictionary.
+        """
         pass
 
 
