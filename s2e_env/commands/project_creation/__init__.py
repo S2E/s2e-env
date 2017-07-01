@@ -40,38 +40,6 @@ from .config import is_valid_arch
 logger = logging.getLogger('new_project')
 
 
-def _parse_target_args(target_args):
-    """
-    Parse the target program's arguments.
-
-    The target arguments are specified using a format similar to the
-    American Fuzzy Lop fuzzer. Options are specified as normal, however
-    for programs that take input from a file, '@@' is used to mark the
-    location in the target's command line where the input file should be
-    placed. This will automatically be substituted with a symbolic file
-    in the S2E bootstrap script.
-
-    Return:
-        A tuple containing:
-            1. A flag that is ``True`` if a '@@' marker was found and
-               replaced with a symbolic file, or ``False`` if no such
-               marker was found
-            2. A list of the new command-line arguments to render to
-               bootstrap.{bat, sh}
-    """
-    use_symb_input_file = False
-    parsed_args = []
-
-    for arg in target_args:
-        if arg == '@@':
-            use_symb_input_file = True
-            parsed_args.append('${SYMB_FILE}')
-        else:
-            parsed_args.append(arg)
-
-    return use_symb_input_file, parsed_args
-
-
 def _create_instructions(context):
     ret = render_template(context, 'instructions.txt')
     # Due to how templates work, there may be many useless new lines, remove
@@ -95,40 +63,46 @@ class Project(EnvCommand):
     def handle(self, *args, **options):
         self._validate_and_create_project(options)
 
-        use_symb_input_file, parsed_args = _parse_target_args(
-            options['target_args']
-        )
-
-        # Prepare context for configuration file templates
-        context = {
+        # Prepare the configuration for file templates
+        config = {
             'creation_time': str(datetime.datetime.now()),
             'project_dir': self._project_dir,
             'project_type': self._configurator.PROJECT_TYPE,
+            'image': self._img_json,
             'target': os.path.basename(self._target_path),
             'target_path': self._target_path,
             'target_arch': options['target_arch'],
-            'target_args': parsed_args,
-            'image': self._img_json,
+            'target_args': options['target_args'],
+
+            # See _create_boostrap for an explanation of the @@ marker
+            'use_symb_input_file': '@@' in options['target_args'],
+
+            # The use of seeds is specified on the command line
             'use_seeds': options['use_seeds'],
             'seeds_dir': os.path.join(self._project_dir, 'seeds'),
+
+            # The use of recipes is set by the configurator
             'use_recipes': False,
             'recipes_dir': os.path.join(self._project_dir, 'recipes'),
+
+            # The use of guestfs is dependent on the specific image
+            'has_guestfs': True,
             'guestfs_dir': os.path.join(self._project_dir, 'guestfs'),
-            'use_symb_input_file': use_symb_input_file,
+
+            # These options are determined by the configurator's analysis
             'dynamically_linked': False,
             'modelled_functions': False,
 
-            # Configurators can silence warnings in case they have
-            # specific hard-coded options
+            # Configurators can silence warnings in case they have specific
+            # hard-coded options
             'warn_seeds': True,
             'warn_input_file': True,
         }
 
-        self._configurator.validate_configuration(context)
+        # The configurator may modify the config dictionary here
+        self._configurator.validate_configuration(config)
 
-        use_symb_input_file = context.get('use_symb_input_file', False)
-
-        if context['warn_input_file'] and not use_symb_input_file:
+        if config['warn_input_file'] and not config['use_symb_input_file']:
             logger.warning('You did not specify the input file marker @@. '
                            'This marker is automatically substituted by a '
                            'file with symbolic content. You will have to '
@@ -136,24 +110,22 @@ class Project(EnvCommand):
                            'program on multiple paths.\n\n'
                            'Example: %s @@', self._target_path)
 
-        use_seeds = context.get('use_seeds', False)
-
-        if use_seeds and not use_symb_input_file and context['warn_seeds']:
+        if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
             logger.warning('Seed files have been enabled, however you did not '
                            'specify an input file marker (i.e. \'@@\') to be '
                            'substituted with a seed file. This means that '
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
 
-        if use_seeds and not os.path.isdir(context['seeds_dir']):
-            os.mkdir(context['seeds_dir'])
+        if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
+            os.mkdir(config['seeds_dir'])
 
-        if context['use_recipes']:
+        if config['use_recipes']:
             recipes_path = self.install_path('share', 'decree-recipes')
-            os.symlink(recipes_path, context['recipes_dir'])
+            os.symlink(recipes_path, config['recipes_dir'])
 
         # Do some basic analysis on the target
-        self._configurator.analyze(context)
+        self._configurator.analyze(config)
 
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools()
@@ -161,50 +133,91 @@ class Project(EnvCommand):
         # Create a symlink to the target program
         self._symlink_target()
 
-        # Create a symlink to guestfs
-        if not self._symlink_guestfs(os.path.dirname(self._img_json['path'])):
-            context['guestfs_dir'] = None
+        # Create a symlink to guestfs (if it exists)
+        if not self._symlink_guestfs():
+            config['has_guestfs'] = False
 
         # Render the templates
         logger.info('Creating launch script')
-        self._create_launch_script()
+        self._create_launch_script(config)
 
-        logger.info('Creating S2E configuration and bootstrap')
-        self._create_config(context)
+        logger.info('Creating S2E configuration')
+        self._create_lua_config(config)
+
+        logger.info('Creating S2E bootstrap script')
+        self._create_bootstrap(config)
 
         # Record some basic information on the project
-        self._save_json_description(context)
+        self._save_json_description(config)
 
         # Return the instructions to the user
-        return _create_instructions(context)
+        return _create_instructions(config)
 
-    def _create_config(self, context):
-        context['target_bootstrap_template'] = self._configurator.BOOTSTRAP_TEMPLATE
-        context['target_lua_template'] = self._configurator.LUA_TEMPLATE
-
-        for f in ('s2e-config.lua', 'models.lua', 'library.lua', 'bootstrap.sh'):
-            output_path = os.path.join(self._project_dir, f)
-            render_template(context, f, output_path)
-
-    def _create_launch_script(self):
+    def _create_launch_script(self, config):
         """
         Create the S2E launch script.
         """
         template = 'launch-s2e.sh'
         script_path = os.path.join(self._project_dir, template)
         context = {
-            'creation_time': str(datetime.datetime.now()),
+            'creation_time': config['creation_time'],
             'env_dir': self.env_path(),
-            'install_dir': self.install_path(),
-            'build_dir': self.build_path(),
-            'arch': self._arch,
-            'image_path': self._img_json['path'],
-            'memory': self._img_json['memory'],
-            'snapshot': self._img_json['snapshot'],
-            'qemu_extra_flags': self._img_json['qemu_extra_flags'],
+            'rel_image_path': os.path.relpath(config['image']['path'], self.env_path()),
+            'qemu_arch': self._qemu_arch,
+            'qemu_memory': config['image']['memory'],
+            'qemu_snapshot': config['image']['snapshot'],
+            'qemu_extra_flags': config['image']['qemu_extra_flags'],
         }
 
         render_template(context, template, script_path, executable=True)
+
+    def _create_lua_config(self, config):
+        """
+        Create the S2E Lua config.
+        """
+        context = {
+            'creation_time': config['creation_time'],
+            'target_lua_template': self._configurator.LUA_TEMPLATE,
+            'project_dir': config['project_dir'],
+            'use_seeds': config['use_seeds'],
+            'seeds_dir': config['seeds_dir'],
+            'has_guestfs': config['has_guestfs'],
+            'guestfs_dir': config['guestfs_dir'],
+            'recipes_dir': config['recipes_dir'],
+        }
+
+        for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
+            output_path = os.path.join(self._project_dir, f)
+            render_template(context, f, output_path)
+
+    def _create_bootstrap(self, config):
+        """
+        Create the S2E bootstrap script.
+        """
+        # The target arguments are specified using a format similar to the
+        # American Fuzzy Lop fuzzer. Options are specified as normal, however
+        # for programs that take input from a file, '@@' is used to mark the
+        # location in the target's command line where the input file should be
+        # placed. This will automatically be substituted with a symbolic file
+        # in the S2E bootstrap script.
+        parsed_args = ['${SYMB_FILE}' if arg == '@@' else arg
+                       for arg in config['target_args']]
+
+        template = 'bootstrap.sh'
+        context = {
+            'creation_time': config['creation_time'],
+            'target': config['target'],
+            'target_args': parsed_args,
+            'target_bootstrap_template': self._configurator.BOOTSTRAP_TEMPLATE,
+            'image_arch': config['image']['os']['arch'],
+            'use_symb_input_file': config['use_symb_input_file'],
+            'use_seeds': config['use_seeds'],
+            'dynamically_linked': config['dynamically_linked'],
+            'project_type': config['project_type'],
+        }
+
+        script_path = os.path.join(self._project_dir, template)
+        render_template(context, template, script_path)
 
     def _validate_and_create_project(self, options):
         self._target_path = options['target']
@@ -297,7 +310,7 @@ class Project(EnvCommand):
                                'project or use the force option' %
                                os.path.basename(self._project_dir))
 
-    def _save_json_description(self, context):
+    def _save_json_description(self, config):
         """
         Create a JSON description of the project.
 
@@ -306,11 +319,11 @@ class Project(EnvCommand):
         logger.info('Creating JSON description')
         project_desc_path = os.path.join(self._project_dir, 'project.json')
         with open(project_desc_path, 'w') as f:
-            s = json.dumps(context, sort_keys=True, indent=4)
+            s = json.dumps(config, sort_keys=True, indent=4)
             f.write(s)
 
     @property
-    def _arch(self):
+    def _qemu_arch(self):
         """
         The architecture is determined by the QEMU executable used to build the
         image.
@@ -331,26 +344,30 @@ class Project(EnvCommand):
         """
         Create a symlink to the guest tools directory.
         """
-        guest_tools_path = self.install_path(
-            'bin', CONSTANTS['guest_tools'][self._arch]
-        )
+        guest_tools_path = \
+            self.install_path('bin', CONSTANTS['guest_tools'][self._qemu_arch])
 
         logger.info('Creating a symlink to %s', guest_tools_path)
-
         os.symlink(guest_tools_path,
                    os.path.join(self._project_dir, 'guest-tools'))
 
-    def _symlink_guestfs(self, image_name):
+    def _symlink_guestfs(self):
         """
         Create a symlink to the guestfs directory.
+
+        Return ``True`` if the guestfs directory exists, or ``False``
+        otherwise.
         """
+        image_name = os.path.dirname(self._img_json['path'])
         guestfs_path = self.image_path(image_name, 'guestfs')
+
         if not os.path.exists(guestfs_path):
-            logger.warn('%s does not exist, Vmi plugin may not run optimally',
+            logger.warn('%s does not exist, the VMI plugin may not run optimally',
                         guestfs_path)
             return False
 
         logger.info('Creating a symlink to %s', guestfs_path)
         os.symlink(guestfs_path,
                    os.path.join(self._project_dir, 'guestfs'))
+
         return True

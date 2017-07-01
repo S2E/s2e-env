@@ -6,8 +6,9 @@
 # arguments can be passed to this script at run time
 #
 
-INSTALL_DIR="{{ install_dir }}"
-BUILD_DIR="{{ build_dir }}"
+ENV_DIR="{{ env_dir }}"
+INSTALL_DIR="$ENV_DIR/install"
+BUILD_DIR="$ENV_DIR/build/s2e"
 BUILD=debug
 
 # Comment this out to enable QEMU GUI
@@ -18,10 +19,10 @@ if [ "x$1" = "xdebug" ]; then
   shift
 fi
 
-DRIVE="-drive file={{ image_path }},format=s2e,cache=writeback"
+DRIVE="-drive file=$ENV_DIR/{{ rel_image_path }},format=s2e,cache=writeback"
 
 export S2E_CONFIG=s2e-config.lua
-export S2E_SHARED_DIR={{ install_dir }}/share/libs2e
+export S2E_SHARED_DIR=$INSTALL_DIR/share/libs2e
 export S2E_MAX_PROCESSES=1
 export S2E_UNBUFFERED_STREAM=1
 
@@ -32,8 +33,8 @@ if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
     exit 1
 fi
 
-QEMU="$BUILD_DIR/qemu-$BUILD/{{ arch }}-softmmu/qemu-system-{{ arch }}"
-LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ arch }}-s2e-softmmu/libs2e.so"
+QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
+LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
 
 cat >> gdb.ini <<EOF
 handle SIGUSR2 noprint
@@ -50,18 +51,18 @@ EOF
 GDB="gdb  --init-command=gdb.ini --args"
 
 $GDB $QEMU $DRIVE \
-    -k en-us $GRAPHICS -monitor null -m {{ memory }} -enable-kvm \
+    -k en-us $GRAPHICS -monitor null -m {{ qemu_memory }} -enable-kvm \
     -serial file:serial.txt {{ qemu_extra_flags }} \
-    -loadvm {{ snapshot }} $*
+    -loadvm {{ qemu_snapshot }} $*
 
 else
 
-QEMU="$INSTALL_DIR/bin/qemu-system-{{ arch }}"
-LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ arch }}-s2e.so"
+QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
+LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e.so"
 
 LD_PRELOAD=$LIBS2E $QEMU $DRIVE \
-    -k en-us $GRAPHICS -monitor null -m {{ memory }} -enable-kvm \
+    -k en-us $GRAPHICS -monitor null -m {{ qemu_memory }} -enable-kvm \
     -serial file:serial.txt {{ qemu_extra_flags }} \
-    -loadvm {{ snapshot }} $*
+    -loadvm {{ qemu_snapshot }} $*
 
 fi

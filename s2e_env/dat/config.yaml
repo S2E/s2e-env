@@ -125,7 +125,7 @@ dirs:
     - projects
     - source
 
-# Mapping of architecture to guest tools directory
+# Mapping of QEMU architecture to guest tools directory
 guest_tools:
     i386: guest-tools32
     x86_64: guest-tools64
