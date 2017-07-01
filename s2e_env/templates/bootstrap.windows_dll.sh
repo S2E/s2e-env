@@ -12,7 +12,7 @@ function execute_target {
 
 function target_init {
     local PREFIX
-    {% if image.os.arch=='x86_64' %}
+    {% if image_arch=='x86_64' %}
     # The driver must be installed by a 64-bit process, otherwise
     # its files are copied into syswow64.
     # We use /c/Windows/sysnative to access 64-bit apps from 32-bit msys.

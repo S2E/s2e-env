@@ -130,8 +130,8 @@ class CommandManager(object):
         """
         commands = find_commands()
         if subcommand not in commands:
-            sys.stderr.write('Unknown command - %r' % subcommand)
-            sys.stderr.write('Type \'%s help\' for usage\n' % self._prog_name)
+            sys.stderr.write('Unknown command - %r. Type \'%s help\' for '
+                             'usage\n' % (subcommand, self._prog_name))
             sys.exit(1)
 
         return load_command_class(subcommand)
