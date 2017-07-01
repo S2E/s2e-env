@@ -130,7 +130,7 @@ guest_tools:
     i386: guest-tools32
     x86_64: guest-tools64
 
-# Functions that are supported by S2E's FunctionModels plugin
+# Functions that are supported by S2E's ``FunctionModels`` plugin
 function_models:
     - strcpy
     - strncpy
@@ -143,3 +143,12 @@ function_models:
     - fprintf
     - strcat
     - strncat
+
+# Project files exported by the ``s2e export_project`` command
+exported_files:
+    - bootstrap.sh
+    - launch-s2e.sh
+    - library.lua
+    - models.lua
+    - project.json
+    - s2e-config.lua
