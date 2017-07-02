@@ -100,8 +100,11 @@ A typical workflow is therefore:
 7. After your analysis has finished, a number of subcommands exist to analyze
    and summarize your results, e.g. the ``coverage`` subcommand, etc.
 
-The `s2e info` command can be used to display a summary of the S2E environment.
-To grab the latest changes from the git repositories, run `s2e update`.
+Other useful commands:
+
+* `s2e info` can be used to display a summary of the S2E environment.
+* To download the latest changes from the git repositories, run `s2e update`.
+* Projects can be shared using `s2e export_project` and `s2e import_project`.
 
 ## Environment structure
 
