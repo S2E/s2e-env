@@ -80,7 +80,7 @@ dependencies:
         # s2e-env dependencies
         - lcov
     ubuntu_16:
-        - libprocps4-dev
+        - libprocps-dev
     ubuntu_14:
         - libprocps3-dev
     ida:
