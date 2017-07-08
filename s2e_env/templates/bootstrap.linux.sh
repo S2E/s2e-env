@@ -13,7 +13,7 @@ function execute_target {
     # {{ target }} is dynamically linked, so s2e.so has been preloaded to
     # provide symbolic arguments to the target if required. You can do so by
     # using the ``S2E_SYM_ARGS`` environment variable as required
-    LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    S2E_SYM_ARGS="{{ sym_args | join(' ') }}" LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% else %}
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% endif %}
@@ -39,7 +39,7 @@ function execute_target_with_seed {
     # {{ target }} is dynamically linked, so s2e.so has been preloaded to
     # provide symbolic arguments to the target if required. You can do so by
     # using the ``S2E_SYM_ARGS`` environment variable as required
-    LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    S2E_SYM_ARGS="{{ sym_args | join(' ') }}" LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% else %}
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% endif %}

@@ -73,6 +73,7 @@ class Project(EnvCommand):
             'target_path': self._target_path,
             'target_arch': options['target_arch'],
             'target_args': options['target_args'],
+            'sym_args': options['sym_args'],
 
             # See _create_boostrap for an explanation of the @@ marker
             'use_symb_input_file': '@@' in options['target_args'],
@@ -102,13 +103,13 @@ class Project(EnvCommand):
         # The configurator may modify the config dictionary here
         self._configurator.validate_configuration(config)
 
-        if config['warn_input_file'] and not config['use_symb_input_file']:
-            logger.warning('You did not specify the input file marker @@. '
-                           'This marker is automatically substituted by a '
-                           'file with symbolic content. You will have to '
-                           'manually edit the bootstrap file in order to run the '
-                           'program on multiple paths.\n\n'
-                           'Example: %s @@', self._target_path)
+        if config['warn_input_file'] and not (config['use_symb_input_file'] or config['sym_args']):
+            logger.warning('You did not specify the input file marker @@. This marker is automatically substituted by '
+                           'a file with symbolic content. You will have to manually edit the bootstrap file in order '
+                           'to run the program on multiple paths.\n\n'
+                           'Example: %s @@\n\n'
+                           'You can also make arguments symbolic using the ``S2E_SYM_ARGS`` environment variable in '
+                           'the bootstrap file', self._target_path)
 
         if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
             logger.warning('Seed files have been enabled, however you did not '
@@ -209,6 +210,7 @@ class Project(EnvCommand):
             'creation_time': config['creation_time'],
             'target': config['target'],
             'target_args': parsed_args,
+            'sym_args': config['sym_args'],
             'target_bootstrap_template': self._configurator.BOOTSTRAP_TEMPLATE,
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
