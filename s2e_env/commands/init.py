@@ -83,9 +83,13 @@ def _install_dependencies():
                        CONSTANTS['dependencies']['ida']
 
     try:
-        apt_get = sudo.bake('apt-get', _fg=True)
+        # Enable 32-bit libraries
+        dpkg_add_arch = sudo.bake('dpkg', add_architecture=True, _fg=True)
+        dpkg_add_arch('i386')
 
         # Perform apt-get install
+        apt_get = sudo.bake('apt-get', _fg=True)
+        apt_get.update()
         apt_get.install(install_packages)
     except ErrorReturnCode as e:
         raise CommandError(e)
@@ -169,7 +173,7 @@ def _get_repo(env_path):
 
 def _download_repo(repo_path):
     """
-    Download repo.
+    Download Google's repo.
     """
     logger.info('Fetching repo')
 
