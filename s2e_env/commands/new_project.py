@@ -48,6 +48,29 @@ DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
 DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 
 
+def _parse_sym_args(sym_args_str):
+    """
+    Parses a list of argument indices to make symbolic.
+
+    ``sym_args_str`` should be a string of space-separated integers that
+    correspond to a program argument to make symbolic. E.g. to make the first
+    argument symbolic, ``sym_args_str`` should be "1". To make the first and
+    third arguments symbolic, ``sym_args_str`` should be "1 3".
+    """
+    sym_args = []
+
+    if not sym_args_str:
+        return sym_args
+
+    for i in sym_args_str.split(' '):
+        try:
+            sym_args.append(int(i))
+        except ValueError:
+            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i)
+
+    return sym_args
+
+
 class Command(EnvCommand):
     """
     Initialize a new analysis project.
@@ -61,7 +84,9 @@ class Command(EnvCommand):
         parser.add_argument('target', nargs=1,
                             help='Path to the target file to analyze')
         parser.add_argument('target_args', nargs=argparse.REMAINDER,
-                            help='Arguments to the target program')
+                            help='Arguments to the target program. Use @@ '
+                                 'as an input file marker that is automatically '
+                                 'substituted by a file with symbolic content')
         parser.add_argument('-n', '--name', required=False, default=None,
                             help='The name of the project. Defaults to the '
                                  'name of the target program.')
@@ -77,6 +102,9 @@ class Command(EnvCommand):
                                  'concolic files. The user must create these '
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
+        parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
+                            help='A space-separated list of target argument '
+                                 'indices to make symbolic')
         parser.add_argument('-f', '--force', action='store_true',
                             help='If a project with the given name already '
                                  'exists, replace it')
