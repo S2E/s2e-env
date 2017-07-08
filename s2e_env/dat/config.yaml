@@ -105,6 +105,10 @@ repos:
         build: guest-images
 
 required_versions:
+    # Ubuntu OS major version
+    ubuntu_major_ver:
+        - 14
+        - 16
     # images.json must have this version
     guest_images: 2
 

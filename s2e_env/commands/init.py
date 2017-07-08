@@ -109,7 +109,7 @@ def _get_ubuntu_version():
 
     major_version = int(version.split('.')[0])
 
-    if major_version < 14:
+    if major_version not in CONSTANTS['required_versions']['ubuntu_major_ver']:
         logger.warning('You are running an unsupported version of Ubuntu. '
                        'Skipping S2E dependencies  - please install them '
                        'manually')
