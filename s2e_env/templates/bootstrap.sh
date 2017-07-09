@@ -13,6 +13,7 @@
 set -x
 
 S2EGET=./s2eget
+S2EPUT=./s2eput
 S2ECMD=./s2ecmd
 COMMON_TOOLS="s2ecmd s2eget s2eput"
 
@@ -163,4 +164,4 @@ ${S2EGET} "{{ target }}"
 execute "./{{ target }}"
 
 # Kill states before exiting
-${S2ECMD} kill 0 "'{{ target }}' state killed"
+${S2ECMD} kill $? "'{{ target }}' state killed"
