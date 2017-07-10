@@ -77,38 +77,37 @@ def _get_file_line_coverage(target_path, addr_counts):
             line_program = dwarf_info.line_program_for_CU(cu)
             cu_filepath = cu.get_top_DIE().get_full_path()
 
-            if line_program['include_directory']:
-                # The actual source path depends on the DWARF line info state
-                # machine
-                src_path = cu_filepath
-                src_dir = os.path.dirname(src_path)
-                for entry in line_program.get_entries():
-                    state = entry.state
+            # Set the default dir and file path
+            src_path = cu_filepath
+            src_dir = os.path.dirname(src_path)
 
-                    if state is None:
-                        # Special handling for commands that don't set a new
-                        # state
-                        if entry.command == dwarf_consts.DW_LNS_set_file:
-                            file_entry = line_program['file_entry'][entry.args[0] - 1]
-                            if file_entry.dir_index == 0:
-                                # Current directory
-                                src_path = os.path.join(src_dir, file_entry.name)
-                            else:
-                                include_dir = line_program['include_directory']
-                                src_path = os.path.join(src_dir, include_dir[file_entry.dir_index - 1],
-                                                        file_entry.name)
-                        elif entry.command == dwarf_consts.DW_LNE_define_file:
+            for entry in line_program.get_entries():
+                state = entry.state
+
+                if state is None:
+                    # Special handling for commands that don't set a new
+                    # state
+                    if entry.command == dwarf_consts.DW_LNS_set_file:
+                        file_entry = line_program['file_entry'][entry.args[0] - 1]
+                        if file_entry.dir_index == 0:
+                            # Current directory
+                            src_path = os.path.join(src_dir, file_entry.name)
+                        elif line_program['include_directory']:
                             include_dir = line_program['include_directory']
-                            src_path = os.path.join(src_dir, include_dir[entry.args[0].dir_index])
-                    elif not state.end_sequence:
-                        # If this address is one that we executed in S2E, save
-                        # the number of times that it was executed into the
-                        # dictionary. Otherwise set it to 0
-                        if src_path not in file_line_info:
-                            src_path = os.path.realpath(src_path)
-                            file_line_info[src_path] = {}
+                            src_path = os.path.join(src_dir, include_dir[file_entry.dir_index - 1],
+                                                    file_entry.name)
+                    elif entry.command == dwarf_consts.DW_LNE_define_file and line_program['include_directory']:
+                        include_dir = line_program['include_directory']
+                        src_path = os.path.join(src_dir, include_dir[entry.args[0].dir_index])
+                elif not state.end_sequence:
+                    # If this address is one that we executed in S2E, save
+                    # the number of times that it was executed into the
+                    # dictionary. Otherwise set it to 0
+                    if src_path not in file_line_info:
+                        src_path = os.path.realpath(src_path)
+                        file_line_info[src_path] = {}
 
-                        file_line_info[src_path][state.line] = addr_counts.get(state.address, 0)
+                    file_line_info[src_path][state.line] = addr_counts.get(state.address, 0)
 
         return file_line_info
 
