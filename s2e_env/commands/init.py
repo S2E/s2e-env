@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import datetime
 import logging
 import os
 import shutil
@@ -201,6 +202,7 @@ def _create_config(env_path):
     version_path = os.path.join(os.path.dirname(__file__), '..', 'dat', 'VERSION')
 
     context = {
+        'creation_time': str(datetime.datetime.now()),
         'version': open(version_path, 'r').read().strip(),
     }
 
