@@ -12,8 +12,7 @@ set to {{ target_args[0] }}.
 If required, you can change the entry point in bootstrap.sh. For example, some
 of the exported symbols provided by this DLL (out of {{ dll_exports | length}})
 include:
-{% for export in dll_exports[0:5] %}
-    * {{ export }}
+{% for export in dll_exports[0:5] %}    * {{ export }}
 {% endfor %}
 
 {% endif %}
@@ -30,7 +29,7 @@ generate symbolic command line arguments.
 {% endif %}
 
 {#############################################################################}
-{% if dynamically_linked and modelled_funcs %}
+{% if dynamically_linked and modelled_functions %}
 
 Function Models
 ===============
@@ -38,7 +37,8 @@ Function Models
 {{ target_path }} is dynamically linked and imports the following
 functions:
 
-{{ modelled_funcs }}
+{% for modelled_function in modelled_functions %}    * {{ modelled_function }}
+{% endfor %}
 
 The FunctionModels plugin provides models for these functions.
 You can enable it in s2e-config.lua.
