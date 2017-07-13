@@ -177,6 +177,7 @@ class Project(EnvCommand):
         """
         context = {
             'creation_time': config['creation_time'],
+            'target': config['target'],
             'target_lua_template': self._configurator.LUA_TEMPLATE,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
