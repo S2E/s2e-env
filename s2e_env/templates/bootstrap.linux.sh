@@ -48,8 +48,8 @@ function execute_target_with_seed {
 
 # Nothing more to initialize on Linux
 function target_init {
-    # Dummy instruction
-    echo -n
+    # Start the LinuxMonitor kernel module
+    sudo modprobe s2e
 }
 
 # Returns Linux-specific tools

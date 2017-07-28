@@ -43,8 +43,10 @@ function target_init {
     PREFIX=
     {% endif %}
 
+    # Start the WindowsMonitor driver
     ${PREFIX}cmd.exe '\/c' 'rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 c:\s2e\s2e.inf'
     sc start s2e
+
     # Create ram disk
     imdisk -a -s 2M -m X: -p "/fs:fat /q /y"
     drvctl.exe register_debug
