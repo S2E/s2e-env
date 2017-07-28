@@ -28,6 +28,9 @@ function target_init {
 
     # Some binaries have strange headers, allow them here
     echo 1 | sudo tee /proc/sys/cgc/relaxed_headers
+
+    # Start the DecreeMonitor kernel module
+    sudo modprobe s2e
 }
 
 function target_tools {
