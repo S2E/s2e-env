@@ -134,7 +134,7 @@ class Command(EnvCommand):
 
             # If we've made it this far, the component is not valid
             raise CommandError('Component %s is not valid. Valid components '
-                               'are: %s' % (component, ','.join(stamp_prefixes)))
+                               'are: %s' % (component, ', '.join(stamp_prefixes)))
 
         # Delete the stamps, ignoring any stamps that do not exist
         for stamp_to_delete in stamps_to_delete:
