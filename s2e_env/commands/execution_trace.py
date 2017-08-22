@@ -21,8 +21,11 @@ SOFTWARE.
 """
 
 
+import binascii
 import json
 import logging
+
+from enum import Enum
 
 from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.execution_trace import parse as parse_execution_tree, trace_entries
@@ -51,13 +54,17 @@ def _make_json_entry(header, item):
         * Enums are replaced by their numerical value (so that they can be
           written to JSON)
     """
-    from enum import Enum
 
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
     if header.type == TraceEntryType.TRACE_FORK:
         children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
         item = trace_entries.TraceFork(item.pc, children)
+    # If the entry is a test case, then we have to "hexlify" the data so that
+    # it can be stored in the JSON file
+    elif header.type == TraceEntryType.TRACE_TESTCASE:
+        data = binascii.hexlify(item.data)
+        item = trace_entries.TraceTestCase(item.name, data)
 
     header_dict = header.as_dict()
 
