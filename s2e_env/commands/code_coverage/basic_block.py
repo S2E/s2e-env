@@ -89,16 +89,16 @@ class BasicBlockCoverage(ProjectCommand):
         # Initialize the backend disassembler
         self._initialize_disassembler()
 
-        # Get the basic block information
-        bbs = self._get_basic_blocks()
-        if not bbs:
-            raise CommandError('No basic block information found')
-
         # Get translation block coverage information
         target_path = self._project_desc['target_path']
         tbs = self._get_tb_coverage(os.path.basename(target_path))
         if not tbs:
             raise CommandError('No translation block coverage information found')
+
+        # Get the basic block information
+        bbs = self._get_basic_blocks()
+        if not bbs:
+            raise CommandError('No basic block information found')
 
         # Calculate the basic block coverage information
         bb_coverage = _basic_block_coverage(bbs, tbs)
