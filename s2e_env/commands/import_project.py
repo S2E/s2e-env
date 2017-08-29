@@ -109,7 +109,7 @@ class Command(EnvCommand):
             self._symlink_guest_tools(project_path, proj_desc)
 
             # Create a symlink to guestfs (if it exists)
-            if proj_desc['has_guestfs']:
+            if proj_desc.get('has_guestfs'):
                 self._symlink_guestfs(project_path, proj_desc)
 
         return 'Project successfully imported from %s' % archive
