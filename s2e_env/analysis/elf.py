@@ -86,13 +86,15 @@ class ELFAnalysis(object):
                     symbol['st_info']['type'] == 'STT_FUNC' and
                     symbol.name in CONSTANTS['function_models'])
 
-        # Find the symbol table
+        # Find the symbol table(s)
+        modelled_functions = set()
         for section in self._elf.iter_sections():
             if isinstance(section, SymbolTableSection):
                 # Look for a function that is supported by the FunctionModels
                 # plugin
-                modelled_functions = [symbol.name for symbol in
-                                      section.iter_symbols()
-                                      if is_modelled_func(symbol)]
+                for symbol in section.iter_symbols():
+                    if is_modelled_func(symbol):
+                        modelled_functions.add(symbol.name)
 
-        return modelled_functions
+        # Must return a list so we can serialize it to JSON
+        return list(modelled_functions)
