@@ -143,6 +143,8 @@ function_models:
     - fprintf
     - strcat
     - strncat
+    - crc16
+    - crc32
 
 # Project files exported by the ``s2e export_project`` command
 exported_files:
