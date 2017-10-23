@@ -280,13 +280,23 @@ class TraceModuleUnload(TraceEntry):
 
 
 class TraceProcessUnload(TraceEntry):
-    FORMAT = '<'
+    FORMAT = '<Q'
+
+    def __init__(self, return_code):
+        super(TraceProcessUnload, self).__init__(TraceProcessUnload.FORMAT)
+        self._return_code = return_code
 
     def serialize(self):
-        return ''
+        return self._struct.pack(self._return_code)
 
     def as_dict(self):
-        return {}
+        return {
+            'returnCode': self.return_code,
+        }
+
+    @property
+    def return_code(self):
+        return self._return_code
 
 
 class TraceCall(TraceEntry):
