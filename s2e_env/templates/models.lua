@@ -6,6 +6,7 @@ Suppose that the binary you want to analyze contains at address 0x1234 a functio
 that computes a standard CRC32 checksum. To enable the model for the CRC32 function,
 add the following lines:
 
+g_function_models["{{ target }}"] = {}
 g_function_models["{{ target }}"][0x1234] = {
     xor_result=true, --Must be true for standard CRC32
     type="crc32"
