@@ -10,7 +10,7 @@
 add_plugin("LinuxMonitor")
 pluginsConfig.LinuxMonitor = {
     -- Kill the execution state when it encounters a segfault
-    terminateOnSegFault = true,
+    terminateOnSegfault = true,
 
     -- Kill the execution state when it encounters a trap
     terminateOnTrap = true,
