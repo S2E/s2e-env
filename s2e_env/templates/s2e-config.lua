@@ -43,7 +43,7 @@ add_plugin("BaseInstructions")
 -- Use it in conjunction with s2eget and s2eput guest tools in order to
 -- transfer files between the guest and the host.
 
-table.insert(plugins, "HostFiles")
+add_plugin("HostFiles")
 pluginsConfig.HostFiles = {
     baseDirs = {
         "{{ project_dir }}",
