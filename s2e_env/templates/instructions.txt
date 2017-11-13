@@ -84,8 +84,8 @@ Running S2E
 
 The S2E project is now ready to run. You have two ways to start the analysis:
 
-    * Use the "s2e run" command
     * cd {{ project_dir }} && ./launch-s2e.sh
+    * Use the "s2e run" command
 
 The results of the analysis can be found in the s2e-last directory.
 You may customize s2e-config.lua, bootstrap.sh, launch-s2e.sh, and others
