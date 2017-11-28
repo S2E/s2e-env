@@ -87,32 +87,40 @@ class Command(ProjectCommand):
             copy_and_rewrite_files(self.project_path(), export_dir,
                                    self.env_path(), S2E_ENV_PLACEHOLDER)
 
-            with open(os.path.join(export_dir, 'project.json'), 'r+') as f:
-                proj_desc = json.load(f)
+            with open(self.project_path('project.json'), 'r') as orig_proj_file, \
+                 open(os.path.join(export_dir, 'project.json'), 'r+') as new_proj_file:
+                orig_proj_desc = json.load(orig_proj_file)
+                new_proj_desc = json.load(new_proj_file)
 
                 # Rewrite the target_path entry in the given project.json. This
                 # is done because when we import the project the target will no
                 # longer be a symlink
-                proj_desc['target_path'] = \
-                    os.path.join(proj_desc['project_dir'], proj_desc['target'])
+                new_proj_desc['target_path'] = \
+                    os.path.join(new_proj_desc['project_dir'], new_proj_desc['target'])
 
-                # Export the recipes directory
-                if proj_desc['use_recipes']:
-                    recipes_dir = os.path.basename(proj_desc['recipes_dir'])
-                    shutil.copytree(proj_desc['recipes_dir'],
+                # Export the recipes directory. We need a reference to the
+                # original project description so that we know where to copy
+                # from (because our new project description has been
+                # overwritten with the S2E_ENV_PLACEHOLDER)
+                if new_proj_desc['use_recipes']:
+                    recipes_dir = os.path.basename(new_proj_desc['recipes_dir'])
+                    shutil.copytree(orig_proj_desc['recipes_dir'],
                                     os.path.join(export_dir, recipes_dir))
 
-                # Export the seeds directory
-                if proj_desc['use_seeds']:
-                    seeds_dir = os.path.basename(proj_desc['seeds_dir'])
-                    shutil.copytree(proj_desc['seeds_dir'],
+                # Export the seeds directory. We need a reference to the
+                # original project description so that we know where to copy
+                # from (because the new project description has been
+                # overwritten with the S2E_ENV_PLACEHOLDER)
+                if new_proj_desc['use_seeds']:
+                    seeds_dir = os.path.basename(new_proj_desc['seeds_dir'])
+                    shutil.copytree(orig_proj_desc['seeds_dir'],
                                     os.path.join(export_dir, seeds_dir))
 
                 # Update the project.json in the temporary directory
-                proj_desc_json = json.dumps(proj_desc, sort_keys=True, indent=4)
-                f.seek(0)
-                f.write(proj_desc_json)
-                f.truncate()
+                new_proj_desc_json = json.dumps(new_proj_desc, sort_keys=True, indent=4)
+                new_proj_file.seek(0)
+                new_proj_file.write(new_proj_desc_json)
+                new_proj_file.truncate()
 
             # Copy the target into the temporary directory
             logger.info('Copying target from %s', self._project_desc['target_path'])
