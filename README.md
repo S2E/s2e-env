@@ -70,11 +70,17 @@ To get help on a particular command:
 s2e <subcommand> --help
 ```
 
-All commands take an optional `--env /path/to/env` argument to specify the
-path to the S2E environment you want to execute the command in. If not provided
-this path defaults to the current working directory. For the workflow described
-below it is easiest to execute all commands from within your S2E environment
-directory.
+Most commands use the `S2EDIR` environment variable so that commands can be run
+from any directory. `S2EDIR` can be set by sourcing `install/bin/s2e_activate`
+in your environment directory. Sourcing this file also makes `s2e_deactivate`
+available, which unsets S2E environment variables.
+
+Alternatively, most commands take an optional `--env /path/to/env` argument.
+This argument can be used to specify the path to the S2E environment you want
+to execute the command in.
+
+Note that **one of** the `S2EDIR` environment variable or `--env` option
+**must** be used.
 
 ## Workflow
 
@@ -87,20 +93,21 @@ A typical workflow is therefore:
 1. Run `s2e init $DIR` to create a new S2E environment in `$DIR`. This will
    create the environment, install dependencies (unless `--skip-dependencies`
    is used) and fetch all of the S2E engine code.
-2. Look around the source code, make some modifications, etc. Then when you are
+2. Activate the environment via `. $DIR/install/bin/s2e_activate`.
+3. Look around the source code, make some modifications, etc. Then when you are
    ready to build run `s2e build`.
-3. You'll need some images to analyze your software in! See what images are
+4. You'll need some images to analyze your software in! See what images are
    available with `s2e image_build`.
-4. Run `s2e image_build $TEMPLATE` to build one of the images listed in the
+5. Run `s2e image_build $TEMPLATE` to build one of the images listed in the
    previous step. This will create the image in the `images` directory.
-5. Use `s2e new_project` to create a new analysis project. This will create all
+6. Use `s2e new_project` to create a new analysis project. This will create all
    the launch scripts, configuration files and bootstrap scripts necessary to
    perform the analysis on a given target. Currently Linux ELF executables,
    Decree CGC binaries, Windows PE executables and Windows DLLs can be
    targeted with the `new_project` command.
-6. Change into the project directory and run the S2E analysis with the
+7. Change into the project directory and run the S2E analysis with the
    `launch-s2e.sh` script.
-7. After your analysis has finished, a number of subcommands exist to analyze
+8. After your analysis has finished, a number of subcommands exist to analyze
    and summarize your results, e.g. the ``coverage`` and ``execution_trace``
    subcommands.
 

@@ -209,6 +209,21 @@ def _create_config(env_path):
     render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
 
 
+def _create_activate_script(env_path):
+    """
+    Create the environment activation script.
+    """
+    # TODO detect shell to determine template
+    template = 's2e_activate.sh'
+
+    context = {
+        'S2EDIR': env_path,
+    }
+
+    render_template(context, template,
+                    os.path.join(env_path, 'install', 'bin', 's2e_activate'))
+
+
 class Command(BaseCommand):
     """
     Initializes a new S2E environment.
@@ -268,6 +283,9 @@ class Command(BaseCommand):
             # Create the YAML config for the environment
             _create_config(env_path)
 
+            # Create the shell script to activate the environment
+            _create_activate_script(env_path)
+
             prefix = options['use_existing_install']
             if prefix is not None:
                 _install_binary_dist(env_path, prefix)
@@ -281,9 +299,11 @@ class Command(BaseCommand):
                 _get_s2e_sources(env_path)
                 _get_img_sources(env_path)
 
-                return ('Environment created in %s. You may wish to modify '
-                        'your environment\'s s2e.yaml config file. Run ``s2e '
-                        'build`` to build S2E' % env_path)
+                return ('Environment created in {0}. You may wish to modify '
+                        'your environment\'s s2e.yaml config file. Source '
+                        '``{0}/install/bin/s2e_activate`` to activate your '
+                        'environment. Then run ``s2e build`` to build '
+                        'S2E'.format(env_path))
         except:
             # Cleanup on failure
             if os.path.isdir(env_path):
