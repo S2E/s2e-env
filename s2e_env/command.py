@@ -249,9 +249,16 @@ class EnvCommand(BaseCommand):
     def handle_common_args(self, **options):
         """
         Adds the environment directory as a class member.
+
+        The environment directory is specified as either an environment
+        variable or a command-line option.
         """
-        self._env_dir = options['env']
-        options.pop('env', ())
+        self._env_dir = os.getenv('S2EDIR') or options.pop('env', None)
+
+        if not self._env_dir:
+            raise CommandError('The S2E environment directory could not be '
+                               'determined. Source install/bin/s2e_activate '
+                               'in your environment or use the --env option')
 
         try:
             with open(self.env_path('s2e.yaml'), 'r') as f:
@@ -266,9 +273,9 @@ class EnvCommand(BaseCommand):
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
 
-        parser.add_argument('-e', '--env', default=os.getcwd(), required=False,
-                            help='The S2E development environment. Defaults '
-                                 'to the current working directory')
+        parser.add_argument('-e', '--env', required=False,
+                            help='The S2E environment. Only used if the '
+                                 'S2EDIR environment variable is not defined')
 
     @property
     def config(self):
