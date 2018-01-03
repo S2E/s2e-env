@@ -234,7 +234,9 @@ class Command(BaseCommand):
     help = 'Initializes a new S2E environment.'
 
     def add_arguments(self, parser):
-        parser.add_argument('dir', help='The environment directory')
+        parser.add_argument('dir', nargs='?', default=os.getcwd(),
+                            help='The environment directory. Defaults to the '
+                                 'current working directory')
         parser.add_argument('-s', '--skip-dependencies', action='store_true',
                             help='Skip the dependency install via apt')
         parser.add_argument('-b', '--use-existing-install', required=False,
@@ -250,12 +252,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
 
-        # First check if we are already in the environment directory
-        if os.path.realpath(env_path) == os.path.realpath(os.getcwd()):
-            raise CommandError('You cannot create an S2E environment in the '
-                               'current working directory. Please `cd ..`')
-
-        # Then check if something already exists at the environment directory
+        # Check if something already exists at the environment directory
         if os.path.isdir(env_path) and not os.listdir(env_path) == []:
             if options['force']:
                 logger.info('%s already exists - removing', env_path)
@@ -305,7 +302,8 @@ class Command(BaseCommand):
                         'environment. Then run ``s2e build`` to build '
                         'S2E'.format(env_path))
         except:
-            # Cleanup on failure
-            if os.path.isdir(env_path):
+            # Cleanup on failure. Note that this only occurs if the chosen
+            # directory is *not* the current working directory
+            if os.path.isdir(env_path) and os.getcwd() != env_path:
                 shutil.rmtree(env_path)
             raise
