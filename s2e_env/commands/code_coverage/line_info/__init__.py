@@ -20,9 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import dwarf
+import logging
 
-# TODO: use architecture-specific parsers (e.g, to extract lines from PDB files)
+from s2e_env.commands.code_coverage.line_info import dwarf
+from s2e_env.commands.code_coverage.line_info import jsoninfo
+
+from s2e_env.command import CommandError
+
+logger = logging.getLogger('line_info')
+
+
 def get_file_line_coverage(target_path, addr_counts):
     """
         Map addresses to line numbers in the source code file.
@@ -50,4 +57,16 @@ def get_file_line_coverage(target_path, addr_counts):
                 ```
     """
 
-    return dwarf.get_file_line_coverage(target_path, addr_counts)
+    try:
+        return dwarf.get_file_line_coverage(target_path, addr_counts)
+    except Exception as e:
+        logger.error('Could not read DWARF information from %s: %s', target_path, e)
+
+    try:
+        return jsoninfo.get_file_line_coverage(target_path, addr_counts)
+    except Exception as e:
+        logger.error('Could not get json line information from %s: %s\n'
+                     'If you try to get coverage for a Windows binary that has a PDB file,\n'
+                     'please use pdbparser.exe to get the json line information.', target_path, e)
+
+    raise CommandError('No usable line information available for %s' % target_path)
