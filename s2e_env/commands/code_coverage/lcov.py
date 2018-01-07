@@ -119,11 +119,19 @@ class LineCoverage(ProjectCommand):
         with open(lcov_path, 'w') as f:
             f.write('TN:\n')
             for src_file in file_line_info.keys():
-                abs_src_path = os.path.realpath(src_file)
-                if not os.path.isfile(abs_src_path):
-                    logger.warning('Cannot find source file \'%s\'. '
-                                   'Skipping...', abs_src_path)
-                    continue
+
+                # Leave Windows paths alone, don't strip any missing ones.
+                if '\\' in src_file:
+                    abs_src_path = src_file
+                else:
+                    abs_src_path = os.path.realpath(src_file)
+
+                    # TODO: genhtml has an option to ignore missing files,
+                    # maybe it's better to keep them here
+                    if not os.path.isfile(abs_src_path):
+                        logger.warning('Cannot find source file \'%s\'. '
+                                       'Skipping...', abs_src_path)
+                        continue
 
                 num_non_zero_lines = 0
                 num_instrumented_lines = 0
@@ -141,6 +149,7 @@ class LineCoverage(ProjectCommand):
 
         return lcov_path
 
+    # TODO: support Windows paths on Linux
     def _gen_html(self, lcov_info_path):
         """
         Generate an LCOV HTML report.
