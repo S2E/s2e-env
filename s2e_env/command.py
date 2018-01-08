@@ -39,28 +39,6 @@ import sys
 import yaml
 
 from s2e_env.utils import log
-from s2e_env.utils.log import ColoredFormatter
-
-
-def _configure_logging(level=logging.INFO, use_color=True):
-    """
-    Configure te global logging settings.
-    """
-    # Add a 'SUCCESS' level to the logger
-    logging.addLevelName(log.SUCCESS, 'SUCCESS')
-    logging.Logger.success = log.success
-
-    # Configure colored logging
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    # Overwrite any existing handlers
-    if logger.handlers:
-        logger.handlers = []
-
-    colored_handler = logging.StreamHandler()
-    colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
-    logger.addHandler(colored_handler)
 
 
 class CommandError(Exception):
@@ -134,7 +112,7 @@ class BaseCommand(object):
 
     def __init__(self):
         # Initialize the default logger
-        _configure_logging()
+        log.configure_logging()
 
     def create_parser(self, prog_name, subcommand):
         """
@@ -244,7 +222,7 @@ class EnvCommand(BaseCommand):
             raise CommandError('Invalid logging level \'%s\' in s2e.yaml' %
                                config_lvl)
 
-        _configure_logging(level, color)
+        log.configure_logging(level, color)
 
     def handle_common_args(self, **options):
         """
