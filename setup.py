@@ -51,6 +51,7 @@ setup(
         'requests',
         'sh',
         'termcolor',
+        'pytrie'
     ],
     packages=find_packages(),
     include_package_data=True,
