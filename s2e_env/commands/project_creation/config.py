@@ -45,7 +45,7 @@ class ProjectConfiguration(object):
         This validation may vary depending on the binary and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
-        return True
+        pass
 
     def validate_configuration(self, config):
         """
@@ -98,6 +98,21 @@ class WindowsProjectConfiguration(ProjectConfiguration):
 
     def is_valid_binary(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+
+
+class WindowsDriverProjectConfiguration(ProjectConfiguration):
+    BOOTSTRAP_TEMPLATE = 'bootstrap.windows_driver.sh'
+    LUA_TEMPLATE = 's2e-config.windows.lua'
+    PROJECT_TYPE = 'windows'
+
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+
+    def validate_configuration(self, config):
+        if config.get('use_seeds', False):
+            logger.warn('Seeds have been enabled, however they are not supported for device drivers.'
+                        ' This flag will be ignored')
+            config['use_seeds'] = False
 
 
 class LinuxProjectConfiguration(ProjectConfiguration):

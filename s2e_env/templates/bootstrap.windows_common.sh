@@ -1,5 +1,8 @@
-function target_init {
+function install_driver {
     local PREFIX
+    local DRIVER
+    DRIVER="$1"
+
     {% if image_arch=='x86_64' %}
     # The driver must be installed by a 64-bit process, otherwise
     # its files are copied into syswow64.
@@ -9,8 +12,12 @@ function target_init {
     PREFIX=
     {% endif %}
 
-    # Start the WindowsMonitor driver
-    ${PREFIX}cmd.exe '\/c' 'rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 c:\s2e\s2e.inf'
+    ${PREFIX}cmd.exe '\/c' "rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ${DRIVER}"
+}
+
+function target_init {
+    # Start the s2e.sys WindowsMonitor driver
+    install_driver 'c:\s2e\s2e.inf'
     sc start s2e
 
     # Create ram disk
@@ -21,6 +28,13 @@ function target_init {
 
 function target_tools {
     echo "s2e.sys s2e.inf drvctl.exe"
+}
+
+# This function converts an msys path into a Windows path
+function win_path {
+  local dir="$(dirname "$1")"
+  local fn="$(basename "$1")"
+  echo "$(cd "$dir"; echo "$(pwd -W)/$fn")" | sed 's|/|\\|g';
 }
 
 cd /c/s2e

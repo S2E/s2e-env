@@ -158,7 +158,9 @@ fi
 target_init
 
 # Download the target file to analyze
-${S2EGET} "{{ target }}"
+{% for tf in target_files -%}
+${S2EGET} "{{ tf }}"
+{% endfor %}
 
 # Run the analysis
 execute "./{{ target }}"

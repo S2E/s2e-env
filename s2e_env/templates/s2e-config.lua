@@ -139,10 +139,12 @@ pluginsConfig.TranslationBlockCoverage = {
 
 add_plugin("ModuleExecutionDetector")
 pluginsConfig.ModuleExecutionDetector = {
+    {% for m in modules %}
     mod_0 = {
-        moduleName = "{{ target }}",
-        kernelMode = false,
+        moduleName = "{{ m[0] }}",
+        kernelMode = {% if m[1] %} true {% else %} false {% endif %},
     },
+    {% endfor %}
 }
 
 -------------------------------------------------------------------------------
@@ -176,7 +178,9 @@ pluginsConfig.ForkLimiter = {
 add_plugin("ProcessExecutionDetector")
 pluginsConfig.ProcessExecutionDetector = {
     moduleNames = {
-        "{{ target }}",
+        {% for p in processes %}
+        "{{ p }}",
+        {% endfor %}
     },
 }
 
