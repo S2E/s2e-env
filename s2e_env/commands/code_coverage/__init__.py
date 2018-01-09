@@ -25,9 +25,12 @@ import glob
 import json
 import logging
 import os
+import re
 
 
 logger = logging.getLogger('coverage')
+
+TB_COVERAGE_FILE_STATE_REGEX = re.compile(r'tbcoverage-(?P<state>\d+)\.json$')
 
 
 def get_tb_files(results_dir):
@@ -39,7 +42,7 @@ def get_tb_files(results_dir):
         results_dir: Path to an ``s2e-out-*`` directory in an analysis project.
 
     Returns:
-        A list of translation block coverage files
+        A list of translation block coverage files.
     """
     # Include both multi-node and single node results
     tb_coverage_files = glob.glob(os.path.join(results_dir, '*', 'tbcoverage-*.json')) + \
@@ -50,6 +53,18 @@ def get_tb_files(results_dir):
                        'plugin in s2e-config.lua?')
 
     return tb_coverage_files
+
+
+def get_tb_state(tb_coverage_file):
+    """
+    Extract the state ID from the given TB coverage file path. Return ``None``
+    if no match is found.
+    """
+    match = TB_COVERAGE_FILE_STATE_REGEX.search(tb_coverage_file)
+    if match:
+        return int(match.group('state'))
+
+    return None
 
 
 def parse_tb_file(path, module):
