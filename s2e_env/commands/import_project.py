@@ -125,7 +125,7 @@ class Command(EnvCommand):
                 directory=self.projects_path(), _fg=True, _out=sys.stdout,
                 _err=sys.stderr)
         except ErrorReturnCode as e:
-            raise CommandError('Failed to decompress project archive - %s', e)
+            raise CommandError('Failed to decompress project archive - %s' % e)
 
     def _symlink_guest_tools(self, project_path, project_desc):
         """

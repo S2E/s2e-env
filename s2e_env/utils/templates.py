@@ -70,3 +70,5 @@ def render_template(context, template, path=None, executable=False):
     if executable:
         st = os.stat(path)
         os.chmod(path, st.st_mode | stat.S_IEXEC)
+
+    return True
