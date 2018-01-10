@@ -273,9 +273,10 @@ class EnvCommand(BaseCommand):
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
 
-        parser.add_argument('-e', '--env', required=False,
+        parser.add_argument('-e', '--env', required=False, default=os.getcwd(),
                             help='The S2E environment. Only used if the '
-                                 'S2EDIR environment variable is not defined')
+                                 'S2EDIR environment variable is not defined. '
+                                 'Defaults to the current working directory')
 
     @property
     def config(self):
