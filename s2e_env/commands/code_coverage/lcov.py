@@ -47,21 +47,27 @@ class LineCoverage(ProjectCommand):
 
     def handle(self, *args, **options):
         target_path = self._project_desc['target_path']
-        target_name = self._project_desc['target']
+        target_dir = os.path.dirname(target_path)
 
-        # Get the translation block coverage information
-        addr_counts = self._get_addr_coverage(target_name)
-        if not addr_counts:
-            raise CommandError('No translation block information found')
+        modules = self._project_desc['modules']
+        for module_info in modules:
+            module = module_info[0]
+            # Get the translation block coverage information
+            addr_counts = self._get_addr_coverage(module)
+            if not addr_counts:
+                logger.warn('No translation block information found for %s', module)
+                continue
 
-        file_line_info = line_info.get_file_line_coverage(target_path, addr_counts)
-        lcov_info_path = self._save_coverage_info(file_line_info)
+            target_path = os.path.join(target_dir, module)
+            file_line_info = line_info.get_file_line_coverage(target_path, addr_counts)
+            lcov_info_path = self._save_coverage_info(module + '.info', file_line_info)
 
-        if options.get('html', False):
-            lcov_html_dir = self._gen_html(lcov_info_path)
-            return 'Line coverage saved to %s. An HTML report is available in %s' % (lcov_info_path, lcov_html_dir)
+            if options.get('html', False):
+                lcov_html_dir = self._gen_html(module, lcov_info_path)
+                logger.info('Line coverage saved to %s. An HTML report is available in %s',
+                            lcov_info_path, lcov_html_dir)
 
-        return 'Line coverage saved to %s' % lcov_info_path
+            logger.info('Line coverage saved to %s', lcov_info_path)
 
     def _get_addr_coverage(self, target_name):
         """
@@ -98,7 +104,7 @@ class LineCoverage(ProjectCommand):
 
         return addr_counts
 
-    def _save_coverage_info(self, file_line_info):
+    def _save_coverage_info(self, filename, file_line_info):
         """
         Save the line coverage information in lcov format.
 
@@ -112,7 +118,7 @@ class LineCoverage(ProjectCommand):
         Returns:
             The file path where the line coverage information was written to.
         """
-        lcov_path = self.project_path('s2e-last', 'coverage.info')
+        lcov_path = self.project_path('s2e-last', filename)
 
         logger.info('Writing line coverage to %s', lcov_path)
 
@@ -150,7 +156,7 @@ class LineCoverage(ProjectCommand):
         return lcov_path
 
     # TODO: support Windows paths on Linux
-    def _gen_html(self, lcov_info_path):
+    def _gen_html(self, filename, lcov_info_path):
         """
         Generate an LCOV HTML report.
 
@@ -158,7 +164,7 @@ class LineCoverage(ProjectCommand):
         """
         from sh import genhtml, ErrorReturnCode
 
-        lcov_html_dir = self.project_path('s2e-last', 'lcov')
+        lcov_html_dir = self.project_path('s2e-last', '%s_lcov' % filename)
         try:
             genhtml(lcov_info_path, output_directory=lcov_html_dir,
                     _out=sys.stdout, _err=sys.stderr, _fg=True)

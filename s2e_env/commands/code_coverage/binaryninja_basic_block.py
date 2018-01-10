@@ -46,7 +46,7 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         self._bv = None
         self._binaryninja_mod = None
 
-    def _initialize_disassembler(self):
+    def _initialize_disassembler(self, module_path):
         """
         Initialize the Binary Ninja Python API.
         """
@@ -66,9 +66,9 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         sys.path.append(binaryninja_py_dir)
         self._binaryninja_mod = importlib.import_module('binaryninja')
 
-        self._bv = self._binaryninja_mod.BinaryViewType.get_view_of_file(self._project_desc['target_path'])
+        self._bv = self._binaryninja_mod.BinaryViewType.get_view_of_file(module_path)
 
-    def _get_basic_blocks(self):
+    def _get_basic_blocks(self, module_path):
         """
         Extract basic block information from the target binary using Binary
         Ninja.
