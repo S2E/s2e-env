@@ -4,6 +4,10 @@
 add_plugin("WindowsMonitor")
 
 -------------------------------------------------------------------------------
+-- Keeps for each state an updated map of all the loaded modules.
+add_plugin("ModuleMap")
+
+-------------------------------------------------------------------------------
 -- This plugin is required to intercept some Windows kernel functions.
 -- Guest code patching monitors execution and transparently changes
 -- the target program counter when it encounters a call instructions.
