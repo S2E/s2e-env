@@ -25,91 +25,11 @@ import logging
 import os
 import sys
 
-from elftools.elf.elffile import ELFFile
-from elftools.dwarf import constants as dwarf_consts
-
 from s2e_env.command import ProjectCommand, CommandError
 from . import get_tb_files, parse_tb_file
-
+from . import line_info
 
 logger = logging.getLogger('lcov')
-
-
-def _get_file_line_coverage(target_path, addr_counts):
-    """
-    Map addresses to line numbers in the source code file.
-
-    Args:
-        target_path: Path to the analysis target.
-        addr_counts: A dictionary mapping instruction addresses exuected by S2E
-                     (and recorded by the ``TranslationBlockCoverage`` plugin)
-                     to the number of times they were executed.
-
-    Returns:
-        A dictionary that maps source code files to line numbers and the number
-        of times each line was executed.
-
-        E.g.:
-            ```
-            {
-                'path/to/source': {
-                                      1: 2, # Line 1 was executed twice
-                                      2: 5, # Line 2 was executed five times
-                                      ...
-                                  },
-                ...
-            }
-            ```
-    """
-    file_line_info = {}
-
-    with open(target_path, 'r') as f:
-        elf = ELFFile(f)
-
-        if not elf.has_dwarf_info():
-            raise CommandError('%s has no DWARF info. Please recompile with ``-g``' % target_path)
-
-        dwarf_info = elf.get_dwarf_info()
-
-        # Adapted from readelf.py (licensed under the "Unlicense"):
-        #   https://github.com/eliben/pyelftools/blob/master/scripts/readelf.py
-        for cu in dwarf_info.iter_CUs():
-            line_program = dwarf_info.line_program_for_CU(cu)
-            cu_filepath = cu.get_top_DIE().get_full_path()
-
-            # Set the default dir and file path
-            src_path = cu_filepath
-            src_dir = os.path.dirname(src_path)
-
-            for entry in line_program.get_entries():
-                state = entry.state
-
-                if state is None:
-                    # Special handling for commands that don't set a new
-                    # state
-                    if entry.command == dwarf_consts.DW_LNS_set_file:
-                        file_entry = line_program['file_entry'][entry.args[0] - 1]
-                        if file_entry.dir_index == 0:
-                            # Current directory
-                            src_path = os.path.join(src_dir, file_entry.name)
-                        elif line_program['include_directory']:
-                            include_dir = line_program['include_directory']
-                            src_path = os.path.join(src_dir, include_dir[file_entry.dir_index - 1],
-                                                    file_entry.name)
-                    elif entry.command == dwarf_consts.DW_LNE_define_file and line_program['include_directory']:
-                        include_dir = line_program['include_directory']
-                        src_path = os.path.join(src_dir, include_dir[entry.args[0].dir_index])
-                elif not state.end_sequence:
-                    # If this address is one that we executed in S2E, save
-                    # the number of times that it was executed into the
-                    # dictionary. Otherwise set it to 0
-                    if src_path not in file_line_info:
-                        src_path = os.path.realpath(src_path)
-                        file_line_info[src_path] = {}
-
-                    file_line_info[src_path][state.line] = addr_counts.get(state.address, 0)
-
-        return file_line_info
 
 
 class LineCoverage(ProjectCommand):
@@ -134,7 +54,7 @@ class LineCoverage(ProjectCommand):
         if not addr_counts:
             raise CommandError('No translation block information found')
 
-        file_line_info = _get_file_line_coverage(target_path, addr_counts)
+        file_line_info = line_info.get_file_line_coverage(target_path, addr_counts)
         lcov_info_path = self._save_coverage_info(file_line_info)
 
         if options.get('html', False):
@@ -199,11 +119,19 @@ class LineCoverage(ProjectCommand):
         with open(lcov_path, 'w') as f:
             f.write('TN:\n')
             for src_file in file_line_info.keys():
-                abs_src_path = os.path.realpath(src_file)
-                if not os.path.isfile(abs_src_path):
-                    logger.warning('Cannot find source file \'%s\'. '
-                                   'Skipping...', abs_src_path)
-                    continue
+
+                # Leave Windows paths alone, don't strip any missing ones.
+                if '\\' in src_file:
+                    abs_src_path = src_file
+                else:
+                    abs_src_path = os.path.realpath(src_file)
+
+                    # TODO: genhtml has an option to ignore missing files,
+                    # maybe it's better to keep them here
+                    if not os.path.isfile(abs_src_path):
+                        logger.warning('Cannot find source file \'%s\'. '
+                                       'Skipping...', abs_src_path)
+                        continue
 
                 num_non_zero_lines = 0
                 num_instrumented_lines = 0
@@ -221,6 +149,7 @@ class LineCoverage(ProjectCommand):
 
         return lcov_path
 
+    # TODO: support Windows paths on Linux
     def _gen_html(self, lcov_info_path):
         """
         Generate an LCOV HTML report.
