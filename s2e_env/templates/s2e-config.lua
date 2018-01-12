@@ -184,10 +184,11 @@ pluginsConfig.ProcessExecutionDetector = {
     },
 }
 
+{% if use_cupa == true %}
+
 -------------------------------------------------------------------------------
 -- MultiSearcher is a top-level searcher that allows switching between
 -- different sub-searchers.
-
 add_plugin("MultiSearcher")
 
 -- CUPA stands for Class-Uniform Path Analysis. It is a searcher that groups
@@ -224,10 +225,14 @@ pluginsConfig.CUPASearcher = {
     logLevel="info"
 }
 
+{% endif %}
+
 {% if use_seeds == true %}
--------------------------------------------------------------------------------
+
+-- Required dependency of SeedSearcher
 add_plugin("MultiSearcher")
 
+-------------------------------------------------------------------------------
 -- The SeedSearcher plugin looks for new seeds in the seed directory and
 -- schedules the seed fetching state whenever a new seed is available. This
 -- searcher may be used in conjunction with a fuzzer in order to combine the

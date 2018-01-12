@@ -109,6 +109,9 @@ class Project(EnvCommand):
             # hard-coded options
             'warn_seeds': True,
             'warn_input_file': True,
+
+            # Searcher options
+            'use_cupa': True
         }
 
         for tf in options['target_files']:
@@ -199,6 +202,7 @@ class Project(EnvCommand):
             'target_lua_template': self._configurator.LUA_TEMPLATE,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
+            'use_cupa': config['use_cupa'],
             'seeds_dir': config['seeds_dir'],
             'has_guestfs': config['has_guestfs'],
             'guestfs_dir': config['guestfs_dir'],
