@@ -1,7 +1,10 @@
-function install_driver {
+# In 64-bit mode, it is important to run commands using the 64-bit cmd.exe,
+# otherwise most changes will be confined to the SysWow64 environment.
+# This function takes care of calling the right cmd.exe depending on the guest OS.
+function run_cmd {
     local PREFIX
-    local DRIVER
-    DRIVER="$1"
+    local CMD
+    CMD="$1"
 
     {% if image_arch=='x86_64' %}
     # The driver must be installed by a 64-bit process, otherwise
@@ -12,7 +15,15 @@ function install_driver {
     PREFIX=
     {% endif %}
 
-    ${PREFIX}cmd.exe '\/c' "rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ${DRIVER}"
+    ${PREFIX}cmd.exe '\/c' "${CMD}"
+}
+
+function install_driver {
+    local PREFIX
+    local DRIVER
+    DRIVER="$1"
+
+    run_cmd "rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ${DRIVER}"
 }
 
 function target_init {
