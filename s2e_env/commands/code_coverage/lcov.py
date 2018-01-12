@@ -98,9 +98,15 @@ class LineCoverage(ProjectCommand):
             if not tb_coverage_data:
                 continue
 
-            for start_addr, end_addr, _ in tb_coverage_data:
-                for addr in xrange(start_addr, end_addr):
-                    addr_counts[addr] = addr_counts.get(addr, 0) + 1
+            for start_addr, _, size in tb_coverage_data:
+                # TODO: it's better to use an interval map instead
+                for byte in xrange(0, size):
+                    addr = start_addr + byte
+                    # The coverage files we get do not indicate how many times an bb has been
+                    # executed. It's more of an approximation of how many times
+                    # the block was translated. To avoid confusion, always set execution
+                    # count to 1.
+                    addr_counts[addr] = 1
 
         return addr_counts
 
