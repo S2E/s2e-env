@@ -164,3 +164,6 @@ class CGCProjectConfiguration(ProjectConfiguration):
         # CGC binaries do not have input files
         config['warn_input_file'] = False
         config['warn_seeds'] = False
+
+        # CGC has its own test case generation system
+        config['use_test_case_generator'] = False

@@ -291,6 +291,20 @@ g_function_models = {}
 safe_load('models.lua')
 pluginsConfig.StaticFunctionModels.modules = g_function_models
 
+{% if use_test_case_generator %}
+-------------------------------------------------------------------------------
+-- This generates test cases when a state crashes or terminates.
+-- If symbolic inputs consist of symbolic files, the test case generator writes
+-- concrete files in the S2E output folder. These files can be used to
+-- demonstrate the crash in a program, added to a test suite, etc.
+
+add_plugin("TestCaseGenerator")
+pluginsConfig.TestCaseGenerator = {
+    generateOnStateKill = true,
+    generateOnSegfault = true
+}
+{% endif %}
+
 
 -- ========================================================================= --
 -- ============== Target-specific configuration begins here. =============== --

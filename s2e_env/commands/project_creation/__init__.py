@@ -111,7 +111,9 @@ class Project(EnvCommand):
             'warn_input_file': True,
 
             # Searcher options
-            'use_cupa': True
+            'use_cupa': True,
+
+            'use_test_case_generator': True
         }
 
         for tf in options['target_files']:
@@ -203,6 +205,7 @@ class Project(EnvCommand):
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
+            'use_test_case_generator': config['use_test_case_generator'],
             'seeds_dir': config['seeds_dir'],
             'has_guestfs': config['has_guestfs'],
             'guestfs_dir': config['guestfs_dir'],
