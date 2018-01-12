@@ -18,6 +18,13 @@ pluginsConfig.GuestCodePatching = {
   allowSelfCalls = true
 }
 
+{% for m in modules %}
+    {% if m[1] %}
+        -- Instrument kernel driver {{m[0]}} for fault injection
+        table.insert(pluginsConfig.GuestCodePatching["moduleNames"], "{{m[0]}}")
+    {% endif %}
+{% endfor %}
+
 -- Add an extra option to the existing config
 pluginsConfig.ModuleExecutionDetector['trackAllModules'] = true
 
