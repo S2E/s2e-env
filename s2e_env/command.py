@@ -239,11 +239,12 @@ class EnvCommand(BaseCommand):
                                'in your environment or use the --env option')
 
         try:
-            with open(self.env_path('s2e.yaml'), 'r') as f:
+            path = self.env_path('s2e.yaml')
+            with open(path, 'r') as f:
                 self._config = yaml.load(f)
         except IOError:
             raise CommandError('This does not look like an S2E environment - '
-                               'it does not contain an s2e.yaml configuration file')
+                               'it does not contain an s2e.yaml configuration file (%s does not exist)' % path)
 
         # Reinitialize logging with settings from the environment's config
         self._init_logging()
