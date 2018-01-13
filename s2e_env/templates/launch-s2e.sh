@@ -29,7 +29,7 @@ export S2E_UNBUFFERED_STREAM=1
 if [ "x$DEBUG" != "x" ]; then
 
 if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
-    echo "No debug build found. Please run \`\`s2e build -g\`\`"
+    echo "No debug build found in $BUILD_DIR/qemu-$BUILD. Please run \`\`s2e build -g\`\`"
     exit 1
 fi
 
