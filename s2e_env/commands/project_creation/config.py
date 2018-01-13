@@ -122,6 +122,9 @@ class WindowsDriverProjectConfiguration(ProjectConfiguration):
         config['warn_input_file'] = False
         config['warn_seeds'] = False
 
+        # All we support for now
+        config['use_fault_injection'] = True
+
 
 class LinuxProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.linux.sh'

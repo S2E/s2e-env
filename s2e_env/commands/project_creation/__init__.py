@@ -113,7 +113,8 @@ class Project(EnvCommand):
             # Searcher options
             'use_cupa': True,
 
-            'use_test_case_generator': True
+            'use_test_case_generator': True,
+            'use_fault_injection': False
         }
 
         for tf in options['target_files']:
@@ -242,6 +243,7 @@ class Project(EnvCommand):
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
+            'use_fault_injection': config['use_fault_injection'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
             'target_files': config['target_files'],
