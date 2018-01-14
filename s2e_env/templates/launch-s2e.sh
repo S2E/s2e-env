@@ -26,6 +26,12 @@ export S2E_SHARED_DIR=$INSTALL_DIR/share/libs2e
 export S2E_MAX_PROCESSES=1
 export S2E_UNBUFFERED_STREAM=1
 
+if [ $S2E_MAX_PROCESSES -gt 1 ]; then
+    # Multi-threaded mode does not support graphics output, so we override
+    # whatever settings were there before.
+    export GRAPHICS=-nographic
+fi
+
 if [ "x$DEBUG" != "x" ]; then
 
 if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
