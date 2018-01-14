@@ -118,7 +118,11 @@ def _handle_inf(target_path, **options):
     for f in driver_files:
         full_path = os.path.join(base_dir, f)
         if not os.path.exists(full_path):
-            raise CommandError('%s does not exist' % full_path)
+            if full_path.endswith('.cat'):
+                logger.warn('Catalog file %s is missing', full_path)
+                continue
+            else:
+                raise CommandError('%s does not exist' % full_path)
 
         logger.info('    %s', full_path)
         file_paths.append(full_path)
