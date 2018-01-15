@@ -23,7 +23,7 @@ SOFTWARE.
 
 from __future__ import division
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import json
 import itertools
 import logging
@@ -36,7 +36,61 @@ from . import get_tb_files, get_tb_state, parse_tb_file
 logger = logging.getLogger('basicblock')
 
 
-BasicBlock = namedtuple('BasicBlock', ['start_addr', 'end_addr', 'function'])
+class BasicBlock(object):
+    """
+    Immutable basic block representation.
+    """
+
+    def __init__(self, start_addr, end_addr, function):
+        self._start_addr = start_addr
+        self._end_addr = end_addr
+        self._function = function
+
+    @property
+    def start_addr(self):
+        return self._start_addr
+
+    @property
+    def end_addr(self):
+        return self._end_addr
+
+    @property
+    def function(self):
+        return self._function
+
+
+class BasicBlockEncoder(json.JSONEncoder):
+    """
+    Encodes a ``BasicBlock`` object in JSON format.
+    """
+
+    # pylint: disable=method-hidden
+    def default(self, o):
+        if isinstance(o, BasicBlock):
+            return {
+                'start_addr': o.start_addr,
+                'end_addr': o.end_addr,
+                'function': o.function,
+            }
+
+        return super(BasicBlockEncoder, self).default(o)
+
+
+class BasicBlockDecoder(json.JSONDecoder):
+    """
+    Decodes a ``BasicBlock`` object from JSON format.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(BasicBlockDecoder, self).__init__(object_hook=self.object_hook,
+                                                *args, **kwargs)
+
+    # pylint: disable=method-hidden
+    def object_hook(self, d):
+        if 'start_addr' in d:
+            return BasicBlock(d['start_addr'], d['end_addr'], d['function'])
+
+        return d
 
 
 class BasicBlockCoverage(ProjectCommand):
@@ -69,10 +123,19 @@ class BasicBlockCoverage(ProjectCommand):
             # Initialize the backend disassembler
             self._initialize_disassembler(module_path)
 
-            # Get static basic block information from the binary
-            bbs = self._get_basic_blocks(module_path)
+            # Check if a cached version of the basic block information exists.
+            # If it does, then we don't have to disassemble the binary (which
+            # may take a long time for large binaries)
+            bbs = self._get_cached_basic_blocks(module)
+
+            # If no cached .bblist file exists, generate a new one using the
+            # given disassembler and cache the results
             if not bbs:
-                raise CommandError('No basic block information found')
+                bbs = self._get_basic_blocks(module_path)
+                if not bbs:
+                    raise CommandError('No basic block information found')
+
+                self._save_basic_blocks(module, bbs)
 
             # Calculate basic block coverage information (based on the
             # translation block coverage recorded by S2E)
@@ -101,19 +164,69 @@ class BasicBlockCoverage(ProjectCommand):
         """
         pass
 
+    def _get_cached_basic_blocks(self, module):
+        """
+        Check if the basic block information from the target binary has already
+        been generated (in a .bblist file). If it has, reuse this information.
+
+        The .bblist file is just a JSON dump.
+
+        Returns:
+            A list of ``BasicBlock`` objects read from a .bblist file. If no
+            .bblist file exists, ``None`` is returned.
+        """
+        logger.info('Checking for existing .bblist file')
+
+        bblist_path = self.project_path('%s.bblist' % module)
+
+        if not os.path.isfile(bblist_path):
+            logger.info('No .bblist file found')
+            return None
+
+        # Force a new .bblist to be generated if the target binary has a newer
+        # modification time compared to the .bblist file
+
+        bblist_mtime = os.path.getmtime(bblist_path)
+        target_mtime = os.path.getmtime(self._project_desc['target_path'])
+
+        if bblist_mtime < target_mtime:
+            logger.info('%s is out of date. A new .bblist file will be generated',
+                        bblist_path)
+            return None
+
+        logger.info('%s found. Returning cached basic blocks', bblist_path)
+
+        with open(bblist_path, 'r') as bblist_file:
+            return json.load(bblist_file, cls=BasicBlockDecoder)
+
     def _get_basic_blocks(self, module_path):
         """
         Extract basic block information from the target binary using one of the
         disassembler backends (IDA Pro, Radare2 or Binary Ninja).
 
         Returns:
-            A list of ``BasicBlock``s, i.e. named tuples containing:
-                1. Basic block start address
-                2. Basic block end address
-                3. Name of function that the basic block resides in
+            A list of ``BasicBlock`` objects.
         """
         raise NotImplementedError('subclasses of BasicBlockCoverage must '
                                   'provide a _get_basic_blocks() method')
+
+    def _save_basic_blocks(self, module, bbs):
+        """
+        Save the a list of basic blocks to a .bblist file in the project
+        directory.
+
+        The .bblist file is just a JSON dump.
+
+        Args:
+            module: Name of the module for the basic blocks in ``bbs``.
+            bbs: A list of ``BasicBlock`` objects.
+        """
+        bblist_path = self.project_path('%s.bblist' % module)
+
+        logger.info('Saving basic block information to %s', bblist_path)
+
+        with open(bblist_path, 'w') as bblist_file:
+            json.dump(bbs, bblist_file, cls=BasicBlockEncoder)
 
     def _get_basic_block_coverage(self, target_name, basic_blocks):
         """
