@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import json
 import logging
 import os
 import shutil
@@ -34,7 +35,7 @@ except ImportError:
     from s2e_env.utils.tempdir import TemporaryDirectory
 
 from s2e_env.command import CommandError
-from .basic_block import BasicBlock, BasicBlockCoverage
+from .basic_block import BasicBlockCoverage, BasicBlockDecoder
 
 
 logger = logging.getLogger('basicblock')
@@ -146,13 +147,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                                        '%s' % target_name)
 
                 # Parse the basic block list file
-                #
-                # to_basic_block takes a 3-tuple read from the bblist file and
-                # converts it to a BasicBlock
-                to_basic_block = lambda tup: BasicBlock(int(tup[0], 16),
-                                                        int(tup[1], 16),
-                                                        tup[2])
                 with open(bblist_file, 'r') as f:
-                    return [to_basic_block(l.rstrip().split(' ')) for l in f]
+                    return json.load(f, cls=BasicBlockDecoder)
         except ErrorReturnCode as e:
             raise CommandError(e)
