@@ -119,9 +119,9 @@ def _check_kvm():
     This is required by libs2e to communicate with QEMU.
     """
     if not os.path.exists(os.path.join(os.sep, 'dev', 'kvm')):
-        raise CommandError('KVM is required to build images. Check that '
-                           '/dev/kvm exists. Alternatively, you can also '
-                           'download pre-built images (-d option).')
+        raise CommandError('KVM interface not found - check that /dev/kvm '
+                           'exists. Alternatively, you can disable KVM (-n '
+                           'option) or download pre-built images (-d option)')
 
 
 def _check_vmlinux():
@@ -261,6 +261,7 @@ class Command(EnvCommand):
         super(Command, self).__init__()
 
         self._headless = True
+        self._use_kvm = True
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -284,11 +285,17 @@ class Command(EnvCommand):
                                  'of building it')
         parser.add_argument('-i', '--iso-dir',
                             help='Path to folder that stores ISO files of Windows images')
+        parser.add_argument('-n', '--no-kvm', action='store_true',
+                            help='Disable KVM during image build')
 
     def handle(self, *args, **options):
         # If DISPLAY is missing, don't use headless mode
         if options['gui']:
             self._headless = False
+
+        # If KVM has been explicitly disabled, don't use it during the build
+        if options['no_kvm']:
+            self._use_kvm = False
 
         num_cores = options['cores']
         _check_core_num(num_cores)
@@ -338,7 +345,9 @@ class Command(EnvCommand):
         _check_product_keys(templates, image_names)
         _check_iso(templates, options['iso_dir'], image_names)
 
-        _check_kvm()
+        if self._use_kvm:
+            _check_kvm()
+
         _check_groups()
         _check_vmlinux()
         _check_virtualbox()
@@ -371,7 +380,11 @@ class Command(EnvCommand):
             env['GRAPHICS'] = ''
         else:
             logger.warn('Image creation will run in headless mode. '
-                        'Use --gui to see graphic output for debugging.')
+                        'Use --gui to see graphic output for debugging')
+
+        if not self._use_kvm:
+            env['QEMU_KVM'] = ''
+            logger.warn('Image build without KVM. This will be slow')
 
         try:
             make = sh.Command('make').bake(file=os.path.join(img_build_dir,
