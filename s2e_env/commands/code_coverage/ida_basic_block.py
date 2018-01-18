@@ -40,6 +40,41 @@ from .basic_block import BasicBlock, BasicBlockCoverage
 logger = logging.getLogger('basicblock')
 
 
+def _get_ida_path(ida_dir, arch):
+    """
+    Returns the path to the required IDA Pro executable.
+
+    IDA Pro 7 renamed ``idal`` (on Linux) to ``idat`` on (on all platforms).
+    See https://www.hex-rays.com/products/ida/7.0/docs/api70_porting_guide.shtml
+    for details.
+
+    If we are analysing a 64-bit binary, then we must also use the 64-bit
+    version of IDA Pro.
+
+    Args:
+        ida_dir: The path to the IDA Pro directory (as specified in the S2E
+                 environment's config file).
+        arch: The target binary's architecture (as specified in the project
+              description file).
+
+    Returns:
+        The path to the IDA Pro executable to use.
+    """
+    for ida_bin in ('idat', 'idal'):
+        ida_path = os.path.join(ida_dir, ida_bin)
+
+        if arch == 'x86_64':
+            ida_path = '%s64' % ida_path
+        elif arch != 'i386':
+            raise CommandError('Invalid project architecture `%s` - unable to '
+                               'determine the IDA Pro version' % arch)
+
+        if os.path.isfile(ida_path):
+            return ida_path
+
+    raise CommandError('IDA Pro not found at %s' % ida_dir)
+
+
 class IDABasicBlockCoverage(BasicBlockCoverage):
     """
     Generate a basic block coverage report using IDA Pro as the disassembler
@@ -69,20 +104,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                                'ida:\n'
                                '\tdir: /path/to/ida')
 
-        project_arch = self._project_desc['target_arch']
-        if project_arch == 'i386':
-            ida_path = os.path.join(ida_dir, 'idal')
-        elif project_arch == 'x86_64':
-            ida_path = os.path.join(ida_dir, 'idal64')
-        else:
-            raise CommandError('Invalid project architecture \'%s\' - unable '
-                               'to determine the version of IDA Pro to use' %
-                               project_arch)
-
-        if not os.path.isfile(ida_path):
-            raise CommandError('IDA Pro not found at %s' % ida_path)
-        else:
-            self._ida_path = ida_path
+        self._ida_path = _get_ida_path(ida_dir, self._project_desc['target_arch'])
 
     def _get_basic_blocks(self, module_path):
         """
