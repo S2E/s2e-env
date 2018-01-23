@@ -359,8 +359,7 @@ class Command(EnvCommand):
 
         self._invoke_make(img_build_dir, rule_names, num_cores, options['iso_dir'])
 
-        logger.info('Built image \'%s\'', image_name)
-        return
+        logger.success('Built image \'%s\'', image_name)
 
     def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=''):
         env = os.environ.copy()

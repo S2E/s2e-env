@@ -62,12 +62,12 @@ class Command(ProjectCommand):
             # Select the disassembler backend
             disassembler = options.pop('disassembler', ())
             if disassembler == 'ida':
-                return call_command(IDABasicBlockCoverage(), args, **options)
+                call_command(IDABasicBlockCoverage(), args, **options)
             elif disassembler == 'r2':
-                return call_command(R2BasicBlockCoverage(), args, **options)
+                call_command(R2BasicBlockCoverage(), args, **options)
             elif disassembler == 'binaryninja':
-                return call_command(BinaryNinjaBasicBlockCoverage(), args, **options)
+                call_command(BinaryNinjaBasicBlockCoverage(), args, **options)
         elif command == 'lcov':
-            return call_command(LineCoverage(), args, **options)
+            call_command(LineCoverage(), args, **options)
         else:
             raise CommandError('Invalid command %s' % command)

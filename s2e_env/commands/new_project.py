@@ -149,7 +149,7 @@ def _handle_inf(target_path, **options):
     options['modules'] = [(os.path.basename(first_sys_file), True)]
     options['processes'] = []
 
-    return call_command(Project(WindowsDriverProjectConfiguration), **options)
+    call_command(Project(WindowsDriverProjectConfiguration), **options)
 
 class Command(EnvCommand):
     """
@@ -210,11 +210,9 @@ class Command(EnvCommand):
             if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
                 options['processes'].append(os.path.basename(target_path))
 
-            return call_command(Project(proj_config_class), **options)
-
-        if target_path.endswith('.inf'):
-            return _handle_inf(target_path, **options)
-
-        # Otherwise no valid file type was found
-        raise CommandError('%s is not a valid target for S2E analysis' %
-                           target_path)
+            call_command(Project(proj_config_class), **options)
+        elif target_path.endswith('.inf'):
+            _handle_inf(target_path, **options)
+        else:
+            raise CommandError('%s is not a valid target for S2E analysis' %
+                               target_path)

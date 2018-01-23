@@ -183,10 +183,7 @@ class BaseCommand(object):
         """
         self.handle_common_args(**options)
 
-        success_msg = self.handle(*args, **options)
-        if success_msg:
-            logger = logging.getLogger(self.name)
-            logger.success(success_msg)
+        self.handle(*args, **options)
 
     @property
     def name(self):

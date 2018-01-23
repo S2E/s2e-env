@@ -95,7 +95,7 @@ class Command(EnvCommand):
         except ErrorReturnCode as e:
             raise CommandError(e)
 
-        return 'S2E built'
+        logger.success('S2E built')
 
     def _rebuild_components(self, components):
         """

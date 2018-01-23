@@ -112,7 +112,7 @@ class Command(EnvCommand):
             if proj_desc.get('has_guestfs'):
                 self._symlink_guestfs(project_path, proj_desc)
 
-        return 'Project successfully imported from %s' % archive
+        logger.success('Project successfully imported from %s', archive)
 
     def _decompress_archive(self, archive_path):
         """

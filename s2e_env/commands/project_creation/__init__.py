@@ -175,7 +175,7 @@ class Project(EnvCommand):
         self._save_json_description(config)
 
         # Return the instructions to the user
-        return _create_instructions(config)
+        logger.success(_create_instructions(config))
 
     def _create_launch_script(self, config):
         """

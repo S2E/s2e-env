@@ -46,7 +46,7 @@ class Command(EnvCommand):
         self._update_s2e_sources()
         self._update_img_sources()
 
-        return 'Environment updated. Now run ``s2e build`` to rebuild'
+        logger.success('Environment updated. Now run ``s2e build`` to rebuild')
 
     def _update_s2e_sources(self):
         """
@@ -68,7 +68,7 @@ class Command(EnvCommand):
             os.chdir(orig_dir)
 
         # Success!
-        logger.success('Updated S2E')
+        logger.info('Updated S2E')
 
     def _update_img_sources(self):
         """

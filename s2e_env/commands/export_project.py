@@ -134,7 +134,7 @@ class Command(ProjectCommand):
             # Create the archive of the temporary directory's contents
             self._create_archive(output_path, temp_dir)
 
-        return 'Project successfully exported to %s' % output_path
+        logger.success('Project successfully exported to %s', output_path)
 
     def _copy_previous_results(self, export_dir):
         """

@@ -286,7 +286,7 @@ class Command(BaseCommand):
             prefix = options['use_existing_install']
             if prefix is not None:
                 _install_binary_dist(env_path, prefix)
-                return 'Environment created in %s.' % env_path
+                logger.success('Environment created in %s', env_path)
             else:
                 # Install S2E's dependencies via apt-get
                 if not options['skip_dependencies']:
@@ -296,11 +296,13 @@ class Command(BaseCommand):
                 _get_s2e_sources(env_path)
                 _get_img_sources(env_path)
 
-                return ('Environment created in {0}. You may wish to modify '
-                        'your environment\'s s2e.yaml config file. Source '
-                        '``{0}/install/bin/s2e_activate`` to activate your '
-                        'environment. Then run ``s2e build`` to build '
-                        'S2E'.format(env_path))
+                msg = 'Environment created in {0}. You may wish to modify ' \
+                      'your environment\'s s2e.yaml config file. Source ' \
+                      '``{0}/install/bin/s2e_activate`` to activate your ' \
+                      'environment. Then run ``s2e build`` to build ' \
+                      'S2E'.format(env_path)
+
+                logger.success(msg)
         except:
             # Cleanup on failure. Note that this only occurs if the chosen
             # directory is *not* the current working directory
