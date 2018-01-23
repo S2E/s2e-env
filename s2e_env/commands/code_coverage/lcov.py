@@ -152,7 +152,7 @@ class LineCoverage(ProjectCommand):
                 for line, count in file_line_info[src_file].items():
                     f.write('DA:%d,%d\n' % (line, count))
 
-                    if count != 0:
+                    if count:
                         num_non_zero_lines += 1
                     num_instrumented_lines += 1
                 f.write('LH:%d\n' % num_non_zero_lines)

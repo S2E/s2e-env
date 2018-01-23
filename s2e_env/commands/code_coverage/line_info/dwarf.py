@@ -50,7 +50,7 @@ def _parse_info(dwarf_info, addr_counts):
                 # state
                 if entry.command == dwarf_consts.DW_LNS_set_file:
                     file_entry = line_program['file_entry'][entry.args[0] - 1]
-                    if file_entry.dir_index == 0:
+                    if not file_entry.dir_index:
                         # Current directory
                         src_path = os.path.join(src_dir, file_entry.name)
                     elif line_program['include_directory']:
