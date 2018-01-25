@@ -73,9 +73,20 @@ class Project(EnvCommand):
             'target_path': self._target_path,
             'target_arch': options['target_arch'],
             'target_args': options['target_args'],
+
+            # These contain all the files that must be downloaded into the guest
+            'target_files': [],
+
+            # List of module names that go into ModuleExecutionDetector
+            'modules': options['modules'],
+
+            # List of binaries that go into ProcessExecutionDetector
+            # These are normally executable files
+            'processes': options['processes'],
+
             'sym_args': options['sym_args'],
 
-            # See _create_boostrap for an explanation of the @@ marker
+            # See _create_bootstrap for an explanation of the @@ marker
             'use_symb_input_file': '@@' in options['target_args'],
 
             # The use of seeds is specified on the command line
@@ -98,7 +109,19 @@ class Project(EnvCommand):
             # hard-coded options
             'warn_seeds': True,
             'warn_input_file': True,
+
+            # Searcher options
+            'use_cupa': True,
+
+            'use_test_case_generator': True,
+            'use_fault_injection': False
         }
+
+        for tf in options['target_files']:
+            if not os.path.exists(tf):
+                raise CommandError('%s does not exist' % tf)
+
+            config['target_files'].append(os.path.basename(tf))
 
         # The configurator may modify the config dictionary here
         self._configurator.validate_configuration(config)
@@ -132,7 +155,7 @@ class Project(EnvCommand):
         self._symlink_guest_tools()
 
         # Create a symlink to the target program
-        self._symlink_target()
+        self._symlink_target_files(options['target_files'])
 
         # Create a symlink to guestfs (if it exists)
         if not self._symlink_guestfs():
@@ -152,7 +175,7 @@ class Project(EnvCommand):
         self._save_json_description(config)
 
         # Return the instructions to the user
-        return _create_instructions(config)
+        logger.success(_create_instructions(config))
 
     def _create_launch_script(self, config):
         """
@@ -182,10 +205,15 @@ class Project(EnvCommand):
             'target_lua_template': self._configurator.LUA_TEMPLATE,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
+            'use_cupa': config['use_cupa'],
+            'use_test_case_generator': config['use_test_case_generator'],
             'seeds_dir': config['seeds_dir'],
             'has_guestfs': config['has_guestfs'],
             'guestfs_dir': config['guestfs_dir'],
             'recipes_dir': config['recipes_dir'],
+            'target_files': config['target_files'],
+            'modules': config['modules'],
+            'processes': config['processes'],
         }
 
         for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
@@ -215,8 +243,12 @@ class Project(EnvCommand):
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
+            'use_fault_injection': config['use_fault_injection'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
+            'target_files': config['target_files'],
+            'modules': config['modules'],
+            'processes': config['processes'],
         }
 
         script_path = os.path.join(self._project_dir, template)
@@ -333,15 +365,14 @@ class Project(EnvCommand):
         """
         return self._img_json['qemu_build']
 
-    def _symlink_target(self):
+    def _symlink_target_files(self, files):
         """
-        Create a symlink to the target program.
+        Create a symlinks to the files that compose the program.
         """
-        logger.info('Creating a symlink to %s', self._target_path)
-
-        target_file = os.path.basename(self._target_path)
-        os.symlink(self._target_path,
-                   os.path.join(self._project_dir, target_file))
+        for f in files:
+            logger.info('Creating a symlink to %s', self._target_path)
+            target_file = os.path.basename(f)
+            os.symlink(f, os.path.join(self._project_dir, target_file))
 
     def _symlink_guest_tools(self):
         """

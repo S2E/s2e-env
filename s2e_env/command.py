@@ -39,28 +39,6 @@ import sys
 import yaml
 
 from s2e_env.utils import log
-from s2e_env.utils.log import ColoredFormatter
-
-
-def _configure_logging(level=logging.INFO, use_color=True):
-    """
-    Configure te global logging settings.
-    """
-    # Add a 'SUCCESS' level to the logger
-    logging.addLevelName(log.SUCCESS, 'SUCCESS')
-    logging.Logger.success = log.success
-
-    # Configure colored logging
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    # Overwrite any existing handlers
-    if logger.handlers:
-        logger.handlers = []
-
-    colored_handler = logging.StreamHandler()
-    colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
-    logger.addHandler(colored_handler)
 
 
 class CommandError(Exception):
@@ -134,7 +112,7 @@ class BaseCommand(object):
 
     def __init__(self):
         # Initialize the default logger
-        _configure_logging()
+        log.configure_logging()
 
     def create_parser(self, prog_name, subcommand):
         """
@@ -205,10 +183,7 @@ class BaseCommand(object):
         """
         self.handle_common_args(**options)
 
-        success_msg = self.handle(*args, **options)
-        if success_msg:
-            logger = logging.getLogger(self.name)
-            logger.success(success_msg)
+        self.handle(*args, **options)
 
     @property
     def name(self):
@@ -244,7 +219,7 @@ class EnvCommand(BaseCommand):
             raise CommandError('Invalid logging level \'%s\' in s2e.yaml' %
                                config_lvl)
 
-        _configure_logging(level, color)
+        log.configure_logging(level, color)
 
     def handle_common_args(self, **options):
         """
@@ -261,11 +236,12 @@ class EnvCommand(BaseCommand):
                                'in your environment or use the --env option')
 
         try:
-            with open(self.env_path('s2e.yaml'), 'r') as f:
+            path = self.env_path('s2e.yaml')
+            with open(path, 'r') as f:
                 self._config = yaml.load(f)
         except IOError:
             raise CommandError('This does not look like an S2E environment - '
-                               'it does not contain an s2e.yaml configuration file')
+                               'it does not contain an s2e.yaml configuration file (%s does not exist)' % path)
 
         # Reinitialize logging with settings from the environment's config
         self._init_logging()

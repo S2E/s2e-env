@@ -30,6 +30,27 @@ import termcolor
 SUCCESS = 25
 
 
+def configure_logging(level=logging.INFO, use_color=True):
+    """
+    Configure te global logging settings.
+    """
+    # Add a 'SUCCESS' level to the logger
+    logging.addLevelName(SUCCESS, 'SUCCESS')
+    logging.Logger.success = success
+
+    # Configure colored logging
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    # Overwrite any existing handlers
+    if logger.handlers:
+        logger.handlers = []
+
+    colored_handler = logging.StreamHandler()
+    colored_handler.setFormatter(ColoredFormatter(use_color=use_color))
+    logger.addHandler(colored_handler)
+
+
 def success(self, msg, *args, **kwargs):
     if self.isEnabledFor(SUCCESS):
         self._log(SUCCESS, msg, args, **kwargs)

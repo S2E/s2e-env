@@ -22,16 +22,21 @@ SOFTWARE.
 
 
 import argparse
+import logging
 import os
 import re
 
 from magic import Magic
 
+from s2e_env.infparser.driver import Driver
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.project_creation import Project
 from s2e_env.commands.project_creation.config import \
-    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration
+    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration, \
+    WindowsDriverProjectConfiguration
+
+logger = logging.getLogger('new_project')
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
@@ -70,6 +75,81 @@ def _parse_sym_args(sym_args_str):
 
     return sym_args
 
+
+def get_arch(target_path):
+    default_magic = Magic()
+    magic_checks = [
+        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
+        (default_magic, ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
+        (default_magic, ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
+        (default_magic, DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
+        (default_magic, DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
+        (default_magic, PE32_REGEX, WindowsProjectConfiguration, 'i386'),
+        (default_magic, PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
+        (default_magic, MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
+    ]
+
+    # Check the target program against the valid file types
+    for magic_check, regex, proj_config_class, arch in magic_checks:
+        magic = magic_check.from_file(target_path)
+        matches = regex.match(magic)
+
+        # If we find a match, create that project. The user instructions
+        # are returned
+        if matches:
+            return arch, proj_config_class
+
+    return None, None
+
+
+def _handle_inf(target_path, **options):
+    logger.info('Detected Windows INF file, attempting to create device driver project...')
+    driver = Driver(target_path)
+    driver.analyze()
+    driver_files = driver.get_files()
+    if not driver_files:
+        raise CommandError('Driver has no files')
+
+    base_dir = os.path.dirname(target_path)
+
+    logger.info('  Driver files:')
+    file_paths = []
+    first_sys_file = None
+    for f in driver_files:
+        full_path = os.path.join(base_dir, f)
+        if not os.path.exists(full_path):
+            if full_path.endswith('.cat'):
+                logger.warn('Catalog file %s is missing', full_path)
+                continue
+            else:
+                raise CommandError('%s does not exist' % full_path)
+
+        logger.info('    %s', full_path)
+        file_paths.append(full_path)
+
+        if full_path.endswith('.sys'):
+            first_sys_file = full_path
+
+    # Pick the architecture of the first sys file
+    # TODO: prompt the user to select the right driver
+    if not first_sys_file:
+        raise CommandError('Could not find any *.sys file')
+
+    arch, _ = get_arch(first_sys_file)
+    if arch is None:
+        raise CommandError('Could not determine architecture for %s' % first_sys_file)
+
+    options['target'] = target_path
+    options['target_arch'] = arch
+
+    # All the files to download into the guest.
+    options['target_files'] = [target_path] + file_paths
+
+    # TODO: support multiple kernel drivers
+    options['modules'] = [(os.path.basename(first_sys_file), True)]
+    options['processes'] = []
+
+    call_command(Project(WindowsDriverProjectConfiguration), **options)
 
 class Command(EnvCommand):
     """
@@ -119,31 +199,20 @@ class Command(EnvCommand):
         if not os.path.isfile(target_path):
             raise CommandError('Target %s does not exist' % target_path)
 
-        default_magic = Magic()
-        magic_checks = [
-            (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
-            (default_magic, ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
-            (default_magic, ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
-            (default_magic, DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
-            (default_magic, DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
-            (default_magic, PE32_REGEX, WindowsProjectConfiguration, 'i386'),
-            (default_magic, PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
-            (default_magic, MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
-        ]
+        arch, proj_config_class = get_arch(target_path)
+        if arch:
+            options['target'] = target_path
+            options['target_files'] = [target_path]
+            options['target_arch'] = arch
+            options['modules'] = [(os.path.basename(target_path), False)]
 
-        # Check the target program against the valid file types
-        for magic_check, regex, proj_config_class, arch in magic_checks:
-            magic = magic_check.from_file(target_path)
-            matches = regex.match(magic)
+            options['processes'] = []
+            if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
+                options['processes'].append(os.path.basename(target_path))
 
-            # If we find a match, create that project. The user instructions
-            # are returned
-            if matches:
-                options['target'] = target_path
-                options['target_arch'] = arch
-
-                return call_command(Project(proj_config_class), **options)
-
-        # Otherwise no valid file type was found
-        raise CommandError('%s is not a valid target for S2E analysis' %
-                           target_path)
+            call_command(Project(proj_config_class), **options)
+        elif target_path.endswith('.inf'):
+            _handle_inf(target_path, **options)
+        else:
+            raise CommandError('%s is not a valid target for S2E analysis' %
+                               target_path)

@@ -112,7 +112,7 @@ class Command(EnvCommand):
             if proj_desc.get('has_guestfs'):
                 self._symlink_guestfs(project_path, proj_desc)
 
-        return 'Project successfully imported from %s' % archive
+        logger.success('Project successfully imported from %s', archive)
 
     def _decompress_archive(self, archive_path):
         """
@@ -125,7 +125,7 @@ class Command(EnvCommand):
                 directory=self.projects_path(), _fg=True, _out=sys.stdout,
                 _err=sys.stderr)
         except ErrorReturnCode as e:
-            raise CommandError('Failed to decompress project archive - %s', e)
+            raise CommandError('Failed to decompress project archive - %s' % e)
 
     def _symlink_guest_tools(self, project_path, project_desc):
         """

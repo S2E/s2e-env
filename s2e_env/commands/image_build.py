@@ -326,7 +326,8 @@ class Command(EnvCommand):
             image_downloader = ImageDownloader(templates)
             image_downloader.download_images(image_names, self.image_path())
 
-            return 'Successfully downloaded images: %s' % ', '.join(image_names)
+            logger.info('Successfully downloaded images: %s', ', '.join(image_names))
+            return
 
         rule_names = image_names
 
@@ -358,7 +359,7 @@ class Command(EnvCommand):
 
         self._invoke_make(img_build_dir, rule_names, num_cores, options['iso_dir'])
 
-        return 'Built image \'%s\'' % image_name
+        logger.success('Built image \'%s\'', image_name)
 
     def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=''):
         env = os.environ.copy()

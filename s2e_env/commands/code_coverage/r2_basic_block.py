@@ -76,7 +76,7 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
 
         self._r2 = None
 
-    def _initialize_disassembler(self):
+    def _initialize_disassembler(self, module_path):
         """
         Initialize Radare2 with r2pipe and perform the initial analysis.
 
@@ -89,10 +89,10 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
             raise CommandError('Unable to load r2pipe. Is Radare2/r2pipe '
                                'installed?')
 
-        self._r2 = r2pipe.open(self._project_desc['target_path'])
+        self._r2 = r2pipe.open(module_path)
         self._r2.cmd('aaa')
 
-    def _get_basic_blocks(self):
+    def _get_basic_blocks(self, module_path):
         """
         Extract basic block information from the target binary using Radare2.
         """

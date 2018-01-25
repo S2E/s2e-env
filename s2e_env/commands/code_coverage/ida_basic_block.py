@@ -51,7 +51,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
 
         self._ida_path = None
 
-    def _initialize_disassembler(self):
+    def _initialize_disassembler(self, module_path):
         """
         Initialize the IDA Pro disassembler.
 
@@ -84,7 +84,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
         else:
             self._ida_path = ida_path
 
-    def _get_basic_blocks(self):
+    def _get_basic_blocks(self, module_path):
         """
         Extract basic block information from the target binary using S2E's IDA
         Pro script.
@@ -92,20 +92,18 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
         This extraction is done within a temporary directory so that we don't
         pollute the file system with temporary idbs and other such things.
         """
-        logger.info('Generating basic block information from IDA Pro')
+        logger.info('Generating basic block information from IDA Pro for %s', module_path)
 
         try:
             with TemporaryDirectory() as temp_dir:
-                target_path = self._project_desc['target_path']
-
                 # Copy the binary to the temporary directory. Because projects
                 # are created with a symlink to the target program, then IDA
                 # Pro will generate the idb and bblist files in the symlinked
                 # target's directory. Which is not what we want
-                target_name = os.path.basename(target_path)
+                target_name = os.path.basename(module_path)
 
                 temp_target_path = os.path.join(temp_dir, target_name)
-                shutil.copyfile(target_path, temp_target_path)
+                shutil.copyfile(module_path, temp_target_path)
 
                 # Run the IDA Pro extractBasicBlocks script
                 env_vars = os.environ.copy()

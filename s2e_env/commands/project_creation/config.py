@@ -45,7 +45,7 @@ class ProjectConfiguration(object):
         This validation may vary depending on the binary and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
-        return True
+        pass
 
     def validate_configuration(self, config):
         """
@@ -100,6 +100,32 @@ class WindowsProjectConfiguration(ProjectConfiguration):
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
 
+class WindowsDriverProjectConfiguration(ProjectConfiguration):
+    BOOTSTRAP_TEMPLATE = 'bootstrap.windows_driver.sh'
+    LUA_TEMPLATE = 's2e-config.windows.lua'
+    PROJECT_TYPE = 'windows'
+
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+
+    def validate_configuration(self, config):
+        if config.get('use_seeds', False):
+            logger.warn('Seeds have been enabled, however they are not supported for device drivers.'
+                        ' This flag will be ignored')
+            config['use_seeds'] = False
+
+        # Fault injection works best with DFS (we want exhaustive exploration)
+        if config.get('use_cupa', False):
+            config['use_cupa'] = False
+
+        # Device drivers do not have input files
+        config['warn_input_file'] = False
+        config['warn_seeds'] = False
+
+        # All we support for now
+        config['use_fault_injection'] = True
+
+
 class LinuxProjectConfiguration(ProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.linux.sh'
     LUA_TEMPLATE = 's2e-config.linux.lua'
@@ -141,3 +167,6 @@ class CGCProjectConfiguration(ProjectConfiguration):
         # CGC binaries do not have input files
         config['warn_input_file'] = False
         config['warn_seeds'] = False
+
+        # CGC has its own test case generation system
+        config['use_test_case_generator'] = False

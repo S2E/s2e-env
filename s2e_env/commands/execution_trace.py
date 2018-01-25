@@ -112,4 +112,4 @@ class Command(ProjectCommand):
         with open(json_trace_file, 'w') as f:
             json.dump(execution_tree_json, f)
 
-        return 'Execution trace saved to %s' % json_trace_file
+        logger.success('Execution trace saved to %s', json_trace_file)

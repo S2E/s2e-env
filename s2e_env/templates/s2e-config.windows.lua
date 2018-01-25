@@ -4,6 +4,10 @@
 add_plugin("WindowsMonitor")
 
 -------------------------------------------------------------------------------
+-- Keeps for each state an updated map of all the loaded modules.
+add_plugin("ModuleMap")
+
+-------------------------------------------------------------------------------
 -- This plugin is required to intercept some Windows kernel functions.
 -- Guest code patching monitors execution and transparently changes
 -- the target program counter when it encounters a call instructions.
@@ -13,6 +17,13 @@ pluginsConfig.GuestCodePatching = {
   moduleNames = {"ntoskrnl.exe", "ntkrnlpa.exe"},
   allowSelfCalls = true
 }
+
+{% for m in modules %}
+    {% if m[1] %}
+        -- Instrument kernel driver {{m[0]}} for fault injection
+        table.insert(pluginsConfig.GuestCodePatching["moduleNames"], "{{m[0]}}")
+    {% endif %}
+{% endfor %}
 
 -- Add an extra option to the existing config
 pluginsConfig.ModuleExecutionDetector['trackAllModules'] = true

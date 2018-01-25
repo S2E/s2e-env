@@ -1,5 +1,11 @@
-function target_init {
+# In 64-bit mode, it is important to run commands using the 64-bit cmd.exe,
+# otherwise most changes will be confined to the SysWow64 environment.
+# This function takes care of calling the right cmd.exe depending on the guest OS.
+function run_cmd {
     local PREFIX
+    local CMD
+    CMD="$1"
+
     {% if image_arch=='x86_64' %}
     # The driver must be installed by a 64-bit process, otherwise
     # its files are copied into syswow64.
@@ -9,8 +15,27 @@ function target_init {
     PREFIX=
     {% endif %}
 
-    # Start the WindowsMonitor driver
-    ${PREFIX}cmd.exe '\/c' 'rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 c:\s2e\s2e.inf'
+    ${PREFIX}cmd.exe '\/c' "${CMD}"
+}
+
+function install_driver {
+    local PREFIX
+    local DRIVER
+    DRIVER="$1"
+
+    run_cmd "rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ${DRIVER}"
+}
+
+function target_init {
+    # Set FaultInjectionEnabled to 1 if you want to test a driver for proper error recovery
+    run_cmd "reg add HKLM\\Software\\S2E /v FaultInjectionEnabled /t REG_DWORD /d {% if use_fault_injection %} 0x1 {% else %} 0 {% endif %} /f"
+
+    # Set this to 1 if you would like more aggressive error injection, to help harden your driver
+    # against arbitrary API call errors. This may add false positives.
+    run_cmd "reg add HKLM\\Software\\S2E /v FaultInjectionOverapproximate /t REG_DWORD /d 0 /f"
+
+    # Start the s2e.sys WindowsMonitor driver
+    install_driver 'c:\s2e\s2e.inf'
     sc start s2e
 
     # Create ram disk
@@ -21,6 +46,13 @@ function target_init {
 
 function target_tools {
     echo "s2e.sys s2e.inf drvctl.exe"
+}
+
+# This function converts an msys path into a Windows path
+function win_path {
+  local dir="$(dirname "$1")"
+  local fn="$(basename "$1")"
+  echo "$(cd "$dir"; echo "$(pwd -W)/$fn")" | sed 's|/|\\|g';
 }
 
 cd /c/s2e

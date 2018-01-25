@@ -139,10 +139,12 @@ pluginsConfig.TranslationBlockCoverage = {
 
 add_plugin("ModuleExecutionDetector")
 pluginsConfig.ModuleExecutionDetector = {
+    {% for m in modules %}
     mod_0 = {
-        moduleName = "{{ target }}",
-        kernelMode = false,
+        moduleName = "{{ m[0] }}",
+        kernelMode = {% if m[1] %} true {% else %} false {% endif %},
     },
+    {% endfor %}
 }
 
 -------------------------------------------------------------------------------
@@ -176,14 +178,17 @@ pluginsConfig.ForkLimiter = {
 add_plugin("ProcessExecutionDetector")
 pluginsConfig.ProcessExecutionDetector = {
     moduleNames = {
-        "{{ target }}",
+        {% for p in processes %}
+        "{{ p }}",
+        {% endfor %}
     },
 }
+
+{% if use_cupa == true %}
 
 -------------------------------------------------------------------------------
 -- MultiSearcher is a top-level searcher that allows switching between
 -- different sub-searchers.
-
 add_plugin("MultiSearcher")
 
 -- CUPA stands for Class-Uniform Path Analysis. It is a searcher that groups
@@ -220,10 +225,14 @@ pluginsConfig.CUPASearcher = {
     logLevel="info"
 }
 
+{% endif %}
+
 {% if use_seeds == true %}
--------------------------------------------------------------------------------
+
+-- Required dependency of SeedSearcher
 add_plugin("MultiSearcher")
 
+-------------------------------------------------------------------------------
 -- The SeedSearcher plugin looks for new seeds in the seed directory and
 -- schedules the seed fetching state whenever a new seed is available. This
 -- searcher may be used in conjunction with a fuzzer in order to combine the
@@ -281,6 +290,20 @@ pluginsConfig.StaticFunctionModels = {
 g_function_models = {}
 safe_load('models.lua')
 pluginsConfig.StaticFunctionModels.modules = g_function_models
+
+{% if use_test_case_generator %}
+-------------------------------------------------------------------------------
+-- This generates test cases when a state crashes or terminates.
+-- If symbolic inputs consist of symbolic files, the test case generator writes
+-- concrete files in the S2E output folder. These files can be used to
+-- demonstrate the crash in a program, added to a test suite, etc.
+
+add_plugin("TestCaseGenerator")
+pluginsConfig.TestCaseGenerator = {
+    generateOnStateKill = true,
+    generateOnSegfault = true
+}
+{% endif %}
 
 
 -- ========================================================================= --

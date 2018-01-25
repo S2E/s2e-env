@@ -38,9 +38,8 @@ class Command(EnvCommand):
     help = 'Displays a summary of the S2E environment.'
 
     def handle(self, *args, **options):
-        # Naively check if S2E has been built (by checking some QEMU binaries
-        # exist)
-        s2e_built = len(glob.glob(self.install_path('bin', 'qemu-system-*'))) > 0
+        # Naively check if S2E has been built (by checking some QEMU binaries exist)
+        s2e_install_files = glob.glob(self.install_path('bin', 'qemu-system-*'))
 
         # Get information on the available images
         images = []
@@ -64,7 +63,7 @@ class Command(EnvCommand):
 
         output = {
             'env_path': self._env_dir,
-            's2e_built': s2e_built,
+            's2e_built': True if s2e_install_files else False,
             'images': images,
             'projects': projects,
         }

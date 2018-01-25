@@ -21,10 +21,14 @@ SOFTWARE.
 """
 
 
-from s2e_env.command import ProjectCommand
+from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.code_coverage.basic_block import BasicBlockCoverage
 from s2e_env.commands.code_coverage.lcov import LineCoverage
+
+from .code_coverage.ida_basic_block import IDABasicBlockCoverage
+from .code_coverage.r2_basic_block import R2BasicBlockCoverage
+from .code_coverage.binaryninja_basic_block import BinaryNinjaBasicBlockCoverage
 
 
 class Command(ProjectCommand):
@@ -58,16 +62,12 @@ class Command(ProjectCommand):
             # Select the disassembler backend
             disassembler = options.pop('disassembler', ())
             if disassembler == 'ida':
-                from .code_coverage.ida_basic_block import IDABasicBlockCoverage
-
-                return call_command(IDABasicBlockCoverage(), args, **options)
+                call_command(IDABasicBlockCoverage(), args, **options)
             elif disassembler == 'r2':
-                from .code_coverage.r2_basic_block import R2BasicBlockCoverage
-
-                return call_command(R2BasicBlockCoverage(), args, **options)
+                call_command(R2BasicBlockCoverage(), args, **options)
             elif disassembler == 'binaryninja':
-                from .code_coverage.binaryninja_basic_block import BinaryNinjaBasicBlockCoverage
-
-                return call_command(BinaryNinjaBasicBlockCoverage(), args, **options)
+                call_command(BinaryNinjaBasicBlockCoverage(), args, **options)
         elif command == 'lcov':
-            return call_command(LineCoverage(), args, **options)
+            call_command(LineCoverage(), args, **options)
+        else:
+            raise CommandError('Invalid command %s' % command)

@@ -86,43 +86,49 @@ class BasicBlockCoverage(ProjectCommand):
               'Covered basic blocks: {num_covered_bbs} ({percent:.1%})'
 
     def handle(self, *args, **options):
-        # Initialize the backend disassembler
-        self._initialize_disassembler()
-
         # Get translation block coverage information
         target_path = self._project_desc['target_path']
-        tbs = self._get_tb_coverage(os.path.basename(target_path))
-        if not tbs:
-            raise CommandError('No translation block coverage information found')
+        target_dir = os.path.dirname(target_path)
+        modules = self._project_desc['modules']
 
-        # Get the basic block information
-        bbs = self._get_basic_blocks()
-        if not bbs:
-            raise CommandError('No basic block information found')
+        for module_info in modules:
+            module = module_info[0]
+            module_path = os.path.join(target_dir, module)
 
-        # Calculate the basic block coverage information
-        bb_coverage = _basic_block_coverage(bbs, tbs)
+            # Initialize the backend disassembler
+            self._initialize_disassembler(module_path)
 
-        # Calculate some statistics
-        total_bbs = len(bbs)
-        covered_bbs = len(bb_coverage)
+            tbs = self._get_tb_coverage(module)
+            if not tbs:
+                raise CommandError('No translation block coverage information found')
 
-        # Write the basic block information to a JSON file
-        bb_coverage_file = self._save_basic_block_coverage(bb_coverage,
-                                                           total_bbs)
+            # Get the basic block information
+            bbs = self._get_basic_blocks(module_path)
+            if not bbs:
+                raise CommandError('No basic block information found')
 
-        return self.RESULTS.format(bb_file=bb_coverage_file,
-                                   num_bbs=total_bbs,
-                                   num_covered_bbs=covered_bbs,
-                                   percent=covered_bbs / total_bbs)
+            # Calculate the basic block coverage information
+            bb_coverage = _basic_block_coverage(bbs, tbs)
 
-    def _initialize_disassembler(self):
+            # Calculate some statistics
+            total_bbs = len(bbs)
+            covered_bbs = len(bb_coverage)
+
+            # Write the basic block information to a JSON file
+            bb_coverage_file = self._save_basic_block_coverage(module, bb_coverage, total_bbs)
+
+            return self.RESULTS.format(bb_file=bb_coverage_file,
+                                       num_bbs=total_bbs,
+                                       num_covered_bbs=covered_bbs,
+                                       percent=covered_bbs / total_bbs)
+
+    def _initialize_disassembler(self, module_path):
         """
         Initialize the backend disassembler.
         """
         pass
 
-    def _get_basic_blocks(self):
+    def _get_basic_blocks(self, module_path):
         """
         Extract basic block information from the target binary using one of the
         disassembler backends (IDA Pro or Radare2).
@@ -165,7 +171,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         return list(covered_tbs)
 
-    def _save_basic_block_coverage(self, basic_blocks, total_bbs):
+    def _save_basic_block_coverage(self, module, basic_blocks, total_bbs):
         """
         Write the basic block coverage information to a JSON file.
 
@@ -177,7 +183,7 @@ class BasicBlockCoverage(ProjectCommand):
             The path of the JSON file.
         """
         bb_coverage_file = self.project_path('s2e-last',
-                                             'basic_block_coverage.json')
+                                             '%s_coverage.json' % module)
 
         logger.info('Saving basic block coverage to %s', bb_coverage_file)
 
