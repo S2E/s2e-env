@@ -68,6 +68,7 @@ dependencies:
         - libboost-system-dev
         - libboost-serialization-dev
         - libboost-regex-dev
+        - libboost-python-dev
         - libprotobuf-dev
         - protobuf-compiler
         - libbsd-dev

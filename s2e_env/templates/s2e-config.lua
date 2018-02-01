@@ -21,6 +21,12 @@ s2e = {
     -- Most of the options can be found in S2EExecutor.cpp and Executor.cpp.
     kleeArgs = {
     },
+
+    -- List the paths to Python modules that contain S2E plugins here.
+    python = {
+        modulePaths = {
+        }
+    },
 }
 
 -- Declare empty plugin settings. They will be populated in the rest of
