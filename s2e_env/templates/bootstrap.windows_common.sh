@@ -28,11 +28,9 @@ function install_driver {
 
 function target_init {
     # Set FaultInjectionEnabled to 1 if you want to test a driver for proper error recovery
+    # This only initializes fault injection infrastructure. Actual activation will be done
+    # later when needed using drvctl.exe.
     run_cmd "reg add HKLM\\Software\\S2E /v FaultInjectionEnabled /t REG_DWORD /d {% if use_fault_injection %} 0x1 {% else %} 0 {% endif %} /f"
-
-    # Set this to 1 if you would like more aggressive error injection, to help harden your driver
-    # against arbitrary API call errors. This may add false positives.
-    run_cmd "reg add HKLM\\Software\\S2E /v FaultInjectionOverapproximate /t REG_DWORD /d 0 /f"
 
     # Start the s2e.sys WindowsMonitor driver
     install_driver 'c:\s2e\s2e.inf'
