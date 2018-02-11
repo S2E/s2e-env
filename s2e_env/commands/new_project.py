@@ -204,6 +204,10 @@ class Command(EnvCommand):
             options['target'] = target_path
             options['target_files'] = [target_path]
             options['target_arch'] = arch
+
+            # The module list is a list of tuples where the first element is
+            # the module name and the second element is True if the module is
+            # a kernel module
             options['modules'] = [(os.path.basename(target_path), False)]
 
             options['processes'] = []

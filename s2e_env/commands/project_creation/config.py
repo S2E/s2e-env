@@ -66,7 +66,20 @@ class ProjectConfiguration(object):
         pass
 
 
-class WindowsDLLProjectConfiguration(ProjectConfiguration):
+class WindowsProjectConfiguration(ProjectConfiguration):
+    BOOTSTRAP_TEMPLATE = 'bootstrap.windows.sh'
+    LUA_TEMPLATE = 's2e-config.windows.lua'
+    PROJECT_TYPE = 'windows'
+
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+
+    def validate_configuration(self, config):
+        # Make all module names lower-case (in line with the WindowsMonitor plugin)
+        config['modules'] = [(mod.lower(), kernel_mode) for mod, kernel_mode in config.get('modules', [])]
+
+
+class WindowsDLLProjectConfiguration(WindowsProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.windows_dll.sh'
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
@@ -75,9 +88,11 @@ class WindowsDLLProjectConfiguration(ProjectConfiguration):
         if not target_path.endswith('.dll'):
             raise CommandError('Invalid DLL name - requires .dll extension')
 
-        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+        return super(WindowsDLLProjectConfiguration, self).is_valid_binary(target_arch, target_path, os_desc)
 
     def validate_configuration(self, config):
+        super(WindowsDLLProjectConfiguration, self).validate_configuration(config)
+
         if config.get('use_seeds', False):
             logger.warn('Seeds have been enabled, however they are not supported for DLLs. This flag will be ignored')
             config['use_seeds'] = False
@@ -91,24 +106,14 @@ class WindowsDLLProjectConfiguration(ProjectConfiguration):
             config['dll_exports'] = pe.get_exports()
 
 
-class WindowsProjectConfiguration(ProjectConfiguration):
-    BOOTSTRAP_TEMPLATE = 'bootstrap.windows.sh'
-    LUA_TEMPLATE = 's2e-config.windows.lua'
-    PROJECT_TYPE = 'windows'
-
-    def is_valid_binary(self, target_arch, target_path, os_desc):
-        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
-
-
-class WindowsDriverProjectConfiguration(ProjectConfiguration):
+class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
     BOOTSTRAP_TEMPLATE = 'bootstrap.windows_driver.sh'
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
-    def is_valid_binary(self, target_arch, target_path, os_desc):
-        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
-
     def validate_configuration(self, config):
+        super(WindowsDriverProjectConfiguration, self).validate_configuration(config)
+
         if config.get('use_seeds', False):
             logger.warn('Seeds have been enabled, however they are not supported for device drivers.'
                         ' This flag will be ignored')
