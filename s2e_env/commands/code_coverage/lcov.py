@@ -67,7 +67,7 @@ class LineCoverage(ProjectCommand):
                 logger.info('Line coverage saved to %s. An HTML report is available in %s',
                             lcov_info_path, lcov_html_dir)
 
-            logger.info('Line coverage saved to %s', lcov_info_path)
+            logger.success('Line coverage saved to %s', lcov_info_path)
 
     def _get_addr_coverage(self, target_name):
         """
