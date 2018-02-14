@@ -57,7 +57,7 @@ def _split_basic_block(func_name, basic_block):
         if inst['type'] == 'call' and i < num_insts - 1:
             bb_end_addr = inst['offset'] + inst['size']
             split_bbs.append(BasicBlock(bb_start_addr, bb_end_addr, func_name))
-            bb_start_addr = insts[i + 1]
+            bb_start_addr = insts[i + 1]['offset']
 
     if bb_start_addr < bb_end_addr:
         split_bbs.append(BasicBlock(bb_start_addr, bb_end_addr, func_name))

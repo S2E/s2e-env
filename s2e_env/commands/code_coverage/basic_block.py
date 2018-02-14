@@ -116,8 +116,7 @@ class BasicBlockCoverage(ProjectCommand):
         target_dir = os.path.dirname(target_path)
         modules = self._project_desc['modules']
 
-        for module_info in modules:
-            module = module_info[0]
+        for module, _ in modules:
             module_path = os.path.join(target_dir, module)
 
             # Initialize the backend disassembler
@@ -147,16 +146,19 @@ class BasicBlockCoverage(ProjectCommand):
             total_bbs = len(bbs)
             num_covered_bbs = len(set(itertools.chain(*bb_coverage.values())))
 
-            # Write the basic block information to a JSON file
+            # Write the basic block coverage information to disk.
+            #
+            # Combine all the basic block coverage information (across all
+            # states) into a single JSON file.
             bb_coverage_file = self._save_basic_block_coverage(module,
                                                                bb_coverage,
                                                                total_bbs,
                                                                num_covered_bbs)
 
-            return self.RESULTS.format(bb_file=bb_coverage_file,
-                                       num_bbs=total_bbs,
-                                       num_covered_bbs=num_covered_bbs,
-                                       percent=num_covered_bbs / total_bbs)
+            logger.success(self.RESULTS.format(bb_file=bb_coverage_file,
+                                               num_bbs=total_bbs,
+                                               num_covered_bbs=num_covered_bbs,
+                                               percent=num_covered_bbs / total_bbs))
 
     def _initialize_disassembler(self, module_path):
         """
