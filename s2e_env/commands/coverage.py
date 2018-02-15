@@ -52,6 +52,8 @@ class Command(ProjectCommand):
                                           help='Generate a basic block report')
         bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2', 'binaryninja'),
                                default='ida', help='Disassembler backend to use')
+        bb_parser.add_argument('-r', '--drcov', action='store_true',
+                               help='Generate drcov-compatible output')
 
         super(Command, self).add_arguments(parser)
 
