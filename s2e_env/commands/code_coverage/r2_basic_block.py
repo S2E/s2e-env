@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import importlib
 import logging
 
 from s2e_env.command import CommandError
@@ -74,37 +75,38 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
     def __init__(self):
         super(R2BasicBlockCoverage, self).__init__()
 
-        self._r2 = None
+        self._r2pipe_mod = None
 
-    def _initialize_disassembler(self, module_path):
+    def _initialize_disassembler(self):
         """
-        Initialize Radare2 with r2pipe and perform the initial analysis.
-
-        Sets the ``_r2`` attribute or raises an exception if Radare2/r2pipe
+        Initialize Radare2 with r2pipe. Raises an exception if Radare2/r2pipe
         cannot be found.
         """
         try:
-            import r2pipe
+            self._r2pipe_mod = importlib.import_module('r2pipe')
         except ImportError:
             raise CommandError('Unable to load r2pipe. Is Radare2/r2pipe '
                                'installed?')
 
-        self._r2 = r2pipe.open(module_path)
-        self._r2.cmd('aaa')
-
-    def _get_basic_blocks(self, module_path):
+    def _get_disassembly_info(self, module_path):
         """
-        Extract basic block information from the target binary using Radare2.
+        Extract disassembly information from the target binary using Radare2.
         """
-        logger.info('Generating basic block information from Radare')
+        logger.info('Generating disassembly information from Radare for %s',
+                    module_path)
 
+        r2 = self._r2pipe_mod.open(module_path)
+        r2.cmd('aaa')
+
+        # Get basic blocks
         bbs = []
-        for func in self._r2.cmdj('aflj'):
+        for func in r2.cmdj('aflj'):
             func_name = func['name']
-            func_graph = self._r2.cmdj('agj 0x%x' % func['offset'])
+            func_graph = r2.cmdj('agj 0x%x' % func['offset'])
 
             if not func_graph:
-                logger.warn('Function %s has an empty graph. Skipping...', func_name)
+                logger.warn('Function %s has an empty graph. Skipping...',
+                            func_name)
                 continue
 
             # For some reason Radare returns the function graph in a list with
@@ -117,4 +119,16 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
                 split_bbs = _split_basic_block(func_name, basic_block)
                 bbs.extend(split_bbs)
 
-        return bbs
+        # Get the module's base address
+        r2.cmd('sg')
+        base_addr = int(r2.cmd('s'), 16)
+
+        # Get the module's end address
+        r2.cmd('sG')
+        end_addr = int(r2.cmd('s'), 16)
+
+        return {
+            'bbs': bbs,
+            'base_addr': base_addr,
+            'end_addr': end_addr,
+        }

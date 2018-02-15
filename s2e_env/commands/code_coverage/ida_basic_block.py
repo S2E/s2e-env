@@ -87,7 +87,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
 
         self._ida_path = None
 
-    def _initialize_disassembler(self, module_path):
+    def _initialize_disassembler(self):
         """
         Initialize the IDA Pro disassembler.
 
@@ -107,26 +107,27 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
 
         self._ida_path = _get_ida_path(ida_dir, self._project_desc['target_arch'])
 
-    def _get_basic_blocks(self, module_path):
+    def _get_disassembly_info(self, module_path):
         """
-        Extract basic block information from the target binary using S2E's IDA
+        Extract disassembly information from the given module using S2E's IDA
         Pro script.
 
         This extraction is done within a temporary directory so that we don't
         pollute the file system with temporary idbs and other such things.
         """
-        logger.info('Generating basic block information from IDA Pro for %s', module_path)
+        logger.info('Generating disassembly information from IDA Pro for %s',
+                    module_path)
 
         try:
             with TemporaryDirectory() as temp_dir:
                 # Copy the binary to the temporary directory. Because projects
-                # are created with a symlink to the target program, then IDA
-                # Pro will generate the idb and bblist files in the symlinked
-                # target's directory. Which is not what we want
-                target_name = os.path.basename(module_path)
+                # are created with a symlink to the given module, IDA Pro
+                # will generate the idb and disas files in the symlinked
+                # module's directory. This is not what we want
+                module_name = os.path.basename(module_path)
 
-                temp_target_path = os.path.join(temp_dir, target_name)
-                shutil.copyfile(module_path, temp_target_path)
+                temp_module_path = os.path.join(temp_dir, module_name)
+                shutil.copyfile(module_path, temp_module_path)
 
                 # Run the IDA Pro extractBasicBlocks script
                 env_vars = os.environ.copy()
@@ -137,17 +138,17 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                 ida = sh.Command(self._ida_path)
                 ida('-A', '-B',
                     '-S%s' % self.install_path('bin', 'extractBasicBlocks.py'),
-                    temp_target_path, _out=os.devnull, _tty_out=False,
+                    temp_module_path, _out=os.devnull, _tty_out=False,
                     _cwd=temp_dir, _env=env_vars)
 
                 # Check that the basic block list file was correctly generated
-                bblist_file = os.path.join(temp_dir, '%s.bblist' % target_name)
-                if not os.path.isfile(bblist_file):
-                    raise CommandError('Failed to generate bblist file for '
-                                       '%s' % target_name)
+                disas_file = os.path.join(temp_dir, '%s.disas' % module_name)
+                if not os.path.isfile(disas_file):
+                    raise CommandError('Failed to generate disas file for '
+                                       '%s' % module_name)
 
                 # Parse the basic block list file
-                with open(bblist_file, 'r') as f:
+                with open(disas_file, 'r') as f:
                     return json.load(f, cls=BasicBlockDecoder)
         except ErrorReturnCode as e:
             raise CommandError(e)

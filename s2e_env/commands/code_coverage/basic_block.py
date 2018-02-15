@@ -111,33 +111,33 @@ class BasicBlockCoverage(ProjectCommand):
               'Covered basic blocks: {num_covered_bbs} ({percent:.1%})'
 
     def handle(self, *args, **options):
-        # Get translation block coverage information
+        # Initialize the backend disassembler
+        self._initialize_disassembler()
+
         target_path = self._project_desc['target_path']
         target_dir = os.path.dirname(target_path)
         modules = self._project_desc['modules']
 
+        # Get translation block coverage information for each module
         for module, _ in modules:
-            module_path = os.path.join(target_dir, module)
-
-            # Initialize the backend disassembler
-            self._initialize_disassembler(module_path)
-
-            # Check if a cached version of the basic block information exists.
+            # Check if a cached version of the disassembly information exists.
             # If it does, then we don't have to disassemble the binary (which
             # may take a long time for large binaries)
-            bbs = self._get_cached_basic_blocks(module)
+            disas_info = self._get_cached_disassembly_info(module)
 
-            # If no cached .bblist file exists, generate a new one using the
+            # If no cached .disas file exists, generate a new one using the
             # given disassembler and cache the results
-            if not bbs:
-                bbs = self._get_basic_blocks(module_path)
-                if not bbs:
-                    raise CommandError('No basic block information found')
+            if not disas_info:
+                module_path = os.path.join(target_dir, module)
+                disas_info = self._get_disassembly_info(module_path)
+                if not disas_info:
+                    raise CommandError('No disassembly information found')
 
-                self._save_basic_blocks(module, bbs)
+                self._save_disassembly_info(module, disas_info)
 
             # Calculate basic block coverage information (based on the
             # translation block coverage recorded by S2E)
+            bbs = disas_info.get('bbs', [])
             bb_coverage = self._get_basic_block_coverage(module, bbs)
             if not bb_coverage:
                 raise CommandError('No basic block coverage information found')
@@ -160,77 +160,78 @@ class BasicBlockCoverage(ProjectCommand):
                                                num_covered_bbs=num_covered_bbs,
                                                percent=num_covered_bbs / total_bbs))
 
-    def _initialize_disassembler(self, module_path):
+    def _initialize_disassembler(self):
         """
         Initialize the backend disassembler.
         """
         pass
 
-    def _get_cached_basic_blocks(self, module):
+    def _get_disassembly_info(self, module_path):
         """
-        Check if the basic block information from the target binary has already
-        been generated (in a .bblist file). If it has, reuse this information.
-
-        The .bblist file is just a JSON dump.
+        Disassemble the give module using on the of the supported backends (IDA
+        Pro, Radare2 or Binary Ninja) and extract useful information, such as
+        basic block information and module start/end addresses.
 
         Returns:
-            A list of ``BasicBlock`` objects read from a .bblist file. If no
-            .bblist file exists, ``None`` is returned.
-        """
-        logger.info('Checking for existing .bblist file')
-
-        bblist_path = self.project_path('%s.bblist' % module)
-
-        if not os.path.isfile(bblist_path):
-            logger.info('No .bblist file found')
-            return None
-
-        # Force a new .bblist to be generated if the target binary has a newer
-        # modification time compared to the .bblist file
-
-        bblist_mtime = os.path.getmtime(bblist_path)
-        target_mtime = os.path.getmtime(self._project_desc['target_path'])
-
-        if bblist_mtime < target_mtime:
-            logger.info('%s is out of date. A new .bblist file will be generated',
-                        bblist_path)
-            return None
-
-        logger.info('%s found. Returning cached basic blocks', bblist_path)
-
-        with open(bblist_path, 'r') as bblist_file:
-            return json.load(bblist_file, cls=BasicBlockDecoder)
-
-    def _get_basic_blocks(self, module_path):
-        """
-        Extract basic block information from the target binary using one of the
-        disassembler backends (IDA Pro, Radare2 or Binary Ninja).
-
-        Returns:
-            A list of ``BasicBlock`` objects.
+            A ``dict`` containing disassembly information.
         """
         raise NotImplementedError('subclasses of BasicBlockCoverage must '
-                                  'provide a _get_basic_blocks() method')
+                                  'provide a _get_disassembly_info method')
 
-    def _save_basic_blocks(self, module, bbs):
+    def _get_cached_disassembly_info(self, module):
         """
-        Save the a list of basic blocks to a .bblist file in the project
+        Check if the disassembly information from the target binary has already
+        been generated (in a .disas file). If it has, reuse this information.
+
+        The .disas file is just a JSON dump.
+
+        Returns:
+            A ``dict`` containing the disassembly information. If no .disas
+            file exists, ``None`` is returned.
+        """
+        logger.info('Checking for existing .disas file')
+
+        disas_path = self.project_path('%s.disas' % module)
+        if not os.path.isfile(disas_path):
+            logger.info('No .disas file found')
+            return None
+
+        # Force a new .disas to be generated if the target binary has a newer
+        # modification time compared to the .disas file
+
+        disas_mtime = os.path.getmtime(disas_path)
+        target_mtime = os.path.getmtime(self._project_desc['target_path'])
+
+        if disas_mtime < target_mtime:
+            logger.info('%s is out of date. A new .disas file will be generated',
+                        disas_path)
+            return None
+
+        logger.info('%s found. Returning cached basic blocks', disas_path)
+
+        with open(disas_path, 'r') as disas_file:
+            return json.load(disas_file, cls=BasicBlockDecoder)
+
+    def _save_disassembly_info(self, module, disas_info):
+        """
+        Save the disassembly information to a .disas file in the project
         directory.
 
-        The .bblist file is just a JSON dump.
+        The .disas file is just a JSON dump.
 
         Args:
-            module: Name of the module for the basic blocks in ``bbs``.
-            bbs: A list of ``BasicBlock`` objects.
+            module: Name of the module for the disassembly information in
+            ``disas_info``.
+            disas_info: A dictionary containing the disassemly information.
         """
-        bblist_path = self.project_path('%s.bblist' % module)
+        disas_path = self.project_path('%s.disas' % module)
 
-        logger.info('Saving basic block information to %s', bblist_path)
+        logger.info('Saving disassembly information to %s', disas_path)
 
-        with open(bblist_path, 'w') as bblist_file:
-            json.dump(bbs, bblist_file, cls=BasicBlockEncoder)
+        with open(disas_path, 'w') as disas_file:
+            json.dump(disas_info, disas_file, cls=BasicBlockEncoder)
 
-    def _get_basic_block_coverage(self, target_name, basic_blocks):
+    def _get_basic_block_coverage(self, module, bbs):
         """
         Calculate the basic block coverage.
 
@@ -243,15 +244,16 @@ class BasicBlockCoverage(ProjectCommand):
         covered_bbs = defaultdict(set)
 
         for tb_coverage_file in tb_coverage_files:
-            tb_coverage_data = parse_tb_file(tb_coverage_file, target_name)
+            tb_coverage_data = parse_tb_file(tb_coverage_file, module)
             if not tb_coverage_data:
                 continue
 
             state = get_tb_state(tb_coverage_file)
 
             logger.info('Calculating basic block coverage for state %d', state)
+
             for tb_start_addr, tb_end_addr, _ in tb_coverage_data:
-                for bb in basic_blocks:
+                for bb in bbs:
                     # Check if the translation block falls within a basic block
                     # OR a basic block falls within a translation block
                     if (bb.end_addr >= tb_start_addr >= bb.start_addr or
