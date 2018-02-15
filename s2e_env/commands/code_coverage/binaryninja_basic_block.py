@@ -46,7 +46,7 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         self._bv = None
         self._binaryninja_mod = None
 
-    def _initialize_disassembler(self, module_path):
+    def _initialize_disassembler(self):
         """
         Initialize the Binary Ninja Python API.
         """
@@ -66,22 +66,34 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         sys.path.append(binaryninja_py_dir)
         self._binaryninja_mod = importlib.import_module('binaryninja')
 
-        self._bv = self._binaryninja_mod.BinaryViewType.get_view_of_file(module_path)
-
-    def _get_basic_blocks(self, module_path):
+    def _get_disassembly_info(self, module_path):
         """
-        Extract basic block information from the target binary using Binary
+        Extract disassembly information from the target binary using Binary
         Ninja.
         """
-        logger.info('Generating basic block information from Binary Ninja')
+        logger.info('Generating disassembly information from Binary Ninja for '
+                    '%s', module_path)
 
+        self._bv = self._binaryninja_mod.BinaryViewType.get_view_of_file(module_path)
+
+        # Get basic blocks
         bbs = []
         for func in self._bv.functions:
             for basic_block in func.basic_blocks:
                 split_bbs = self._split_basic_block(func.name, basic_block)
                 bbs.extend(split_bbs)
 
-        return bbs
+        # Get the module's base address
+        base_addr = self._bv.start
+
+        # Get the module's end address
+        end_addr = self._bv.end
+
+        return {
+            'bbs': bbs,
+            'base_addr': base_addr,
+            'end_addr': end_addr,
+        }
 
     def _split_basic_block(self, func_name, basic_block):
         """
