@@ -20,10 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
+import logging
 import struct
 
 from enum import Enum
+
+logger = logging.getLogger('trace_entries')
 
 #
 # The following code is a Python adaption of the C++ code in
@@ -710,45 +712,52 @@ class TraceMemChecker(TraceEntry):
 
 
 class TraceTestCase(TraceEntry):
-    FORMAT = '<II%ds%ds'
+    """
+    A test case payload consists of a sequence of <header, name, data> entries,
+    where header describes the length of the string name and the size of the data.
+    """
 
-    def __init__(self, name, data):
-        super(TraceTestCase, self).__init__(TraceTestCase.FORMAT % (len(name), len(data)))
-        self._name = name
+    HEADER_FORMAT = '<II'
+    HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
+
+    def __init__(self, data):
+        super(TraceTestCase, self).__init__()
         self._data = data
+        self._testcase = {}
+        self._initialize_test_case_items()
 
     @classmethod
     def deserialize(cls, data, size=None):
         if not size:
             raise TraceEntryError('A size must be provided when deserializing '
                                   'a ``TraceTestCase`` item')
-        name_data_size_struct_fmt = '<II'
-        name_data_size_struct_size = struct.calcsize(name_data_size_struct_fmt)
-        name_size, data_size = struct.unpack(name_data_size_struct_fmt,
-                                             data[:name_data_size_struct_size])
-        unpacked_data = struct.unpack(TraceTestCase.FORMAT % (name_size, data_size), data)
 
-        return TraceTestCase(*unpacked_data[2:])
+        return TraceTestCase(data)
 
     def serialize(self):
-        return self._struct.pack(len(self._name),
-                                 len(self._data),
-                                 self._name,
-                                 self._data)
+        raise NotImplementedError()
+
+    def _read_test_case_item(self):
+        name_size, data_size = struct.unpack(TraceTestCase.HEADER_FORMAT, self._data[:TraceTestCase.HEADER_SIZE])
+        self._data = self._data[TraceTestCase.HEADER_SIZE:]
+
+        entry = '%ds%ds' % (name_size, data_size)
+        entry_size = struct.calcsize(entry)
+        tc = struct.unpack(entry, self._data[:entry_size])
+        self._data = self._data[entry_size:]
+        return tc
+
+    def _initialize_test_case_items(self):
+        while self._data:
+            tc = self._read_test_case_item()
+            self._testcase[tc[0]] = tc[1]
 
     def as_dict(self):
-        return {
-            'name': self.name,
-            'data': self.data,
-        }
+        return self._testcase
 
     @property
-    def name(self):
-        return self._name
-
-    @property
-    def data(self):
-        return self._data
+    def testcase(self):
+        return self._testcase
 
 
 class TraceMemory(TraceEntry):
