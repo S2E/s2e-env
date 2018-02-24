@@ -23,7 +23,6 @@ SOFTWARE.
 
 import glob
 import logging
-import operator
 import os
 
 from . import trace_entries
@@ -213,6 +212,31 @@ class ExecutionTraceParser(object):
 
         return self._execution_traces[0]
 
+    @staticmethod
+    def _read_trace_entry(trace_file):
+        raw_header = trace_file.read(TraceItemHeader.static_size())
+
+        # An empty header signifies EOF
+        if not raw_header:
+            raise EOFError()
+
+        header = TraceItemHeader.deserialize(raw_header)
+
+        # Determine the item's type from the header
+        item_type = header.type
+        item_class = _TRACE_ENTRY_MAP.get(item_type)
+        if not item_class:
+            # If an unknown item type is found, just skip it
+            logger.warn('Found unknown trace item `%s`. Skipping %d '
+                        'bytes...', item_type.value, header.size)
+            trace_file.read(header.size)
+            return None
+
+        # Read the raw data and deserialize it
+        raw_item = trace_file.read(header.size)
+
+        return header, item_class.deserialize(raw_item, header.size)
+
     def _parse_trace_file(self, trace_file, path_ids=None):
         """
         Parse a single ``trace_file``.
@@ -247,28 +271,23 @@ class ExecutionTraceParser(object):
         # state/path. Used for determining fork points.
         path_lengths = {}
 
-        while True:
-            raw_header = trace_file.read(TraceItemHeader.static_size())
+        current_element = -1
 
-            # An empty header signifies EOF
-            if not raw_header:
+        while True:
+            current_element += 1
+
+            try:
+                header, item = self._read_trace_entry(trace_file)
+            except EOFError:
+                break
+            except Exception as e:
+                # This usually means that the trace was truncated (e.g., S2E was killed)
+                logger.warn('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
                 break
 
-            header = TraceItemHeader.deserialize(raw_header)
-
-            # Determine the item's type from the header
-            item_type = header.type
-            item_class = _TRACE_ENTRY_MAP.get(item_type)
-            if not item_class:
-                # If an unknown item type is found, just skip it
-                logger.warn('Found unknown trace item `%s`. Skipping %d '
-                            'bytes...', item_type.value, header.size)
-                trace_file.read(header.size)
+            if not item:
+                # Unknown item, skip it
                 continue
-
-            # Read the raw data and deserialize it
-            raw_item = trace_file.read(header.size)
-            item = item_class.deserialize(raw_item, header.size)
 
             # Skip any states that have an ID greater than that which we have
             # been asked to parse
@@ -278,7 +297,7 @@ class ExecutionTraceParser(object):
 
             # If the item is a state fork, we must update the ``_path_info``
             # dictionary with the parent and fork point information
-            if item_type == TraceEntryType.TRACE_FORK:
+            if header.type == TraceEntryType.TRACE_FORK:
                 new_children = {}
 
                 for child_state_id in item.children:
