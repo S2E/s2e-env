@@ -96,6 +96,10 @@ class Command(ProjectCommand):
                                  'option can be used multiple times to trace '
                                  'multiple path IDs')
 
+        parser.add_argument('-pp', '--pretty-print', action='store_true',
+                            dest='pretty_print',
+                            help='Pretty print the generated json')
+
     def handle(self, *args, **options):
         # Parse the ExecutionTracer.dat file(s) and generate an execution tree
         # for the given path IDs
@@ -110,6 +114,9 @@ class Command(ProjectCommand):
         # Write the execution tree to a JSON file
         json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
         with open(json_trace_file, 'w') as f:
-            json.dump(execution_tree_json, f)
+            if options['pretty_print']:
+                json.dump(execution_tree_json, f, indent=4, sort_keys=True)
+            else:
+                json.dump(execution_tree_json, f)
 
         logger.success('Execution trace saved to %s', json_trace_file)
