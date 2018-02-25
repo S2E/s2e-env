@@ -148,6 +148,10 @@ if ! mount | grep "/tmp type tmpfs"; then
     sudo mount -t tmpfs -osize=10m tmpfs /tmp
 fi
 
+# Need to disable swap, otherwise there will be forced concretization if the
+# system swaps out symbolic data to disk.
+sudo swapoff -a
+
 {% endif %}
 
 target_init
