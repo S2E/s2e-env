@@ -52,6 +52,16 @@ MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
 DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 
+PROJECT_CONFIGS = {
+    'cgc': CGCProjectConfiguration,
+    'linux': LinuxProjectConfiguration,
+    'windows': WindowsDLLProjectConfiguration
+}
+
+
+def _get_configs():
+    return PROJECT_CONFIGS.keys()
+
 
 def _parse_sym_args(sym_args_str):
     """
@@ -151,6 +161,66 @@ def _handle_inf(target_path, **options):
 
     call_command(Project(WindowsDriverProjectConfiguration), **options)
 
+
+def _handle_with_file(**options):
+    # Need an absolute path for the target in order to simplify
+    # symlink creation.
+    target_path = options['target']
+    target_path = os.path.realpath(target_path)
+
+    # Check that the target actually exists
+    if not os.path.isfile(target_path):
+        raise CommandError('Target %s does not exist' % target_path)
+
+    arch, proj_config_class = get_arch(target_path)
+    if arch:
+        options['target'] = target_path
+        options['target_files'] = [target_path]
+        options['target_arch'] = arch
+
+        # The module list is a list of tuples where the first element is
+        # the module name and the second element is True if the module is
+        # a kernel module
+        options['modules'] = [(os.path.basename(target_path), False)]
+
+        options['processes'] = []
+        if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
+            options['processes'].append(os.path.basename(target_path))
+
+        call_command(Project(proj_config_class), **options)
+    elif target_path.endswith('.inf'):
+        _handle_inf(target_path, **options)
+    else:
+        raise CommandError('%s is not a valid target for S2E analysis' %
+                           target_path)
+
+
+def _handle_empty_project(**options):
+    if not options['no_target']:
+        raise CommandError('No target binary specified. Use the --no-target option to create an empty project.')
+
+    if not options['image']:
+        raise CommandError('An empty project requires a VM image. Use the -i option to specify the image.')
+
+    if not options['name']:
+        raise CommandError('Project name missing. Use the -n option to specify one.')
+
+    if options['type'] not in _get_configs():
+        raise CommandError('The project type is invalid. Please use %s for the -t option.' % _get_configs())
+
+    options['target'] = None
+    options['target_files'] = []
+    options['target_arch'] = None
+
+    # The module list is a list of tuples where the first element is
+    # the module name and the second element is True if the module is
+    # a kernel module
+    options['modules'] = []
+    options['processes'] = []
+
+    call_command(Project(PROJECT_CONFIGS[options['type']]), **options)
+
+
 class Command(EnvCommand):
     """
     Initialize a new analysis project.
@@ -161,62 +231,51 @@ class Command(EnvCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
 
-        parser.add_argument('target', nargs=1,
+        parser.add_argument('target', nargs='?',
                             help='Path to the target file to analyze')
+
         parser.add_argument('target_args', nargs=argparse.REMAINDER,
                             help='Arguments to the target program. Use @@ '
                                  'as an input file marker that is automatically '
                                  'substituted by a file with symbolic content')
+
         parser.add_argument('-n', '--name', required=False, default=None,
                             help='The name of the project. Defaults to the '
                                  'name of the target program.')
+
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
                                  'directory. If missing, the image will be '
                                  'guessed based on the type of the binary')
+
         parser.add_argument('-d', '--download-image', required=False,
                             action='store_true',
                             help='Download a suitable image if it is not available')
+
+        parser.add_argument('--no-target', required=False, default=False,
+                            action='store_true',
+                            help='Create a bare targetless project, when no binary is needed')
+
+        parser.add_argument('--type', required=False, default=None,
+                            help='Project type (%s), valid only when creating empty projects' %
+                            ','.join(_get_configs()))
+
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
                                  'concolic files. The user must create these '
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
+
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
                             help='A space-separated list of target argument '
                                  'indices to make symbolic')
+
         parser.add_argument('-f', '--force', action='store_true',
                             help='If a project with the given name already '
                                  'exists, replace it')
 
     def handle(self, *args, **options):
-        # Need an absolute path for the target in order to simplify
-        # symlink creation.
-        target_path = options['target'][0]
-        target_path = os.path.realpath(target_path)
-
-        # Check that the target actually exists
-        if not os.path.isfile(target_path):
-            raise CommandError('Target %s does not exist' % target_path)
-
-        arch, proj_config_class = get_arch(target_path)
-        if arch:
-            options['target'] = target_path
-            options['target_files'] = [target_path]
-            options['target_arch'] = arch
-
-            # The module list is a list of tuples where the first element is
-            # the module name and the second element is True if the module is
-            # a kernel module
-            options['modules'] = [(os.path.basename(target_path), False)]
-
-            options['processes'] = []
-            if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
-                options['processes'].append(os.path.basename(target_path))
-
-            call_command(Project(proj_config_class), **options)
-        elif target_path.endswith('.inf'):
-            _handle_inf(target_path, **options)
+        if options['target']:
+            _handle_with_file(**options)
         else:
-            raise CommandError('%s is not a valid target for S2E analysis' %
-                               target_path)
+            _handle_empty_project(**options)

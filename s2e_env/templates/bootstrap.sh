@@ -161,8 +161,13 @@ target_init
 ${S2EGET} "{{ tf }}"
 {% endfor %}
 
+{% if target %}
 # Run the analysis
 execute "./{{ target }}"
+{% else %}
+##### NO TARGET HAS BEEN SPECIFIED DURING PROJECT CREATION #####
+##### Please fetch and execute the target files manually   #####
+{% endif %}
 
 # Kill states before exiting
-${S2ECMD} kill $? "'{{ target }}' state killed"
+${S2ECMD} kill $? "Target execution terminated"

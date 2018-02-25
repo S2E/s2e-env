@@ -69,7 +69,7 @@ class Project(EnvCommand):
             'project_dir': self._project_dir,
             'project_type': self._configurator.PROJECT_TYPE,
             'image': self._img_json,
-            'target': os.path.basename(self._target_path),
+            'target': os.path.basename(self._target_path) if self._target_path else None,
             'target_path': self._target_path,
             'target_arch': options['target_arch'],
             'target_args': options['target_args'],
@@ -126,7 +126,11 @@ class Project(EnvCommand):
         # The configurator may modify the config dictionary here
         self._configurator.validate_configuration(config)
 
-        if config['warn_input_file'] and not (config['use_symb_input_file'] or config['sym_args']):
+        display_marker_warning = self._target_path and \
+                                 config['warn_input_file'] and \
+                                 not (config['use_symb_input_file'] or config['sym_args'])
+
+        if display_marker_warning:
             logger.warning('You did not specify the input file marker @@. This marker is automatically substituted by '
                            'a file with symbolic content. You will have to manually edit the bootstrap file in order '
                            'to run the program on multiple paths.\n\n'
@@ -148,14 +152,15 @@ class Project(EnvCommand):
             recipes_path = self.install_path('share', 'decree-recipes')
             os.symlink(recipes_path, config['recipes_dir'])
 
-        # Do some basic analysis on the target
-        self._configurator.analyze(config)
+        if self._target_path:
+            # Do some basic analysis on the target
+            self._configurator.analyze(config)
+
+            # Create a symlink to the target program
+            self._symlink_target_files(options['target_files'])
 
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools()
-
-        # Create a symlink to the target program
-        self._symlink_target_files(options['target_files'])
 
         # Create a symlink to guestfs (if it exists)
         if not self._symlink_guestfs():
@@ -256,18 +261,22 @@ class Project(EnvCommand):
 
     def _validate_and_create_project(self, options):
         self._target_path = options['target']
+        if not self._target_path:
+            logger.warn('Creating a project without a target file, you will have to manually edit bootstrap.sh')
 
-        # Check that the analysis target is valid
-        if not os.path.isfile(self._target_path):
-            raise CommandError('Cannot analyze %s because it does not seem to '
-                               'exist' % self._target_path)
-
-        # The default project name is the target program to be analyzed
-        # (without any file extension)
         project_name = options['name']
-        if not project_name:
-            project_name, _ = \
-                os.path.splitext(os.path.basename(self._target_path))
+
+        if self._target_path:
+            # Check that the analysis target is valid
+            if not os.path.isfile(self._target_path):
+                raise CommandError('Cannot analyze %s because it does not seem to '
+                                   'exist' % self._target_path)
+
+            # The default project name is the target program to be analyzed
+            # (without any file extension)
+            if not project_name:
+                project_name, _ = \
+                    os.path.splitext(os.path.basename(self._target_path))
 
         self._project_dir = self.env_path('projects', project_name)
 
@@ -281,10 +290,11 @@ class Project(EnvCommand):
 
         self._img_json = self._get_or_download_image(templates, image, options['download_image'])
 
-        # Check architecture consistency
-        if not is_valid_arch(options['target_arch'], self._img_json['os']):
-            raise CommandError('Binary is x86_64 while VM image is %s. Please '
-                               'choose another image' % self._img_json['os']['arch'])
+        if self._target_path:
+            # Check architecture consistency
+            if not is_valid_arch(options['target_arch'], self._img_json['os']):
+                raise CommandError('Binary is x86_64 while VM image is %s. Please '
+                                   'choose another image' % self._img_json['os']['arch'])
 
         # Check if the project dir already exists
         # Do this after all checks have completed
