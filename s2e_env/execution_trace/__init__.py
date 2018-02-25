@@ -154,6 +154,10 @@ class ExecutionTraceParser(object):
         self._execution_traces = {}
         self._path_info = {}
 
+        # Map of state IDs to the number of entries for that particular
+        # state/path. Used for determining fork points.
+        self._path_lengths = {}
+
     def parse(self, path_ids=None):
         """
         Parse the list of trace files and generate a single execution tree
@@ -266,11 +270,6 @@ class ExecutionTraceParser(object):
         """
         # The maximum state ID to return an execution trace for
         max_path_id = max(path_ids) if path_ids else None
-
-        # Map of state IDs to the number of entries for that particular
-        # state/path. Used for determining fork points.
-        path_lengths = {}
-
         current_element = -1
 
         while True:
@@ -304,11 +303,11 @@ class ExecutionTraceParser(object):
                     # For each child state, save:
                     #   * The state ID of the parent
                     #   * The index into the current state's execution trace
-                    #     indicating where the fork occured
+                    #     indicating where the fork occurred
                     #   * Create a entry for the new state in the main trace
                     #     dictionary
                     if child_state_id != current_state_id:
-                        fork_point = path_lengths.get(current_state_id, 0)
+                        fork_point = self._path_lengths.get(current_state_id, 0)
                         self._path_info[child_state_id] = current_state_id, fork_point
 
                         # When parsed directly from the trace file, the
@@ -331,9 +330,9 @@ class ExecutionTraceParser(object):
             self._execution_traces[current_state_id].append((header, item))
 
             # Update the path length information for future fork points
-            if current_state_id not in path_lengths:
-                path_lengths[current_state_id] = 0
-            path_lengths[current_state_id] += 1
+            if current_state_id not in self._path_lengths:
+                self._path_lengths[current_state_id] = 0
+            self._path_lengths[current_state_id] += 1
 
     def _get_parent_states(self, state_id):
         """
@@ -374,6 +373,9 @@ def parse(results_dir, path_ids=None):
         logger.warning('No \'ExecutionTrace.dat\' file found in s2e-last. Did '
                        'you enable any trace plugins in s2e-config.lua?')
         return []
+
+    # We must sort the traces by increasing id, so that it is possible to concatenate them
+    execution_trace_files = sorted(execution_trace_files)
 
     # Parse the execution trace file(s) to construct a single execution tree.
     execution_trace_parser = ExecutionTraceParser(execution_trace_files)
