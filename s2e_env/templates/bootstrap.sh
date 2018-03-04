@@ -12,11 +12,6 @@
 
 set -x
 
-S2EGET=./s2eget
-S2EPUT=./s2eput
-S2ECMD=./s2ecmd
-COMMON_TOOLS="s2ecmd s2eget s2eput"
-
 # To save you the hassle of rebuilding the image every time you want to update
 # S2E's guest tools, the first thing that we do is get the latest versions of
 # the guest tools.

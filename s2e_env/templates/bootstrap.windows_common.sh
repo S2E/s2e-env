@@ -53,7 +53,9 @@ function win_path {
   echo "$(cd "$dir"; echo "$(pwd -W)/$fn")" | sed 's|/|\\|g';
 }
 
-cd /c/s2e
-S2EGET=./s2eget.exe
 S2ECMD=./s2ecmd.exe
+S2EGET=./s2eget.exe
+S2EPUT=./s2eput.exe
 COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe"
+
+cd /c/s2e
