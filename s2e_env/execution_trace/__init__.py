@@ -23,7 +23,6 @@ SOFTWARE.
 
 import glob
 import logging
-import operator
 import os
 
 from . import trace_entries
@@ -155,6 +154,10 @@ class ExecutionTraceParser(object):
         self._execution_traces = {}
         self._path_info = {}
 
+        # Map of state IDs to the number of entries for that particular
+        # state/path. Used for determining fork points.
+        self._path_lengths = {}
+
     def parse(self, path_ids=None):
         """
         Parse the list of trace files and generate a single execution tree
@@ -213,6 +216,31 @@ class ExecutionTraceParser(object):
 
         return self._execution_traces[0]
 
+    @staticmethod
+    def _read_trace_entry(trace_file):
+        raw_header = trace_file.read(TraceItemHeader.static_size())
+
+        # An empty header signifies EOF
+        if not raw_header:
+            raise EOFError()
+
+        header = TraceItemHeader.deserialize(raw_header)
+
+        # Determine the item's type from the header
+        item_type = header.type
+        item_class = _TRACE_ENTRY_MAP.get(item_type)
+        if not item_class:
+            # If an unknown item type is found, just skip it
+            logger.warn('Found unknown trace item `%s`. Skipping %d '
+                        'bytes...', item_type.value, header.size)
+            trace_file.read(header.size)
+            return None
+
+        # Read the raw data and deserialize it
+        raw_item = trace_file.read(header.size)
+
+        return header, item_class.deserialize(raw_item, header.size)
+
     def _parse_trace_file(self, trace_file, path_ids=None):
         """
         Parse a single ``trace_file``.
@@ -242,33 +270,23 @@ class ExecutionTraceParser(object):
         """
         # The maximum state ID to return an execution trace for
         max_path_id = max(path_ids) if path_ids else None
-
-        # Map of state IDs to the number of entries for that particular
-        # state/path. Used for determining fork points.
-        path_lengths = {}
+        current_element = -1
 
         while True:
-            raw_header = trace_file.read(TraceItemHeader.static_size())
+            current_element += 1
 
-            # An empty header signifies EOF
-            if not raw_header:
+            try:
+                header, item = self._read_trace_entry(trace_file)
+            except EOFError:
+                break
+            except Exception as e:
+                # This usually means that the trace was truncated (e.g., S2E was killed)
+                logger.warn('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
                 break
 
-            header = TraceItemHeader.deserialize(raw_header)
-
-            # Determine the item's type from the header
-            item_type = header.type
-            item_class = _TRACE_ENTRY_MAP.get(item_type)
-            if not item_class:
-                # If an unknown item type is found, just skip it
-                logger.warn('Found unknown trace item `%s`. Skipping %d '
-                            'bytes...', item_type.value, header.size)
-                trace_file.read(header.size)
+            if not item:
+                # Unknown item, skip it
                 continue
-
-            # Read the raw data and deserialize it
-            raw_item = trace_file.read(header.size)
-            item = item_class.deserialize(raw_item, header.size)
 
             # Skip any states that have an ID greater than that which we have
             # been asked to parse
@@ -278,18 +296,18 @@ class ExecutionTraceParser(object):
 
             # If the item is a state fork, we must update the ``_path_info``
             # dictionary with the parent and fork point information
-            if item_type == TraceEntryType.TRACE_FORK:
+            if header.type == TraceEntryType.TRACE_FORK:
                 new_children = {}
 
                 for child_state_id in item.children:
                     # For each child state, save:
                     #   * The state ID of the parent
                     #   * The index into the current state's execution trace
-                    #     indicating where the fork occured
+                    #     indicating where the fork occurred
                     #   * Create a entry for the new state in the main trace
                     #     dictionary
                     if child_state_id != current_state_id:
-                        fork_point = path_lengths.get(current_state_id, 0)
+                        fork_point = self._path_lengths.get(current_state_id, 0)
                         self._path_info[child_state_id] = current_state_id, fork_point
 
                         # When parsed directly from the trace file, the
@@ -312,9 +330,9 @@ class ExecutionTraceParser(object):
             self._execution_traces[current_state_id].append((header, item))
 
             # Update the path length information for future fork points
-            if current_state_id not in path_lengths:
-                path_lengths[current_state_id] = 0
-            path_lengths[current_state_id] += 1
+            if current_state_id not in self._path_lengths:
+                self._path_lengths[current_state_id] = 0
+            self._path_lengths[current_state_id] += 1
 
     def _get_parent_states(self, state_id):
         """
@@ -355,6 +373,9 @@ def parse(results_dir, path_ids=None):
         logger.warning('No \'ExecutionTrace.dat\' file found in s2e-last. Did '
                        'you enable any trace plugins in s2e-config.lua?')
         return []
+
+    # We must sort the traces by increasing id, so that it is possible to concatenate them
+    execution_trace_files = sorted(execution_trace_files)
 
     # Parse the execution trace file(s) to construct a single execution tree.
     execution_trace_parser = ExecutionTraceParser(execution_trace_files)
