@@ -148,6 +148,10 @@ if ! mount | grep "/tmp type tmpfs"; then
     sudo mount -t tmpfs -osize=10m tmpfs /tmp
 fi
 
+# Need to disable swap, otherwise there will be forced concretization if the
+# system swaps out symbolic data to disk.
+sudo swapoff -a
+
 {% endif %}
 
 target_init
@@ -157,8 +161,13 @@ target_init
 ${S2EGET} "{{ tf }}"
 {% endfor %}
 
+{% if target %}
 # Run the analysis
 execute "./{{ target }}"
+{% else %}
+##### NO TARGET HAS BEEN SPECIFIED DURING PROJECT CREATION #####
+##### Please fetch and execute the target files manually   #####
+{% endif %}
 
 # Kill states before exiting
-${S2ECMD} kill $? "'{{ target }}' state killed"
+${S2ECMD} kill $? "Target execution terminated"
