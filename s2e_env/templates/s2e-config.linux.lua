@@ -15,15 +15,3 @@ pluginsConfig.LinuxMonitor = {
     -- Kill the execution state when it encounters a trap
     terminateOnTrap = true,
 }
-
--------------------------------------------------------------------------------
--- This generates test cases when a state crashes or terminates.
--- If symbolic inputs consist of symbolic files, the test case generator writes
--- concrete files in the S2E output folder. These files can be used to
--- demonstrate the crash in a program, added to a test suite, etc.
-
-add_plugin("TestCaseGenerator")
-pluginsConfig.TestCaseGenerator = {
-    generateOnStateKill = true,
-    generateOnSegfault = true
-}
