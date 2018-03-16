@@ -55,7 +55,7 @@ DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 PROJECT_CONFIGS = {
     'cgc': CGCProjectConfiguration,
     'linux': LinuxProjectConfiguration,
-    'windows': WindowsDLLProjectConfiguration
+    'windows': WindowsProjectConfiguration
 }
 
 
@@ -206,7 +206,7 @@ def _handle_empty_project(**options):
         raise CommandError('Project name missing. Use the -n option to specify one.')
 
     if options['type'] not in _get_configs():
-        raise CommandError('The project type is invalid. Please use %s for the -t option.' % _get_configs())
+        raise CommandError('The project type is invalid. Please use %s for the --type option.' % _get_configs())
 
     options['target'] = None
     options['target_files'] = []
