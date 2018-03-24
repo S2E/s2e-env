@@ -21,7 +21,6 @@ SOFTWARE.
 """
 
 
-import binascii
 import json
 import logging
 
@@ -60,18 +59,13 @@ def _make_json_entry(header, item):
     if header.type == TraceEntryType.TRACE_FORK:
         children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
         item = trace_entries.TraceFork(item.pc, children)
-    # If the entry is a test case, then we have to "hexlify" the data so that
-    # it can be stored in the JSON file
-    elif header.type == TraceEntryType.TRACE_TESTCASE:
-        data = binascii.hexlify(item.data)
-        item = trace_entries.TraceTestCase(item.name, data)
 
     header_dict = header.as_dict()
 
     del header_dict['size']
 
     entry = header_dict.copy()
-    entry.update(item.as_dict())
+    entry.update(item.as_json_dict())
 
     for key, value in entry.items():
         if isinstance(value, Enum):
