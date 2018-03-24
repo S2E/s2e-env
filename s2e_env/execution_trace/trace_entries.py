@@ -107,6 +107,13 @@ class TraceEntry(object):
         """
         return self._struct.size
 
+    def __nonzero__(self):
+        """
+        Allows using tests like "if not item".
+        __len__ may return False for some types of objects.
+        """
+        return True
+
     def as_dict(self):
         """
         Get a dictionary representation of the trace entry.
