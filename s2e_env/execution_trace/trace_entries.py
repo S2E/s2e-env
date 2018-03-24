@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import binascii
 import logging
 import struct
 
@@ -121,6 +122,15 @@ class TraceEntry(object):
         This method should be overwritten.
         """
         return {}
+
+    def as_json_dict(self):
+        """
+        Get a dictionary suitable for JSON serialization.
+        All binary data should be serialized to a JSON-compatible format.
+
+        This method should be overwritten if as_dict may return binary data.
+        """
+        return self.as_dict()
 
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__,
@@ -761,6 +771,14 @@ class TraceTestCase(TraceEntry):
 
     def as_dict(self):
         return self._testcase
+
+    def as_json_dict(self):
+        ret = {}
+
+        for k, v in self._testcase.iteritems():
+            ret[k] = binascii.hexlify(v)
+
+        return {'testcase': ret}
 
     @property
     def testcase(self):
