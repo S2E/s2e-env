@@ -22,6 +22,7 @@ SOFTWARE.
 
 import binascii
 import logging
+import re
 import struct
 
 from enum import Enum
@@ -733,21 +734,33 @@ class TraceTestCase(TraceEntry):
     A test case payload consists of a sequence of <header, name, data> entries,
     where header describes the length of the string name and the size of the data.
     """
-
     HEADER_FORMAT = '<II'
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
+
+    """
+    S2E generates one test case entry for each symbolic variable in the following format: vXXX_var_name_YYY
+
+    XXX represents the sequence of the variable in the current state. For example, XXX=2 means that this was
+    the variable associated with the 3rd call of s2e_make_symbolic.
+
+    YYY represents the absolute sequence number since S2E start. For example, YYY=999 means that this was the
+    1000th invocation of s2e_make_symbolic since S2E started. Note that this number may be pretty random depending
+    on the specific schedule of paths in a given S2E run.
+    """
+    ENTRY_PATTERN = r'^v(\d+)_(.+?)_\d+$'
+    ENTRY_REGEX = re.compile(ENTRY_PATTERN)
 
     def __init__(self, data):
         super(TraceTestCase, self).__init__()
         self._data = data
         self._testcase = {}
         self._initialize_test_case_items()
+        self._testcase = TraceTestCase._parse_test_case_entries(self._testcase)
 
     @classmethod
     def deserialize(cls, data, size=None):
         if not size:
-            raise TraceEntryError('A size must be provided when deserializing '
-                                  'a ``TraceTestCase`` item')
+            raise TraceEntryError('A size must be provided when deserializing a ``TraceTestCase`` item')
 
         return TraceTestCase(data)
 
@@ -769,15 +782,34 @@ class TraceTestCase(TraceEntry):
             tc = self._read_test_case_item()
             self._testcase[tc[0]] = tc[1]
 
+    @staticmethod
+    def _parse_test_case_entries(entries):
+        """
+        Returns an ordered array according to vXXX so that it is easier to manipulate test cases.
+        """
+        ret = []
+
+        for k, v in entries.iteritems():
+            result = TraceTestCase.ENTRY_REGEX.match(k)
+            if not result:
+                logger.warn('Invalid test case entry: %s', k)
+                continue
+
+            local_seq = int(result.group(1))
+            while local_seq >= len(ret):
+                ret.append(None)
+
+            # Ignore the absolute sequence number, it's not really useful
+            var_name = result.group(2)
+            ret[local_seq] = (var_name, v)
+
+        return ret
+
     def as_dict(self):
-        return self._testcase
+        return {'testcase': self._testcase}
 
     def as_json_dict(self):
-        ret = {}
-
-        for k, v in self._testcase.iteritems():
-            ret[k] = binascii.hexlify(v)
-
+        ret = [(var_name, binascii.hexlify(v)) for var_name, v in self._testcase]
         return {'testcase': ret}
 
     @property
