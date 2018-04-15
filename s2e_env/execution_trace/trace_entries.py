@@ -66,7 +66,8 @@ class TraceEntryType(Enum):
     TRACE_TB_START_X64 = 19
     TRACE_TB_END_X64 = 20
     TRACE_BLOCK = 21
-    TRACE_MAX = 22
+    TRACE_OSINFO = 22
+    TRACE_MAX = 23
 
 
 class TraceEntryError(Exception):
@@ -1198,3 +1199,23 @@ class TraceStateSwitch(TraceEntry):
     @property
     def new_state_id(self):
         return self._new_state_id
+
+
+class TraceOSInfo(TraceEntry):
+    FORMAT = '<Q'
+
+    def __init__(self, kernel_start):
+        super(TraceOSInfo, self).__init__(TraceOSInfo.FORMAT)
+        self._kernel_start = kernel_start
+
+    def serialize(self):
+        return self._struct.pack(self._kernel_start)
+
+    def as_dict(self):
+        return {
+            'kernel_start': self.kernel_start,
+        }
+
+    @property
+    def kernel_start(self):
+        return self._kernel_start

@@ -56,6 +56,7 @@ _TRACE_ENTRY_MAP = {
     TraceEntryType.TRACE_TB_START_X64: trace_entries.TraceTranslationBlock64,
     TraceEntryType.TRACE_TB_END_X64: trace_entries.TraceTranslationBlock64,
     TraceEntryType.TRACE_BLOCK: trace_entries.TraceBlock,
+    TraceEntryType.TRACE_OSINFO: trace_entries.TraceOSInfo,
 }
 
 
