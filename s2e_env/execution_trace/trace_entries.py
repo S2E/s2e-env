@@ -29,6 +29,11 @@ from enum import Enum
 
 logger = logging.getLogger('trace_entries')
 
+# Not much we can do about these for now
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-instance-attributes
+
 #
 # The following code is a Python adaption of the C++ code in
 # libs2eplugins/src/s2e/Plugins/ExecutionTracers/TraceEntries.h
@@ -109,14 +114,14 @@ class TraceEntry(object):
         """
         return self._struct.size
 
-    def __nonzero__(self):
+    def __nonzero__(self): # pylint: disable=no-self-use
         """
         Allows using tests like "if not item".
         __len__ may return False for some types of objects.
         """
         return True
 
-    def as_dict(self):
+    def as_dict(self): # pylint: disable=no-self-use
         """
         Get a dictionary representation of the trace entry.
 
@@ -145,7 +150,7 @@ class TraceEntry(object):
             raise TraceEntryError('Cannot statically determine the size of %s' % cls.__name__)
 
     @classmethod
-    def deserialize(cls, data, size=None):
+    def deserialize(cls, data, size=None): # pylint: disable=unused-argument
         try:
             unpacked_data = struct.unpack(cls.FORMAT, data)
             return cls(*unpacked_data)
@@ -169,39 +174,38 @@ class TraceEntry(object):
 
 
 class TraceItemHeader(TraceEntry):
-    FORMAT = '<QIBIQ'
+    FORMAT = '<IIQQQQI'
 
-    def __init__(self, timestamp, size, type_, state_id, pid):
+    def __init__(self, type_, state_id, timestamp, address_space, pid, pc, size):
         super(TraceItemHeader, self).__init__(TraceItemHeader.FORMAT)
-        self._timestamp = timestamp
-        self._size = size
         self._type = TraceEntryType(type_)
         self._state_id = state_id
+        self._timestamp = timestamp
+
+        self._address_space = address_space
         self._pid = pid
+        self._pc = pc
+        self._size = size
 
     def serialize(self):
-        return self._struct.pack(self._timestamp,
-                                 self._size,
-                                 self._type,
+        return self._struct.pack(self._type,
                                  self._state_id,
-                                 self._pid)
+                                 self._timestamp,
+                                 self._address_space,
+                                 self._pid,
+                                 self._pc,
+                                 self._size)
 
     def as_dict(self):
         return {
-            'timestamp': self.timestamp,
-            'size': self.size,
             'type': self.type,
             'stateId': self.state_id,
+            'timestamp': self.timestamp,
+            'address_space': self.address_space,
             'pid': self.pid,
+            'pc': self.pc,
+            'size': self.size,
         }
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def size(self):
-        return self._size
 
     @property
     def type(self):
@@ -212,8 +216,24 @@ class TraceItemHeader(TraceEntry):
         return self._state_id
 
     @property
+    def timestamp(self):
+        return self._timestamp
+
+    @property
+    def address_space(self):
+        return self._address_space
+
+    @property
     def pid(self):
         return self._pid
+
+    @property
+    def pc(self):
+        return self._pc
+
+    @property
+    def size(self):
+        return self._size
 
 
 class TraceModuleLoad(TraceEntry):
@@ -280,23 +300,35 @@ class TraceModuleLoad(TraceEntry):
 
 
 class TraceModuleUnload(TraceEntry):
-    FORMAT = '<Q'
+    FORMAT = '<QQQ'
 
-    def __init__(self, load_base):
+    def __init__(self, load_base, address_space, pid):
         super(TraceModuleUnload, self).__init__(TraceModuleUnload.FORMAT)
         self._load_base = load_base
+        self._address_space = address_space
+        self._pid = pid
 
     def serialize(self):
         return self._struct.pack(self._load_base)
 
     def as_dict(self):
         return {
-            'loadBase': self.load_base,
+            'load_base': self.load_base,
+            'address_space': self.address_space,
+            'pid': self.pid,
         }
 
     @property
     def load_base(self):
         return self._load_base
+
+    @property
+    def address_space(self):
+        return self._address_space
+
+    @property
+    def pid(self):
+        return self._pid
 
 
 class TraceProcessUnload(TraceEntry):
@@ -372,11 +404,10 @@ class TraceReturn(TraceEntry):
 
 
 class TraceFork(TraceEntry):
-    FORMAT = '<QI%dI'
+    FORMAT = '<I%dI'
 
-    def __init__(self, pc, children):
+    def __init__(self, children):
         super(TraceFork, self).__init__(TraceFork.FORMAT % len(children))
-        self._pc = pc
         self._children = children
 
     @classmethod
@@ -384,25 +415,18 @@ class TraceFork(TraceEntry):
         if not size:
             raise TraceEntryError('A size must be provided when deserializing '
                                   'a ``TraceFork`` item')
-        num_children = (size - struct.calcsize('<QI')) / struct.calcsize('<I')
+        num_children = (size - struct.calcsize('<I')) / struct.calcsize('<I')
         unpacked_data = struct.unpack(TraceFork.FORMAT % num_children, data)
 
-        return TraceFork(unpacked_data[0], unpacked_data[2:])
+        return TraceFork(unpacked_data[1:])
 
     def serialize(self):
-        return self._struct.pack(self._pc,
-                                 len(self._children),
-                                 *self._children)
+        return self._struct.pack(len(self._children), *self._children)
 
     def as_dict(self):
         return {
-            'pc': self.pc,
             'children': self.children,
         }
-
-    @property
-    def pc(self):
-        return self._pc
 
     @property
     def children(self):
@@ -759,7 +783,8 @@ class TraceTestCase(TraceEntry):
 
     @classmethod
     def deserialize(cls, data, size=None):
-        if not size:
+        # A zero size is valid for a test case
+        if size is None:
             raise TraceEntryError('A size must be provided when deserializing a ``TraceTestCase`` item')
 
         return TraceTestCase(data)

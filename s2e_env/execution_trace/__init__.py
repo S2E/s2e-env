@@ -321,7 +321,7 @@ class ExecutionTraceParser(object):
 
                 # Since a ``TraceEntry`` is immutable, we have to create a new
                 # one if we want to use the ``new_children`` dictionary
-                item = trace_entries.TraceFork(item.pc, new_children)
+                item = trace_entries.TraceFork(new_children)
 
             # Append the ``(TraceItemHeader, TraceEntry)`` tuple to the
             # execution trace for this state
