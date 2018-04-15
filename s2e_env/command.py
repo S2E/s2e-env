@@ -342,3 +342,6 @@ class ProjectCommand(EnvCommand):
         Create a path relative to this project directory.
         """
         return os.path.join(self._project_dir, *p)
+
+    def symbol_search_path(self):
+        return [self.project_path(), self.project_path('guestfs'), self.project_path('guest-tools')]
