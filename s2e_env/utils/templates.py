@@ -61,6 +61,12 @@ def render_template(context, template, path=None, executable=False):
     env = _init_template_env()
     data = env.get_template(template).render(context)
 
+    # Remove trailing spaces
+    cleaned_lines = []
+    for line in data.splitlines():
+        cleaned_lines.append(line.rstrip())
+    data = '\n'.join(cleaned_lines)
+
     if not path:
         return data
 
