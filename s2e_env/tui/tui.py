@@ -29,6 +29,12 @@ import time
 
 _s_screen = None
 
+# TODO: this module requires clean up
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# pylint: disable=protected-access
+# pylint: disable=no-self-use
+
 
 class Form(object):
     def __init__(self, parent, x, y, w=None, h=None):

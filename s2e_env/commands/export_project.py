@@ -28,6 +28,8 @@ import os
 import shutil
 import sys
 
+# pylint: disable=no-name-in-module
+# No name 'tar' in module 'sh'
 from sh import tar, ErrorReturnCode
 
 try:

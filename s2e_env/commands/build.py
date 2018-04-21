@@ -126,8 +126,7 @@ class Command(EnvCommand):
                 continue
 
             # Check if the user has specified a valid component prefix
-            # XXX This will delete both the debug and release stamps (if they
-            # exist)
+            # TODO: This will delete both the debug and release stamps (if they exist)
             if component in stamp_prefixes:
                 stamps_to_delete.extend(glob.glob(self.env_path('build', 's2e', 'stamps', '%s-*' % component)))
                 continue

@@ -46,6 +46,7 @@ class Device(object):
         ret.version = version
         return ret
 
+    # pylint: disable=no-self-use
     def get_s2e_cfg(self):
         raise Exception('Not implemented')
 

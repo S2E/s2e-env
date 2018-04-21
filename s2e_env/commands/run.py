@@ -103,6 +103,7 @@ def _sigterm_handler(signum=None, _=None):
 
 
 class S2EThread(Thread):
+    # pylint: disable=too-many-arguments
     def __init__(self, args, env, cwd, stdout, stderr):
         super(S2EThread, self).__init__()
         self._args = args
@@ -188,6 +189,8 @@ class Command(ProjectCommand):
                                            '(in minutes) expires. This option '
                                            'has no effect when the TUI is enabled')
 
+    # pylint: disable=too-many-locals
+    # TODO: split this method
     def handle(self, *args, **options):
         no_tui = options['no_tui']
 

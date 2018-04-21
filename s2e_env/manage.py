@@ -82,6 +82,8 @@ def call_command(command_name, *args, **options):
     # Simulate argument parsing to get the option defaults
     parser = command.create_parser('', command_name)
     # Use the `dest` option name from the parser option
+
+    # pylint: disable=protected-access
     opt_mapping = {
         min(s_opt.option_strings).lstrip('-').replace('-', '_'): s_opt.dest
         for s_opt in parser._actions if s_opt.option_strings
@@ -89,7 +91,10 @@ def call_command(command_name, *args, **options):
     arg_options = {opt_mapping.get(key, key): value for
                    key, value in options.items()}
     defaults = parser.parse_args(args=args)
+
+    # pylint: disable=protected-access
     defaults = dict(defaults._get_kwargs(), **arg_options)
+
     # Move positional args out of options to mimic legacy optparse
     args = defaults.pop('args', ())
 
