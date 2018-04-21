@@ -32,6 +32,7 @@ from .debuglink import get_debug_file_for_binary
 from .functions import FunctionInfo
 from .lines import LineInfoEntry, LinesByAddr
 from .paths import guess_target_path, guess_source_file_path
+from .pe import PEFile
 
 logger = logging.getLogger('symbols')
 
@@ -119,13 +120,14 @@ class DebugInfo(object):
 
         logger.info('Looking for debug information for %s', target_path)
 
-        try:
-            syms = DwarfDebugInfo(target_path, search_paths)
-            syms.parse()
-            return syms
-        except Exception as e:
-            errors.append(e)
-            errors.append('Could not read DWARF information from %s' % target_path)
+        for cls in (ELFFile, PEFile):
+            try:
+                syms = DwarfDebugInfo(target_path, search_paths, cls)
+                syms.parse()
+                return syms
+            except Exception as e:
+                errors.append(e)
+                errors.append('Could not read DWARF information from %s' % target_path)
 
         try:
             syms = JsonDebugInfo(target_path)
@@ -152,13 +154,14 @@ class DebugInfo(object):
 
 
 class DwarfDebugInfo(DebugInfo):
-    def __init__(self, path, search_paths=None):
+    def __init__(self, path, search_paths=None, cls=ELFFile):
         super(DwarfDebugInfo, self).__init__(path, search_paths)
 
         # This tracks the compilation units that have already been parsed
         self._cus = set()
         self._dwarf_info = None
         self._aranges = None
+        self._class = cls
 
     def _parse_function_info(self, cu):
         for die in cu.iter_DIEs():
@@ -234,12 +237,12 @@ class DwarfDebugInfo(DebugInfo):
     # (accessing useful internal pyelftools methods)
     def _locate_debug_info(self, path):
         with open(path, 'r') as f:
-            elf = ELFFile(f)
+            binary = self._class(f)
 
-            if not elf.has_dwarf_info():
+            if not binary.has_dwarf_info():
                 raise Exception('Could not find DWARF debug info in %s' % path)
 
-            dwarf_info = elf.get_dwarf_info()
+            dwarf_info = binary.get_dwarf_info()
             aranges = dwarf_info.get_aranges()
 
             if not aranges or not aranges._get_entries():
@@ -261,11 +264,11 @@ class DwarfDebugInfo(DebugInfo):
         if there is debug info in the target file, and if not, tries to use the debug link.
         """
         try:
-            logger.debug('Attempting to parse %s as ELF/DWARF file', self.path)
+            logger.debug('Attempting to look for DWARF info in %s', self.path)
             self._locate_debug_info(self.path)
             return
         except Exception as e:
-            logger.debug(e)
+            logger.debug(e, exc_info=1)
 
         try:
             # No debug info found, try to use the debug link
@@ -275,7 +278,7 @@ class DwarfDebugInfo(DebugInfo):
             self._locate_debug_info(target_path)
             return
         except Exception as e:
-            logger.debug(e)
+            logger.debug(e, exc_info=1)
 
         raise Exception('Could not find DWARF debug symbols for %s' % self.path)
 
