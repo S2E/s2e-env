@@ -155,7 +155,7 @@ class BaseCommand(object):
         args = cmd_options.pop('args', ())
 
         try:
-            if os.getuid() == 0:
+            if not os.getuid():
                 raise CommandError('Please do not run s2e as root')
 
             output = self.execute(*args, **cmd_options)
@@ -196,7 +196,8 @@ class BaseCommand(object):
         raise NotImplementedError('subclasses of BaseCommand must provide a '
                                   'handle() method')
 
-
+# pylint: disable=abstract-method
+# We don't want to implement handle() in this class
 class EnvCommand(BaseCommand):
     """
     The base command for all commands that follow the ``init`` command.
@@ -298,6 +299,8 @@ class EnvCommand(BaseCommand):
         return self.env_path('images', *p)
 
 
+# pylint: disable=abstract-method
+# We don't want to implement handle() in this class
 class ProjectCommand(EnvCommand):
     """
     The base command for all commands that work on existing projects.
@@ -342,3 +345,6 @@ class ProjectCommand(EnvCommand):
         Create a path relative to this project directory.
         """
         return os.path.join(self._project_dir, *p)
+
+    def symbol_search_path(self):
+        return [self.project_path(), self.project_path('guestfs'), self.project_path('guest-tools')]

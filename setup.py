@@ -45,7 +45,7 @@ setup(
         'jinja2',
         'pefile',
         'psutil',
-        'pyelftools',
+        'pyelftools==0.24s2e',
         'python-magic',
         'pyyaml',
         'requests',
@@ -54,6 +54,7 @@ setup(
         'pytrie'
     ],
     packages=find_packages(),
+    dependency_links=['git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24s2e'],
     include_package_data=True,
     package_data={
         's2e_env': [

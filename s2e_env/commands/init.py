@@ -31,6 +31,8 @@ import sys
 import requests
 import sh
 from sh import ErrorReturnCode
+
+# pylint: disable=import-error
 from sh.contrib import sudo
 
 from s2e_env import CONSTANTS

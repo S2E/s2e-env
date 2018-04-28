@@ -47,6 +47,8 @@ class Command(ProjectCommand):
                                             help='Generate a line coverage report')
         lcov_parser.add_argument('--html', action='store_true',
                                  help='Generate an HTML report in s2e-last')
+        lcov_parser.add_argument('--include-covered-files-only', action='store_true',
+                                 help='The coverage report will exclude files that were never covered', default=True)
 
         bb_parser = subparsers.add_parser('basic_block', cmd=BasicBlockCoverage(),
                                           help='Generate a basic block report')

@@ -89,11 +89,7 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         # Get the module's end address
         end_addr = self._bv.end
 
-        return {
-            'bbs': bbs,
-            'base_addr': base_addr,
-            'end_addr': end_addr,
-        }
+        return BasicBlockCoverage._make_disassembly_info(bbs, base_addr, end_addr)
 
     def _split_basic_block(self, func_name, basic_block):
         """

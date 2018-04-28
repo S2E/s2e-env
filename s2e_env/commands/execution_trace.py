@@ -58,7 +58,7 @@ def _make_json_entry(header, item):
     # JSON-serializable as well
     if header.type == TraceEntryType.TRACE_FORK:
         children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
-        item = trace_entries.TraceFork(item.pc, children)
+        item = trace_entries.TraceFork(children)
 
     header_dict = header.as_dict()
 

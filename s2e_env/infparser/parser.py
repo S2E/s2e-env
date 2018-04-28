@@ -91,7 +91,7 @@ class InfFileParser(object):
                 continue
 
             # Remove comment from line
-            # XXX: does not work if semicolon is inside a quoted string
+            # TODO: does not work if semicolon is inside a quoted string
             data = line.split(';')
             line = data[0].strip()
 

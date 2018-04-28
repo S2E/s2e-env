@@ -147,6 +147,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                     raise CommandError('Failed to generate disas file for '
                                        '%s' % module_name)
 
+                logger.info('Disassembly successful')
                 # Parse the basic block list file
                 with open(disas_file, 'r') as f:
                     return json.load(f, cls=BasicBlockDecoder)

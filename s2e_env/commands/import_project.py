@@ -27,6 +27,7 @@ import os
 import shutil
 import sys
 
+# pylint: disable=no-name-in-module
 from sh import tar, ErrorReturnCode
 
 from s2e_env import CONSTANTS

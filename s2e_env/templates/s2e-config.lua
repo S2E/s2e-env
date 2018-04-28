@@ -63,7 +63,7 @@ pluginsConfig.HostFiles = {
 add_plugin("Vmi")
 pluginsConfig.Vmi = {
     baseDirs = {
-        "{{ project_dir }}",
+        "{{ project_dir }}", "{{ project_dir }}/guest-tools",
         {% if has_guestfs %}
         "{{ guestfs_dir }}"
         {% endif %}

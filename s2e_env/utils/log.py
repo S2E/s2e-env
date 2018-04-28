@@ -22,7 +22,7 @@ SOFTWARE.
 
 
 import logging
-
+import os
 import termcolor
 
 
@@ -34,6 +34,11 @@ def configure_logging(level=logging.INFO, use_color=True):
     """
     Configure te global logging settings.
     """
+
+    override_level = os.environ.get('S2EENV_LOG_LEVEL', None)
+    if override_level:
+        level = logging.getLevelName(override_level)
+
     # Add a 'SUCCESS' level to the logger
     logging.addLevelName(SUCCESS, 'SUCCESS')
     logging.Logger.success = success
@@ -51,6 +56,7 @@ def configure_logging(level=logging.INFO, use_color=True):
     logger.addHandler(colored_handler)
 
 
+# pylint: disable=protected-access
 def success(self, msg, *args, **kwargs):
     if self.isEnabledFor(SUCCESS):
         self._log(SUCCESS, msg, args, **kwargs)

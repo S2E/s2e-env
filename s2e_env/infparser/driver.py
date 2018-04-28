@@ -63,8 +63,8 @@ class Driver(object):
             self._all_manufacturers.add(m)
 
         default_install = inf_file.get_install_info('DefaultInstall')
-        for key in default_install.keys():
-            self._all_files |= default_install[key].copyFiles
+        for value in default_install.itervalues():
+            self._all_files |= value.copyFiles
 
     def get_files(self):
         return self._all_files

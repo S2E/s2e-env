@@ -127,8 +127,4 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
         r2.cmd('sG')
         end_addr = int(r2.cmd('s'), 16)
 
-        return {
-            'bbs': bbs,
-            'base_addr': base_addr,
-            'end_addr': end_addr,
-        }
+        return BasicBlockCoverage._make_disassembly_info(bbs, base_addr, end_addr)

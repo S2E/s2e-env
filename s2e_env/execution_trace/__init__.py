@@ -56,6 +56,7 @@ _TRACE_ENTRY_MAP = {
     TraceEntryType.TRACE_TB_START_X64: trace_entries.TraceTranslationBlock64,
     TraceEntryType.TRACE_TB_END_X64: trace_entries.TraceTranslationBlock64,
     TraceEntryType.TRACE_BLOCK: trace_entries.TraceBlock,
+    TraceEntryType.TRACE_OSINFO: trace_entries.TraceOSInfo,
 }
 
 
@@ -321,7 +322,7 @@ class ExecutionTraceParser(object):
 
                 # Since a ``TraceEntry`` is immutable, we have to create a new
                 # one if we want to use the ``new_children`` dictionary
-                item = trace_entries.TraceFork(item.pc, new_children)
+                item = trace_entries.TraceFork(new_children)
 
             # Append the ``(TraceItemHeader, TraceEntry)`` tuple to the
             # execution trace for this state
@@ -374,8 +375,18 @@ def parse(results_dir, path_ids=None):
                        'you enable any trace plugins in s2e-config.lua?')
         return []
 
-    # We must sort the traces by increasing id, so that it is possible to concatenate them
-    execution_trace_files = sorted(execution_trace_files)
+    if len(execution_trace_files) > 1:
+        # We must sort the traces by increasing id, so that it is possible to concatenate them
+        ids = []
+        for f in execution_trace_files:
+            dirname = os.path.dirname(f)
+            trace_id = os.path.basename(dirname)
+            ids.append(int(trace_id))
+
+        execution_trace_files = []
+        for trace_id in sorted(ids):
+            trace_file = os.path.join(results_dir, str(trace_id), 'ExecutionTracer.dat')
+            execution_trace_files.append(trace_file)
 
     # Parse the execution trace file(s) to construct a single execution tree.
     execution_trace_parser = ExecutionTraceParser(execution_trace_files)
