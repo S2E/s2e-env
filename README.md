@@ -27,7 +27,7 @@ disassemblers include:
 ```
 git clone https://github.com/S2E/s2e-env.git
 cd s2e-env
-pip install .
+pip install . --process-dependency-links
 ```
 
 If you wish to install `s2e-env` to a Python
