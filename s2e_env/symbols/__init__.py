@@ -126,6 +126,7 @@ class DebugInfo(object):
                 syms.parse()
                 return syms
             except Exception as e:
+                logger.debug(e, exc_info=1)
                 errors.append(e)
                 errors.append('Could not read DWARF information from %s' % target_path)
 
@@ -134,6 +135,7 @@ class DebugInfo(object):
             syms.parse()
             return syms
         except Exception as e:
+            logger.debug(e, exc_info=1)
             errors.append(e)
             err = 'Could not get JSON line information from %s' % target_path
             errors.append(err)
@@ -365,7 +367,7 @@ class SymbolManager(object):
             syms = DebugInfo.from_file(self._search_paths, actual_target)
             self._targets[target] = syms
         except Exception as e:
-            logger.debug(e)
+            logger.debug(e, exc_info=1)
             self._targets[target] = None
 
         return syms
