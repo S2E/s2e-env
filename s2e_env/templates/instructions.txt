@@ -78,6 +78,21 @@ Examples: t0-1.png, 1-1.jpg, 2-0.elf, etc.
 {% endif %}
 
 {#############################################################################}
+{% if enable_pov_generation %}
+
+Proof of Vulnerability (PoV) Generation
+=======================================
+
+You have enabled PoV generation. S2E will look for common vulnerability conditions
+and generate test cases that demonstrate the vulnerabilities.
+
+The format of the test cases depends on the target platform. For CGC binaries, it
+will be a combination of XML/C files. For others, it will be a concrete input file
+that can be fed to the original binary.
+
+{% endif %}
+
+{#############################################################################}
 
 Running S2E
 ===========

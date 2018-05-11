@@ -4,24 +4,19 @@
 add_plugin("WindowsMonitor")
 
 -------------------------------------------------------------------------------
--- Keeps for each state an updated map of all the loaded modules.
-add_plugin("ModuleMap")
-
--------------------------------------------------------------------------------
 -- This plugin is required to intercept some Windows kernel functions.
 -- Guest code patching monitors execution and transparently changes
 -- the target program counter when it encounters a call instructions.
 
-add_plugin("GuestCodePatching")
-pluginsConfig.GuestCodePatching = {
-  moduleNames = {"ntoskrnl.exe", "ntkrnlpa.exe"},
-  allowSelfCalls = true
+add_plugin("GuestCodeHooking")
+pluginsConfig.GuestCodeHooking = {
+  moduleNames = {}
 }
 
 {% for m in modules %}
     {% if m[1] %}
         -- Instrument kernel driver {{m[0]}} for fault injection
-        table.insert(pluginsConfig.GuestCodePatching["moduleNames"], "{{m[0]}}")
+        table.insert(pluginsConfig.GuestCodeHooking["moduleNames"], "{{m[0]}}")
     {% endif %}
 {% endfor %}
 
@@ -54,3 +49,21 @@ pluginsConfig.WindowsCrashMonitor = {
     -- you almost always want to compress them.
     compressDumps = true
 }
+
+{% if enable_pov_generation %}
+
+-------------------------------------------------------------------------------
+-- This plugin writes PoVs as input files. This is suitable for programs that
+-- take their inputs from files (instead of stdin or other methods).
+add_plugin("FilePovGenerator")
+pluginsConfig.FilePovGenerator = {
+    -- The generated PoV will set the program counter
+    -- of the vulnerable program to this value
+    target_pc = 0x0011223344556677,
+
+    -- The generated PoV will set a general purpose register
+    -- of the vulnerable program to this value.
+    target_gp = 0x8899aabbccddeeff
+}
+
+{% endif %}

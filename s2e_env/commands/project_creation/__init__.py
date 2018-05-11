@@ -114,7 +114,11 @@ class Project(EnvCommand):
             'use_cupa': True,
 
             'use_test_case_generator': True,
-            'use_fault_injection': False
+            'use_fault_injection': False,
+
+            # This will add analysis overhead, so disable unless requested by the user.
+            # Also enabled by default for Decree targets.
+            'enable_pov_generation': options['enable_pov_generation']
         }
 
         for tf in options['target_files']:
@@ -147,6 +151,9 @@ class Project(EnvCommand):
 
         if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
             os.mkdir(config['seeds_dir'])
+
+        if config['enable_pov_generation']:
+            config['use_recipes'] = True
 
         if config['use_recipes']:
             recipes_path = self.install_path('share', 'decree-recipes')
@@ -212,6 +219,7 @@ class Project(EnvCommand):
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
             'use_test_case_generator': config['use_test_case_generator'],
+            'enable_pov_generation': config['enable_pov_generation'],
             'seeds_dir': config['seeds_dir'],
             'has_guestfs': config['has_guestfs'],
             'guestfs_dir': config['guestfs_dir'],
@@ -249,6 +257,7 @@ class Project(EnvCommand):
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
             'use_fault_injection': config['use_fault_injection'],
+            'enable_pov_generation': config['enable_pov_generation'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
             'target_files': config['target_files'],

@@ -175,3 +175,8 @@ class CGCProjectConfiguration(ProjectConfiguration):
 
         # CGC has its own test case generation system
         config['use_test_case_generator'] = False
+
+        enable_pov_generation = config.get('enable_pov_generation', False)
+        if not enable_pov_generation:
+            logger.warn('CGC required PoV generation, forcing --enable-pov-generation option on')
+            config['enable_pov_generation'] = True

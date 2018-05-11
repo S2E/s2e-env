@@ -15,3 +15,21 @@ pluginsConfig.LinuxMonitor = {
     -- Kill the execution state when it encounters a trap
     terminateOnTrap = true,
 }
+
+{% if enable_pov_generation %}
+
+-------------------------------------------------------------------------------
+-- This plugin writes PoVs as input files. This is suitable for programs that
+-- take their inputs from files (instead of stdin or other methods).
+add_plugin("FilePovGenerator")
+pluginsConfig.FilePovGenerator = {
+    -- The generated PoV will set the program counter
+    -- of the vulnerable program to this value
+    target_pc = 0x0011223344556677,
+
+    -- The generated PoV will set a general purpose register
+    -- of the vulnerable program to this value.
+    target_gp = 0x8899aabbccddeeff
+}
+
+{% endif %}
