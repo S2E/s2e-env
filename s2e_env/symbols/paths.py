@@ -43,7 +43,7 @@ def guess_target_path(search_paths, target):
     candidates = [target, bn]
 
     if target.lower() != target:
-        candidates.append(target.lower)
+        candidates.append(target.lower())
 
     if bn.lower() != bn:
         candidates.append(bn.lower())
