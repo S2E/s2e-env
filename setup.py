@@ -51,7 +51,8 @@ setup(
         'requests',
         'sh',
         'termcolor',
-        'pytrie'
+        'pytrie',
+        'pwntools'
     ],
     packages=find_packages(),
     dependency_links=['git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+s2e'],

@@ -32,6 +32,7 @@ import shutil
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.image_build import get_image_templates, get_image_descriptor
+from s2e_env.commands.recipe import Command as RecipeCommand
 from s2e_env.utils.image_download import ImageDownloader
 from s2e_env.utils.templates import render_template
 from .config import is_valid_arch
@@ -155,10 +156,6 @@ class Project(EnvCommand):
         if config['enable_pov_generation']:
             config['use_recipes'] = True
 
-        if config['use_recipes']:
-            recipes_path = self.install_path('share', 'decree-recipes')
-            os.symlink(recipes_path, config['recipes_dir'])
-
         if self._target_path:
             # Do some basic analysis on the target
             self._configurator.analyze(config)
@@ -185,6 +182,13 @@ class Project(EnvCommand):
 
         # Record some basic information on the project
         self._save_json_description(config)
+
+        if config['use_recipes']:
+            os.makedirs(config['recipes_dir'])
+            project_name = os.path.basename(self._project_dir)
+            cmd = RecipeCommand()
+            cmd.handle_common_args(env=options['env'], project=project_name)
+            cmd.handle()
 
         # Return the instructions to the user
         logger.success(_create_instructions(config))
