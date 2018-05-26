@@ -230,6 +230,10 @@ pluginsConfig.CUPASearcher = {
         "seed",
         {% endif %}
 
+        -- This ensures that states run for a certain amount of time.
+        -- Otherwise too frequent state switching may decrease performance.
+        "batch",
+
         {% if use_pov_generation %}
         -- This class is used with the Recipe plugin in order to prioritize
         -- states that have a high chance of containing a vulnerability.
