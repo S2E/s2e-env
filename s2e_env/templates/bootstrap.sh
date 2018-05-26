@@ -69,8 +69,15 @@ function prepare_inputs {
         cp ${SEED_FILE} ${SYMB_FILE}
     fi
 
-    # Make thie file symbolic
-    ${S2ECMD} symbfile ${SYMB_FILE}
+    # Make the file symbolic
+    {% if enable_pov_generation %}
+    # It is important to have one symbolic variable by byte to make PoV generation work.
+    # One-byte variables simplify input mapping in the Recipe plugin.
+    ${S2ECMD} symbfile 1 ${SYMB_FILE}
+    {% else %}
+    # The symbolic file will be split into symbolic variables of up to 4k bytes each.
+    ${S2ECMD} symbfile 4096 ${SYMB_FILE}
+    {% endif %}
     echo ${SYMB_FILE}
 }
 
