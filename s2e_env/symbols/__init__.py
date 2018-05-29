@@ -248,7 +248,7 @@ class DwarfDebugInfo(DebugInfo):
             aranges = dwarf_info.get_aranges()
 
             if not aranges or not aranges._get_entries():
-                raise Exception('There is no DWARF debug info in %s' % path)
+                raise Exception('DWARF aranges section is missing or empty in %s' % path)
 
             self._dwarf_info = dwarf_info
             self._aranges = aranges
