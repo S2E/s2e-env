@@ -67,63 +67,16 @@ pluginsConfig.ControlFlowGraph = {
 
 add_plugin("BasicBlockCoverage")
 
-
 -------------------------------------------------------------------------------
--- This plugin aggregates different sources of vulnerability information and
--- uses it to generate PoVs.
-
-add_plugin("ExploitGenerator")
-
 -- This is the actual PoV generation logic. It currently supports the DARPA
 -- Decree CGC formats, both *.c and *.xml.
-
-add_plugin("POVGenerator")
-pluginsConfig.POVGenerator = {
-    generatePOVFiles = true,
-}
-
--------------------------------------------------------------------------------
--- The Recipe plugin continuously monitors execution and looks for states
--- that can be exploited. The most important marker of a vulnerability is
--- dereferencing a symbolic pointer. The recipe plugin then constrains that
--- symbolic pointer in a way that forces program execution into a state that
--- was negotiated with the CGC framework.
-
-add_plugin("Recipe")
-pluginsConfig.Recipe = {
-    recipesDir = "{{ recipes_dir }}",
-}
+add_plugin("DecreePovGenerator")
 
 -------------------------------------------------------------------------------
 -- The stack monitor plugin instruments function calls and returns in order
 -- to keep track of call stacks, stack frames, etc. Interested plugins can
 -- use StackMonitor to get information about the current call stack.
-
+--
+-- Note: this plugin is currently only enabled for Decree, as it does not
+-- support Linux properly (probably a signal issue).
 add_plugin("StackMonitor")
-
--------------------------------------------------------------------------------
--- This plugin monitors call sites, i.e., pairs of source-destination program
--- counters. It is useful to recover information about indirect control flow,
--- which is hard to compute statically.
-
-add_plugin("CallSiteMonitor")
-pluginsConfig.CallSiteMonitor = {
-    dumpInterval = 5,
-}
-
-
--------------------------------------------------------------------------------
--- Override default CUPASearcher settings with CGC-specific ones.
-pluginsConfig.CUPASearcher = {
-    logLevel = "info",
-    enabled = true,
-    classes = {
-        "seed",
-
-        -- This class is used with the Recipe plugin in order to prioritize
-        -- states that have a high chance of containing a vulnerability.
-        "group",
-        "pagedir",
-        "pc",
-    },
-}

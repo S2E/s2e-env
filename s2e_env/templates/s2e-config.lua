@@ -71,6 +71,12 @@ pluginsConfig.Vmi = {
 }
 
 -------------------------------------------------------------------------------
+-- This plugin provides various utilities to read from process memory.
+-- In case it is not possible to read from guest memory, the plugin tries
+-- to read static data from binary files stored in guestfs.
+add_plugin("MemUtils")
+
+-------------------------------------------------------------------------------
 -- This plugin collects various execution statistics and sends them to a QMP
 -- server that listens on an address:port configured by the S2E_QMP_SERVER
 -- environment variable.
@@ -184,6 +190,16 @@ pluginsConfig.ProcessExecutionDetector = {
     },
 }
 
+-------------------------------------------------------------------------------
+-- Keeps for each state/process an updated map of all the loaded modules.
+add_plugin("ModuleMap")
+
+
+-------------------------------------------------------------------------------
+-- Keeps for each process in ProcessExecutionDetector an updated map
+-- of memory regions.
+add_plugin("MemoryMap")
+
 {% if use_cupa == true %}
 
 -------------------------------------------------------------------------------
@@ -214,6 +230,16 @@ pluginsConfig.CUPASearcher = {
         "seed",
         {% endif %}
 
+        -- This ensures that states run for a certain amount of time.
+        -- Otherwise too frequent state switching may decrease performance.
+        "batch",
+
+        {% if use_pov_generation %}
+        -- This class is used with the Recipe plugin in order to prioritize
+        -- states that have a high chance of containing a vulnerability.
+        "group",
+        {% endif %}
+
         -- A program under test may be composed of several binaries.
         -- We want to give equal chance to all binaries, even if some of them
         -- fork a lot more than others.
@@ -222,7 +248,8 @@ pluginsConfig.CUPASearcher = {
         -- Finally, group states by program counter at fork.
         "pc",
     },
-    logLevel="info"
+    logLevel="info",
+    enabled = true
 }
 
 {% endif %}
@@ -305,6 +332,40 @@ pluginsConfig.TestCaseGenerator = {
 }
 {% endif %}
 
+
+{% if enable_pov_generation %}
+
+-------------------------------------------------------------------------------
+-- This plugin aggregates different sources of vulnerability information and
+-- uses it to generate PoVs.
+
+add_plugin("PovGenerationPolicy")
+
+-------------------------------------------------------------------------------
+-- The Recipe plugin continuously monitors execution and looks for states
+-- that can be exploited. The most important marker of a vulnerability is
+-- dereferencing a symbolic pointer. The recipe plugin then constrains that
+-- symbolic pointer in a way that forces program execution into a state that
+-- was negotiated with the CGC framework.
+
+add_plugin("Recipe")
+pluginsConfig.Recipe = {
+    recipesDir = "{{ recipes_dir }}",
+    logLevel = "warn"
+}
+
+-------------------------------------------------------------------------------
+-- This plugin monitors call sites, i.e., pairs of source-destination program
+-- counters. It is useful to recover information about indirect control flow,
+-- which is hard to compute statically.
+
+add_plugin("CallSiteMonitor")
+pluginsConfig.CallSiteMonitor = {
+    dumpInterval = 5,
+}
+
+
+{% endif %}
 
 -- ========================================================================= --
 -- ============== Target-specific configuration begins here. =============== --

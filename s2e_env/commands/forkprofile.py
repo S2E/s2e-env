@@ -75,7 +75,8 @@ class ForkProfiler(object):
             for rel_pc, count in counts.iteritems():
                 try:
                     sym, fcn = self._syms.get(mod.path, rel_pc)
-                except Exception:
+                except Exception as e:
+                    logger.debug(e, exc_info=1)
                     sym, fcn = None, None
 
                 fp.append((mod, rel_pc, count, sym, fcn))

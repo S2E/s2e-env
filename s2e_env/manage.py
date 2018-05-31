@@ -106,7 +106,9 @@ class CommandManager(object):
     Manages and executes commands.
     """
     def __init__(self, argv):
-        self._argv = argv
+        # We must do a copy by value of the arguments, because the original sys.argv
+        # may be sometimes changed arbitrarily by a call to import_module.
+        self._argv = argv[:]
         self._prog_name = os.path.basename(self._argv[0])
 
     def main_help_text(self, commands_only=False):

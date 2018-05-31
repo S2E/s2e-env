@@ -348,3 +348,12 @@ class ProjectCommand(EnvCommand):
 
     def symbol_search_path(self):
         return [self.project_path(), self.project_path('guestfs'), self.project_path('guest-tools')]
+
+    def recipes_path(self, *p):
+        return self.project_path('recipes', *p)
+
+    def get_os_arch(self):
+        return self._project_desc['image']['os']['arch']
+
+    def get_binary_formats(self):
+        return self._project_desc['image']['os']['binary_formats']

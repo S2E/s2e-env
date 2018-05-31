@@ -266,6 +266,9 @@ class Command(EnvCommand):
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
+        parser.add_argument('--enable-pov-generation', action='store_true', default=False,
+                            help='Enables PoV generation')
+
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
                             help='A space-separated list of target argument '
                                  'indices to make symbolic')
