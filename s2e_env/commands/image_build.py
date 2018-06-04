@@ -162,7 +162,7 @@ def _translate_image_name(templates, image_name):
         for k, v in templates.iteritems():
             if v['image_group'] == image_name:
                 ret.append(k)
-    elif image_name in templates.keys():
+    elif image_name in templates:
         ret = [image_name]
     else:
         raise CommandError('Invalid image name: %s. Run ``s2e image_build`` '

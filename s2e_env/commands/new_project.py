@@ -28,13 +28,14 @@ import re
 
 from magic import Magic
 
-from s2e_env.infparser.driver import Driver
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.manage import call_command
 from s2e_env.commands.project_creation import Project
 from s2e_env.commands.project_creation.config import \
     CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration, \
     WindowsDriverProjectConfiguration
+from s2e_env.infparser.driver import Driver
+from s2e_env.manage import call_command
+
 
 logger = logging.getLogger('new_project')
 

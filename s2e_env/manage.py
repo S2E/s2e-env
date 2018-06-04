@@ -89,7 +89,7 @@ def call_command(command_name, *args, **options):
         for s_opt in parser._actions if s_opt.option_strings
     }
     arg_options = {opt_mapping.get(key, key): value for
-                   key, value in options.items()}
+                   key, value in options.iteritems()}
     defaults = parser.parse_args(args=args)
 
     # pylint: disable=protected-access

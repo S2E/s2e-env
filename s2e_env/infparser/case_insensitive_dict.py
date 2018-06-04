@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 from collections import MutableMapping
-from pytrie import SortedStringTrie as trie
+from pytrie import SortedStringTrie as Trie
 
 
 class CaseInsensitiveStringMixin(object):
@@ -62,7 +62,7 @@ class CaseInsensitiveDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         # pylint: disable=super-init-not-called
         self._dict = {}
-        self._trie = trie(*args, **kwargs)
+        self._trie = Trie(*args, **kwargs)
 
         d = dict(*args, **kwargs)
         for key, value in d.iteritems():

@@ -123,7 +123,7 @@ class InfFile(object):
         mfg = self._sections['manufacturer']
 
         # For each manufacturer...
-        for mfg_key in mfg.data.keys():
+        for mfg_key in mfg.data.iterkeys():
             # The key is the string identifier,
             # the value is the section that defines the manufacturer
             manufacturer = mfg_key
@@ -173,7 +173,7 @@ class InfFile(object):
             return ret
 
         devices = self._sections[dev_key]
-        for k in devices.data.keys():
+        for k in devices.data.iterkeys():
             device_name = self.expand_key(k)
             install_section = ''
             hardware_id = ''
@@ -239,7 +239,7 @@ class InfFile(object):
             logger.warn('File list section %s does not exist', file_list_section_key)
             return ret
 
-        for f in self._sections[file_list_section_key].data.keys():
+        for f in self._sections[file_list_section_key].data.iterkeys():
             components = f.split(',')
             ret.add(self.expand_key(components[0].lower()))
 

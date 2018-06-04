@@ -36,7 +36,7 @@ CHUNK_SIZE = 32768
 # http://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive
 
 def _get_confirm_token(response):
-    for key, value in response.cookies.items():
+    for key, value in response.cookies.iteritems():
         if key.startswith('download_warning'):
             return value
 

@@ -22,9 +22,9 @@ SOFTWARE.
 
 
 from s2e_env.command import ProjectCommand, CommandError
-from s2e_env.manage import call_command
 from s2e_env.commands.code_coverage.basic_block import BasicBlockCoverage
 from s2e_env.commands.code_coverage.lcov import LineCoverage
+from s2e_env.manage import call_command
 
 from .code_coverage.ida_basic_block import IDABasicBlockCoverage
 from .code_coverage.r2_basic_block import R2BasicBlockCoverage

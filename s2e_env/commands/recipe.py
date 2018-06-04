@@ -65,7 +65,7 @@ def assemble_raw(inst_list, arch, convert_to_hex):
     ret = [val for i, val in enumerate(assembled)]
     if convert_to_hex:
         for i, val in enumerate(ret):
-            ret[i] = '0x' + binascii.hexlify(val)
+            ret[i] = '0x%s' % binascii.hexlify(val)
     return ret
 
 
@@ -79,7 +79,7 @@ def resolve_marker(asmd, marker, marker_size, var_name):
         raise Exception('Could not find marker %s in %s' % (marker, asmd))
 
     for i, val in enumerate(asmd):
-        asmd[i] = '0x' + binascii.hexlify(val)
+        asmd[i] = '0x%s' % binascii.hexlify(val)
 
     if marker_size == 1:
         asmd[pk_idx] = '%s' % var_name

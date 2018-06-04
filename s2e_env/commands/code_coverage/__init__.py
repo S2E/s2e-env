@@ -80,6 +80,7 @@ def _tb_to_uint64(tb):
     size = tb[2]
     return start_addr, end_addr, size
 
+
 def aggregate_tb_files_per_state(tb_files):
     """
     Aggregate translation block coverage information from all files and
@@ -102,7 +103,7 @@ def aggregate_tb_files_per_state(tb_files):
 
             for module_path, coverage in data.iteritems():
                 states = {}
-                if module_path not in ret.keys():
+                if module_path not in ret:
                     ret[module_path] = states
                 else:
                     states = ret[module_path]

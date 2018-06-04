@@ -185,7 +185,7 @@ class QMPConnectionHandler(LineRequestHandler):
         processed = True
         data = message['s2e-event']
 
-        for k in data.keys():
+        for k in data.iterkeys():
             if k in _PLUGINS:
                 _PLUGINS[k].process(data[k], analysis)
             else:
