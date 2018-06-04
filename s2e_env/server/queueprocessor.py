@@ -35,7 +35,7 @@ class QueueProcessor(Thread):
         self._binaries = {}
 
     def get_binary(self, binary_name):
-        if binary_name not in self._binaries.keys():
+        if binary_name not in self._binaries:
             self._binaries[binary_name] = {}
 
         return self._binaries[binary_name]

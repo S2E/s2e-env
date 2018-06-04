@@ -141,7 +141,7 @@ class TraceEntry(object):
 
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__,
-                           ', '.join('%s=%s' % (key, value) for key, value in self.as_dict().items()))
+                           ', '.join('%s=%s' % (key, value) for key, value in self.as_dict().iteritems()))
 
     @classmethod
     def static_size(cls):

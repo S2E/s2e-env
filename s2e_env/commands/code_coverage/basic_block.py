@@ -178,7 +178,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         # Calculate some statistics (across all states)
         total_bbs = len(bbs)
-        num_covered_bbs = len(set(itertools.chain(*bb_coverage.values())))
+        num_covered_bbs = len(set(itertools.chain(*bb_coverage.itervalues())))
 
         # Write the basic block coverage information to disk.
         #
@@ -321,7 +321,7 @@ class BasicBlockCoverage(ProjectCommand):
                 'total_basic_blocks': total_bbs,
                 'covered_basic_blocks': num_covered_bbs,
             },
-            'coverage': [to_dict(bb) for bbs in basic_blocks.values() for bb in bbs],
+            'coverage': [to_dict(bb) for bbs in basic_blocks.itervalues() for bb in bbs],
         }
 
         with open(bb_coverage_file, 'w') as f:
@@ -387,7 +387,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         module = os.path.basename(module_path)
 
-        for state, bbs in basic_blocks.items():
+        for state, bbs in basic_blocks.iteritems():
             drcov_filename = '%s_coverage_%s.drcov' % (module, state)
             drcov_file = os.path.join(drcov_dir, drcov_filename)
 

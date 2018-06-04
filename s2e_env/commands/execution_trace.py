@@ -57,7 +57,7 @@ def _make_json_entry(header, item):
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
     if header.type == TraceEntryType.TRACE_FORK:
-        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
+        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.iteritems()}
         item = trace_entries.TraceFork(children)
 
     header_dict = header.as_dict()
@@ -67,7 +67,7 @@ def _make_json_entry(header, item):
     entry = header_dict.copy()
     entry.update(item.as_json_dict())
 
-    for key, value in entry.items():
+    for key, value in entry.iteritems():
         if isinstance(value, Enum):
             entry[key] = value.value
 

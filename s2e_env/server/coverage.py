@@ -83,7 +83,7 @@ class Coverage(QueueProcessor):
             actual_cov = self._bb_coverage
 
         for module, coverage in data.iteritems():
-            if module not in actual_cov.keys():
+            if module not in actual_cov:
                 result[module] = coverage
                 actual_cov[module] = set()
 

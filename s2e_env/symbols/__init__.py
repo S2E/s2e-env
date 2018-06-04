@@ -76,7 +76,7 @@ class DebugInfo(object):
 
     def get_coverage(self, addr_counts, include_covered_files_only=False):
         if include_covered_files_only:
-            for addr in addr_counts.keys():
+            for addr in addr_counts.iterkeys():
                 try:
                     self.get(addr)
                 except Exception:
@@ -117,6 +117,7 @@ class DebugInfo(object):
         :return: an instance of DebugInfo
         """
         errors = []
+        target_path = os.path.realpath(target_path)
 
         logger.info('Looking for debug information for %s', target_path)
 

@@ -122,7 +122,7 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
             num_instrumented_lines = 0
 
             f.write('SF:%s\n' % src_file)
-            for line, count in file_line_info[src_file].items():
+            for line, count in file_line_info[src_file].iteritems():
                 f.write('DA:%d,%d\n' % (line, count))
 
                 if count:

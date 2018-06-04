@@ -75,7 +75,7 @@ class Analyzer(object):
 
             for header, item in trace:
                 if header.type == TraceEntryType.TRACE_FORK:
-                    for _, child_trace in item.children.items():
+                    for child_trace in item.children.itervalues():
                         ns = state.clone()
                         stack.append((child_trace, ns))
                 elif header.type == TraceEntryType.TRACE_OSINFO:

@@ -20,7 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import print_function
+
 import logging
+import os
 
 from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.execution_trace import parse as parse_execution_tree
@@ -55,12 +58,12 @@ class ForkProfiler(object):
         rel_pc = mod.to_native(header.pc)
 
         counts = {}
-        if mod not in self._fp.keys():
+        if mod not in self._fp:
             self._fp[mod] = counts
         else:
             counts = self._fp[mod]
 
-        if rel_pc not in counts.keys():
+        if rel_pc not in counts:
             counts[rel_pc] = 1
         else:
             counts[rel_pc] += 1
@@ -86,16 +89,24 @@ class ForkProfiler(object):
     def dump(self):
         profile = self.get_profile()
 
-        logger.info('# The fork profile shows all the program counters where execution forked:')
-        logger.info('# process_pid module_path:address fork_count source_file:line_number (function_name)')
+        print('# The fork profile shows all the program counters where execution forked:')
+        print('# process_pid module_path:address fork_count source_file:line_number (function_name)')
 
         for v in profile:
             mod, rel_pc, count, sym, fcn = v
             if v[3]:
-                logger.info('%05d %s:%#010x %4d %s:%d (%s)',
-                            mod.pid, mod.path, rel_pc, count, sym.filename, sym.line, fcn.name if fcn else None)
+                print('%05d %s:%#010x %4d %s:%d (%s)' % (mod.pid,
+                                                         os.path.normpath(mod.path),
+                                                         rel_pc,
+                                                         count,
+                                                         os.path.normpath(sym.filename),
+                                                         sym.line,
+                                                         fcn.name if fcn else None))
             else:
-                logger.info('%05d %s:%#010x %4d (no debug info)', mod.pid, mod.path, rel_pc, count)
+                print('%05d %s:%#010x %4d (no debug info)' % (mod.pid,
+                                                              os.path.normpath(mod.path),
+                                                              rel_pc,
+                                                              count))
 
 
 class Command(ProjectCommand):
