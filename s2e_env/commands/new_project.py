@@ -87,6 +87,9 @@ def _parse_sym_args(sym_args_str):
 
 
 def get_arch(target_path):
+    # Resolve possible symlinks
+    target_path = os.path.realpath(target_path)
+
     default_magic = Magic()
     magic_checks = [
         (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
