@@ -393,7 +393,7 @@ class Project(EnvCommand):
         Create a symlinks to the files that compose the program.
         """
         for f in files:
-            logger.info('Creating a symlink to %s', self._target_path)
+            logger.info('Creating a symlink to %s', f)
             target_file = os.path.basename(f)
             os.symlink(f, os.path.join(self._project_dir, target_file))
 

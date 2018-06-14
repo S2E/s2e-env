@@ -131,7 +131,7 @@ class DebugInfo(object):
                 errors.append('Could not read DWARF information from %s' % target_path)
 
         try:
-            syms = JsonDebugInfo(target_path)
+            syms = JsonDebugInfo(target_path, search_paths)
             syms.parse()
             return syms
         except Exception as e:
@@ -323,6 +323,7 @@ class JsonDebugInfo(DebugInfo):
     """
     def _parse_info(self, lines):
         for filepath, line_info in lines.iteritems():
+            filepath = guess_source_file_path(self._search_paths, filepath)
             for line in line_info:
                 line_number = line[0]
                 addresses = line[1]
@@ -330,12 +331,19 @@ class JsonDebugInfo(DebugInfo):
                     self.add(filepath, line_number, address)
 
     def parse(self):
-        target_path = '%s.lines' % self.path
-        logger.debug('Attempting to parse JSON debug data from %s', target_path)
+        candidates = [
+            '%s.lines' % self.path,
+            '%s.lines' % os.path.realpath(self.path)
+        ]
 
-        with open(target_path, 'r') as f:
-            lines = json.loads(f.read())
-            self._parse_info(lines)
+        for path in candidates:
+            if not os.path.exists(path):
+                continue
+
+            logger.debug('Attempting to parse JSON debug data from %s', path)
+            with open(path, 'r') as f:
+                lines = json.loads(f.read())
+                self._parse_info(lines)
 
 
 class SymbolManager(object):

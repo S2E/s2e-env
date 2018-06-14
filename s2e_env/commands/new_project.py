@@ -87,6 +87,9 @@ def _parse_sym_args(sym_args_str):
 
 
 def get_arch(target_path):
+    # Resolve possible symlinks
+    target_path = os.path.realpath(target_path)
+
     default_magic = Magic()
     magic_checks = [
         (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
@@ -112,8 +115,36 @@ def get_arch(target_path):
     return None, None
 
 
+def _gen_win_driver_project(target_path, file_paths, **options):
+    first_sys_file = None
+    for f in file_paths:
+        if f.endswith('.sys'):
+            first_sys_file = f
+
+    # TODO: prompt the user to select the right driver
+    if not first_sys_file:
+        raise CommandError('Could not find any *.sys file')
+
+    # Pick the architecture of the first sys file
+    arch, _ = get_arch(first_sys_file)
+    if arch is None:
+        raise CommandError('Could not determine architecture for %s' % first_sys_file)
+
+    options['target'] = target_path
+    options['target_arch'] = arch
+
+    # All the files to download into the guest.
+    options['target_files'] = list(set([target_path] + file_paths))
+
+    # TODO: support multiple kernel drivers
+    options['modules'] = [(os.path.basename(first_sys_file), True)]
+    options['processes'] = []
+
+    call_command(Project(WindowsDriverProjectConfiguration), **options)
+
+
 def _handle_inf(target_path, **options):
-    logger.info('Detected Windows INF file, attempting to create device driver project...')
+    logger.info('Detected Windows INF file, attempting to create a driver project...')
     driver = Driver(target_path)
     driver.analyze()
     driver_files = driver.get_files()
@@ -124,7 +155,6 @@ def _handle_inf(target_path, **options):
 
     logger.info('  Driver files:')
     file_paths = []
-    first_sys_file = None
     for f in driver_files:
         full_path = os.path.join(base_dir, f)
         if not os.path.exists(full_path):
@@ -137,62 +167,54 @@ def _handle_inf(target_path, **options):
         logger.info('    %s', full_path)
         file_paths.append(full_path)
 
-        if full_path.endswith('.sys'):
-            first_sys_file = full_path
+    _gen_win_driver_project(target_path, file_paths, **options)
 
-    # Pick the architecture of the first sys file
-    # TODO: prompt the user to select the right driver
-    if not first_sys_file:
-        raise CommandError('Could not find any *.sys file')
 
-    arch, _ = get_arch(first_sys_file)
-    if arch is None:
-        raise CommandError('Could not determine architecture for %s' % first_sys_file)
+def _handle_sys(target_path, **options):
+    logger.info('Detected Windows SYS file, attempting to create a driver project...')
+    _gen_win_driver_project(target_path, [target_path], **options)
+
+
+def _handle_generic_target(target_path, **options):
+    arch, proj_config_class = get_arch(target_path)
+    if not arch:
+        raise CommandError('%s is not a valid target for S2E analysis' % target_path)
 
     options['target'] = target_path
+    options['target_files'] = [target_path]
     options['target_arch'] = arch
 
-    # All the files to download into the guest.
-    options['target_files'] = [target_path] + file_paths
+    # The module list is a list of tuples where the first element is
+    # the module name and the second element is True if the module is
+    # a kernel module
+    options['modules'] = [(os.path.basename(target_path), False)]
 
-    # TODO: support multiple kernel drivers
-    options['modules'] = [(os.path.basename(first_sys_file), True)]
     options['processes'] = []
+    if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
+        options['processes'].append(os.path.basename(target_path))
 
-    call_command(Project(WindowsDriverProjectConfiguration), **options)
+    call_command(Project(proj_config_class), **options)
 
 
 def _handle_with_file(**options):
     # Need an absolute path for the target in order to simplify
     # symlink creation.
     target_path = options['target']
-    target_path = os.path.realpath(target_path)
 
     # Check that the target actually exists
     if not os.path.isfile(target_path):
         raise CommandError('Target %s does not exist' % target_path)
 
-    arch, proj_config_class = get_arch(target_path)
-    if arch:
-        options['target'] = target_path
-        options['target_files'] = [target_path]
-        options['target_arch'] = arch
-
-        # The module list is a list of tuples where the first element is
-        # the module name and the second element is True if the module is
-        # a kernel module
-        options['modules'] = [(os.path.basename(target_path), False)]
-
-        options['processes'] = []
-        if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
-            options['processes'].append(os.path.basename(target_path))
-
-        call_command(Project(proj_config_class), **options)
-    elif target_path.endswith('.inf'):
+    if target_path.endswith('.inf'):
+        # Don't call realpath on an inf file. Doing so will force
+        # lookup of binary files in the same directory as the actual inf file.
         _handle_inf(target_path, **options)
+    elif target_path.endswith('.sys'):
+        target_path = os.path.realpath(target_path)
+        _handle_sys(target_path, **options)
     else:
-        raise CommandError('%s is not a valid target for S2E analysis' %
-                           target_path)
+        target_path = os.path.realpath(target_path)
+        _handle_generic_target(target_path, **options)
 
 
 def _handle_empty_project(**options):
