@@ -111,6 +111,10 @@ class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        # Windows drivers must match the OS's bitness
+        return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
+
     def validate_configuration(self, config):
         super(WindowsDriverProjectConfiguration, self).validate_configuration(config)
 
