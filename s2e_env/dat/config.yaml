@@ -77,6 +77,8 @@ dependencies:
         - python-docutils
         - qemu
         - mingw-w64
+        - gcc-multilib
+        - g++-multilib
 
         # s2e-env dependencies
         - lcov
