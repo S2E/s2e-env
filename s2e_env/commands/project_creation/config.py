@@ -123,10 +123,6 @@ class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
                         ' This flag will be ignored')
             config['use_seeds'] = False
 
-        # Fault injection works best with DFS (we want exhaustive exploration)
-        if config.get('use_cupa', False):
-            config['use_cupa'] = False
-
         # Device drivers do not have input files
         config['warn_input_file'] = False
         config['warn_seeds'] = False
