@@ -12,15 +12,25 @@
 
 set -x
 
-# To save you the hassle of rebuilding the image every time you want to update
-# S2E's guest tools, the first thing that we do is get the latest versions of
-# the guest tools.
+# To save the hassle of rebuilding guest images every time you update S2E's guest tools,
+# the first thing that we do is get the latest versions of the guest tools.
 function update_guest_tools {
     local GUEST_TOOLS
+    local OUR_S2EGET
 
     GUEST_TOOLS="$COMMON_TOOLS $(target_tools)"
+    OUR_S2EGET=${S2EGET}
+
+    {% if project_type == 'windows' %}
+    # Windows does not allow s2eget.exe to overwrite itself, so we need a workaround.
+    if echo ${GUEST_TOOLS} | grep -q s2eget; then
+      OUR_S2EGET=${S2EGET}_old.exe
+      mv ${S2EGET} ${OUR_S2EGET}
+    fi
+    {% endif %}
+
     for TOOL in ${GUEST_TOOLS}; do
-        ${S2EGET} guest-tools/${TOOL}
+        ${OUR_S2EGET} guest-tools/${TOOL}
         chmod +x ${TOOL}
     done
 }
