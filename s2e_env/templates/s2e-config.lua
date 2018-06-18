@@ -249,7 +249,12 @@ pluginsConfig.CUPASearcher = {
         "pc",
     },
     logLevel="info",
-    enabled = true
+    enabled = true,
+
+    -- Delay (in seconds) before switching states (when used with the "batch" class).
+    -- A very large delay becomes similar to DFS (current state keeps running
+    -- until it is terminated).
+    batchTime = 5
 }
 
 {% endif %}
