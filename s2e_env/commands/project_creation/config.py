@@ -118,15 +118,6 @@ class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
     def validate_configuration(self, config):
         super(WindowsDriverProjectConfiguration, self).validate_configuration(config)
 
-        if config.get('use_seeds', False):
-            logger.warn('Seeds have been enabled, however they are not supported for device drivers.'
-                        ' This flag will be ignored')
-            config['use_seeds'] = False
-
-        # Device drivers do not have input files
-        config['warn_input_file'] = False
-        config['warn_seeds'] = False
-
         # All we support for now
         config['use_fault_injection'] = True
 
