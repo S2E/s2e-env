@@ -55,6 +55,14 @@ function prepare_inputs {
 
     # This can be empty if there are no seed files
     SEED_FILE="$1"
+
+    # Check whether the target has custom handling
+    # of seed files.
+    if [ $(make_seeds_symbolic) -eq 0 ]; then
+        echo ${SEED_FILE}
+        return
+    fi
+
     {% if project_type == 'windows' %}
     SYMB_FILE="x:\\input"
     {% else %}
@@ -76,7 +84,16 @@ function prepare_inputs {
             exit 1
         fi
     else
+        ${S2EGET} ${SEED_FILE}
+        if [ ! -f ${SEED_FILE} ]; then
+           ${S2ECMD} kill 1 "Could not fetch seed file ${SEED_FILE} from the host"
+        fi
+
+        {% if project_type == 'windows' %}
+        run_cmd "copy ${SEED_FILE} ${SYMB_FILE}"
+        {% else %}
         cp ${SEED_FILE} ${SYMB_FILE}
+        {% endif %}
     fi
 
     # Make the file symbolic
@@ -99,6 +116,7 @@ function prepare_inputs {
 function execute {
     local TARGET
     local SEED_FILE
+    local SYMB_FILE
 
     TARGET=$1
 
@@ -127,15 +145,24 @@ function execute {
     done
 
     if [ -n "${SEED_FILE}" ]; then
-        execute_target_with_seed "${TARGET}" "${SEED_FILE}"
+        SYMB_FILE="$(prepare_inputs ${SEED_FILE})"
+        execute_target "${TARGET}" "${SYMB_FILE}"
     else
         # If there are no seeds available, execute the seedless instance.
         # The SeedSearcher only schedules the seedless instance once.
+        #
+        echo "Starting seedless execution"
+
+        # NOTE: If you do not want to use seedless execution, comment out
+        # the following line.
         execute_target "${TARGET}"
     fi
 
     {% else %}
-    execute_target "${TARGET}"
+    {% if use_symb_input_file %}
+    SYMB_FILE="$(prepare_inputs)"
+    {% endif %}
+    execute_target "${TARGET}" "${SYMB_FILE}"
     {% endif %}
 }
 
