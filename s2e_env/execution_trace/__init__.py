@@ -215,6 +215,10 @@ class ExecutionTraceParser(object):
             if path_ids and parent_state_id not in path_ids:
                 del parent_execution_trace[fork_point + 1:]
 
+        # We have an empty trace
+        if 0 not in self._execution_traces:
+            return []
+
         return self._execution_traces[0]
 
     @staticmethod
