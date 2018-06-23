@@ -54,13 +54,18 @@ def guess_target_path(search_paths, target):
 
     tried = []
     bn = os.path.basename(target)
-    candidates = [target, bn]
 
-    if target.lower() != target:
-        candidates.append(target.lower())
+    # Try base name without the path prefix first, in case the file
+    # ends up being stored in user locations. The prefixed path
+    # is usually used as last resort within the guestfs folder.
+    # TODO: scan all folders and detect conflicting files
+    candidates = [bn, target]
 
     if bn.lower() != bn:
         candidates.append(bn.lower())
+
+    if target.lower() != target:
+        candidates.append(target.lower())
 
     for t in candidates:
         for sp in search_paths:

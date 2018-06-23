@@ -353,7 +353,8 @@ class ProjectCommand(EnvCommand):
         return os.path.join(self._project_dir, *p)
 
     def symbol_search_path(self):
-        ret = [self.project_path(), self.project_path('guestfs'), self.project_path('guest-tools')]
+        # guestfs should come last because it may contain outdated and conflicting copies of guest-tools
+        ret = [self.project_path(), self.project_path('guest-tools'), self.project_path('guestfs')]
         ret = ret + self._sym_paths
         return ret
 
