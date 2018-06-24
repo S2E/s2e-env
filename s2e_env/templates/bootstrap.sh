@@ -94,9 +94,15 @@ function prepare_inputs {
         {% else %}
         cp ${SEED_FILE} ${SYMB_FILE}
         {% endif %}
+
+        ${S2EGET} ${SEED_FILE}.symranges
     fi
 
     # Make the file symbolic
+    if [ -f "${SEED_FILE}.symranges" ]; then
+       export S2E_SYMFILE_RANGES="${SEED_FILE}.symranges"
+    fi
+
     {% if enable_pov_generation %}
     # It is important to have one symbolic variable by byte to make PoV generation work.
     # One-byte variables simplify input mapping in the Recipe plugin.
