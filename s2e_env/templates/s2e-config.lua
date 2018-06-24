@@ -377,3 +377,48 @@ pluginsConfig.CallSiteMonitor = {
 -- ========================================================================= --
 
 {% include '%s' % target_lua_template %}
+
+-- ========================================================================= --
+-- ============== User-specific scripts begin here ========================= --
+-- ========================================================================= --
+
+
+-------------------------------------------------------------------------------
+-- This plugin exposes core S2E engine functionality to LUA scripts.
+-- In particular, it provides the g_s2e global variable, which works similarly
+-- to C++ plugins.
+-------------------------------------------------------------------------------
+add_plugin("LuaBindings")
+
+-------------------------------------------------------------------------------
+-- Exposes S2E engine's core event.
+-- These are similar to events in CorePlugin.h. Please refer to
+-- the LuaCoreEvents.cpp source file for a list of availble events.
+-------------------------------------------------------------------------------
+add_plugin("LuaCoreEvents")
+
+-- This configuration shows an example that kills states if they fork in
+-- a specific module.
+-- [[
+pluginsConfig.LuaCoreEvents = {
+    -- This annotation is called in case of a fork. It should return true
+    -- to allow the fork and false to prevent it.
+    onStateForkDecide = "onStateForkDecide"
+}
+
+function onStateForkDecide(state)
+   mmap = g_s2e:getPlugin("ModuleMap")
+   mod = mmap:getModule(state)
+   if mod ~= nil then
+      name = mod:getName()
+      if name == "mymodule" then
+          state:kill(0, "forked in mymodule")
+      end
+
+      if name == "myothermodule" then
+          return false
+      end
+   end
+   return true
+end
+-- ]]
