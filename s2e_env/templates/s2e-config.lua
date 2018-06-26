@@ -284,6 +284,10 @@ add_plugin("SeedSearcher")
 pluginsConfig.SeedSearcher = {
     enableSeeds = true,
     seedDirectory = "{{ project_dir }}/seeds",
+
+    -- Save a copy of fetched seeds in s2e-last. This is useful in case
+    -- you modify seeds between runs and would like to keep track of the history.
+    backupSeeds = true,
 }
 
 -- The SeedScheduler plugin takes care of implementing the seed usage policies.
