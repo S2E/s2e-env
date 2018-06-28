@@ -152,6 +152,7 @@ pluginsConfig.ModuleExecutionDetector = {
         kernelMode = {% if m[1] %} true {% else %} false {% endif %},
     },
     {% endfor %}
+    logLevel="info"
 }
 
 -------------------------------------------------------------------------------
