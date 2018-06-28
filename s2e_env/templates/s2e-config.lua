@@ -131,7 +131,8 @@ add_plugin("KeyValueStore")
 
 add_plugin("TranslationBlockCoverage")
 pluginsConfig.TranslationBlockCoverage = {
-    writeCoverageOnStateKill = true
+    writeCoverageOnStateKill = true,
+    writeCoverageOnStateSwitch = true,
 }
 
 -------------------------------------------------------------------------------
