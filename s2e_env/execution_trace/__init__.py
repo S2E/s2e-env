@@ -181,10 +181,6 @@ class ExecutionTraceParser(object):
                 logger.debug('Parsing %s', trace_file_path)
                 self._parse_trace_file(trace_file, path_ids)
 
-        # Sort the execution trace for each state
-        for execution_trace in self._execution_traces.values():
-            execution_trace.sort(key=lambda x: x[0].timestamp)
-
         # If a list of path IDs is given, we will return these states plus
         # their parents.
         #
