@@ -231,11 +231,11 @@ def _create_activate_script(env_path):
     template = 's2e_activate.sh'
 
     context = {
+        'creation_time': str(datetime.datetime.now()),
         'S2EDIR': env_path,
     }
 
-    render_template(context, template,
-                    os.path.join(env_path, 'install', 'bin', 's2e_activate'))
+    render_template(context, template, os.path.join(env_path, 's2e_activate'))
 
 
 class Command(BaseCommand):
@@ -297,10 +297,10 @@ class Command(BaseCommand):
             # Create the shell script to activate the environment
             _create_activate_script(env_path)
 
-            msg = 'Environment created in {0}. You may wish to modify your ' \
-                  'environment\'s s2e.yaml config file. Source ' \
-                  '``{0}/install/bin/s2e_activate`` to activate your ' \
-                  'environment'.format(env_path)
+            msg = 'Environment created in %s. You may wish to modify your ' \
+                  'environment\'s s2e.yaml config file. Source ``%s`` to ' \
+                  'activate your environment' % (env_path,
+                                                 os.path.join(env_path, 's2e_activate'))
 
             existing_install_path = options['use_existing_install']
             if existing_install_path:

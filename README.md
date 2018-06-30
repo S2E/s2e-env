@@ -71,9 +71,9 @@ s2e <subcommand> --help
 ```
 
 Most commands use the `S2EDIR` environment variable so that commands can be run
-from any directory. `S2EDIR` can be set by sourcing `install/bin/s2e_activate`
-in your environment directory. Sourcing this file also makes `s2e_deactivate`
-available, which unsets S2E environment variables.
+from any directory. `S2EDIR` can be set by sourcing `s2e_activate` in your
+environment directory. Sourcing this file also makes `s2e_deactivate`
+available, which unsets the S2E environment variables.
 
 Alternatively, most commands take an optional `--env /path/to/env` argument.
 This argument can be used to specify the path to the S2E environment you want
