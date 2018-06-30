@@ -54,14 +54,26 @@ def _get_img_sources(env_path):
         repos.git_clone_to_source(env_path, git_repo)
 
 
-def _install_binary_dist(env_path, prefix):
-    # We must use an absolute path because of symlinks
-    prefix = os.path.abspath(prefix)
+def _link_existing_install(env_path, existing_install):
+    """
+    Reuse an existing S2E installation at ```existing_install``` in the new
+    environment at ```env_path```.
+    """
+    # Check that the expected S2E installation directories exist
+    for dir_ in ('bin', os.path.join('share', 'libs2e')):
+        if not os.path.isdir(os.path.join(existing_install, dir_)):
+            raise CommandError('Invalid S2E installation - ``%s`` does not '
+                               'exist. Are you sure that this directory '
+                               'contains a valid S2E installation?' % dir_)
 
-    logger.info('Using S2E installation in %s', prefix)
-    install = os.path.join(env_path, 'install')
-    shutil.rmtree(install, True)
-    os.symlink(prefix, install)
+    logger.info('Using existing S2E installation at %s', existing_install)
+
+    # Clear out anything that may exist in the new environment's install dir
+    new_install = os.path.join(env_path, 'install')
+    shutil.rmtree(new_install, True)
+
+    # We must use an absolute path for symlinks
+    os.symlink(os.path.abspath(existing_install), new_install)
 
     # We still need to clone guest-images repo, because it contains info about
     # the location of images
@@ -285,10 +297,14 @@ class Command(BaseCommand):
             # Create the shell script to activate the environment
             _create_activate_script(env_path)
 
-            prefix = options['use_existing_install']
-            if prefix is not None:
-                _install_binary_dist(env_path, prefix)
-                logger.success('Environment created in %s', env_path)
+            msg = 'Environment created in {0}. You may wish to modify your ' \
+                  'environment\'s s2e.yaml config file. Source ' \
+                  '``{0}/install/bin/s2e_activate`` to activate your ' \
+                  'environment'.format(env_path)
+
+            existing_install_path = options['use_existing_install']
+            if existing_install_path:
+                _link_existing_install(env_path, existing_install_path)
             else:
                 # Install S2E's dependencies via apt-get
                 if not options['skip_dependencies']:
@@ -298,13 +314,10 @@ class Command(BaseCommand):
                 _get_s2e_sources(env_path)
                 _get_img_sources(env_path)
 
-                msg = 'Environment created in {0}. You may wish to modify ' \
-                      'your environment\'s s2e.yaml config file. Source ' \
-                      '``{0}/install/bin/s2e_activate`` to activate your ' \
-                      'environment. Then run ``s2e build`` to build ' \
-                      'S2E'.format(env_path)
+                # Remind the user that they must build S2E
+                msg = '%s. Then run ``s2e build`` to build S2E' % msg
 
-                logger.success(msg)
+            logger.success(msg)
         except:
             # Cleanup on failure. Note that this only occurs if the chosen
             # directory is *not* the current working directory
