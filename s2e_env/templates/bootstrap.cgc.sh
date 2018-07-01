@@ -1,26 +1,29 @@
-function execute_target {
-    TARGET="$1"
-    ./${TARGET} > /tmp/out 2>&1
+# CGC has a different way of making seeds symbolic,
+# override default behavior.
+function make_seeds_symbolic {
+    echo 0
 }
 
-{% if use_seeds %}
-# Executes the target with a seed file as input.
-# You can customize this function if you need to do special processing
-# on the seeds, tweak arguments, etc.
-function execute_target_with_seed {
+function execute_target {
+    local TARGET
+    local SEED_FILE
+
     TARGET="$1"
     SEED_FILE="$2"
 
-    # Make the seed file concolic and submit it to the cb-test application.
-    # Note: CGC files don't need to be in a ram disk, as they will be made
-    # symbolic at the syscall level. See DecreeMonitor for details.
-    ${S2EGET} "${SEED_FILE}"
-    ./cgccmd concolic on
+    if [ "x${SEED_FILE}" = "x" ]; then
+        ./${TARGET} > /tmp/out 2>&1
+    else
+        # Make the seed file concolic and submit it to the cb-test application.
+        # Note: CGC files don't need to be in a ram disk, as they will be made
+        # symbolic at the syscall level. See DecreeMonitor for details.
+        ${S2EGET} "${SEED_FILE}"
+        ./cgccmd concolic on
 
-    chmod +x ${SEED_FILE}
-    cb-test --directory $(pwd) --xml ${SEED_FILE} --cb ${TARGET} --should_core --timeout 3600 2>&1
+        chmod +x ${SEED_FILE}
+        cb-test --directory $(pwd) --xml ${SEED_FILE} --cb ${TARGET} --should_core --timeout 3600 2>&1
+    fi
 }
-{% endif %}
 
 function target_init {
     # Patch cb-test so that it works without core dumps

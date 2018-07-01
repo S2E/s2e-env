@@ -26,6 +26,17 @@ import os
 logger = logging.getLogger('paths')
 
 
+def _convert_path_to_unix(path):
+    if '\\' not in path:
+        return path
+
+    path = path.replace('\\', '/')
+    if len(path) >= 3 and path[1:3] == ':/':
+        path = path[2:]
+
+    return path
+
+
 def guess_target_path(search_paths, target):
     """
     Find the given binary file in the specified search paths.
@@ -34,19 +45,27 @@ def guess_target_path(search_paths, target):
     if os.path.exists(target):
         return target
 
+    if os.name != 'nt':
+        target = _convert_path_to_unix(target)
+
     # os.path.join does not like concatenating two absolute paths
     if target[0] == '/':
         target = target[1:]
 
     tried = []
     bn = os.path.basename(target)
-    candidates = [target, bn]
 
-    if target.lower() != target:
-        candidates.append(target.lower())
+    # Try base name without the path prefix first, in case the file
+    # ends up being stored in user locations. The prefixed path
+    # is usually used as last resort within the guestfs folder.
+    # TODO: scan all folders and detect conflicting files
+    candidates = [bn, target]
 
     if bn.lower() != bn:
         candidates.append(bn.lower())
+
+    if target.lower() != target:
+        candidates.append(target.lower())
 
     for t in candidates:
         for sp in search_paths:
@@ -114,6 +133,11 @@ def guess_source_file_path(search_paths, path):
     if os.path.exists(path):
         return path
 
+    original_path = path
+
+    if os.name != 'nt':
+        path = _convert_path_to_unix(path)
+
     if os.path.isabs(path):
         # Try to strip prefixes until we find something
         components = _splitall(path)
@@ -123,9 +147,10 @@ def guess_source_file_path(search_paths, path):
             if guessed_path:
                 return guessed_path
 
-        return path
+        return original_path
 
     guessed_path = _guess_rel_path(search_paths, path)
     if guessed_path:
         return guessed_path
-    return path
+
+    return original_path

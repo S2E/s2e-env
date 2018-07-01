@@ -111,21 +111,12 @@ class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
     LUA_TEMPLATE = 's2e-config.windows.lua'
     PROJECT_TYPE = 'windows'
 
+    def is_valid_binary(self, target_arch, target_path, os_desc):
+        # Windows drivers must match the OS's bitness
+        return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
+
     def validate_configuration(self, config):
         super(WindowsDriverProjectConfiguration, self).validate_configuration(config)
-
-        if config.get('use_seeds', False):
-            logger.warn('Seeds have been enabled, however they are not supported for device drivers.'
-                        ' This flag will be ignored')
-            config['use_seeds'] = False
-
-        # Fault injection works best with DFS (we want exhaustive exploration)
-        if config.get('use_cupa', False):
-            config['use_cupa'] = False
-
-        # Device drivers do not have input files
-        config['warn_input_file'] = False
-        config['warn_seeds'] = False
 
         # All we support for now
         config['use_fault_injection'] = True

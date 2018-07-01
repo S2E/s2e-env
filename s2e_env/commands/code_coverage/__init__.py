@@ -48,9 +48,9 @@ def get_tb_files(results_dir):
     tb_coverage_files = glob.glob(os.path.join(results_dir, '*', 'tbcoverage-*.json')) + \
                         glob.glob(os.path.join(results_dir, 'tbcoverage-*.json'))
     if not tb_coverage_files:
-        logger.warning('No translation block coverage files found in s2e-last. '
+        logger.warning('No translation block coverage files found in %s. '
                        'Did you enable the ``TranslationBlockCoverage`` '
-                       'plugin in s2e-config.lua?')
+                       'plugin in s2e-config.lua?', results_dir)
 
     return tb_coverage_files
 

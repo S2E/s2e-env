@@ -50,6 +50,18 @@ class Command(ProjectCommand):
         lcov_parser.add_argument('--include-covered-files-only', action='store_true',
                                  help='The coverage report will exclude files that were never covered', default=True)
 
+        lcov_parser.add_argument('--s2e-out-dir', action='append',
+                                 help='S2E output directories to consider (default is s2e-last).',
+                                 required=False)
+
+        lcov_parser.add_argument('--aggregate-outputs', type=int,
+                                 help='Specifies n most recent s2e-out-* folders to aggregate for coverage.',
+                                 required=False)
+
+        lcov_parser.add_argument('--lcov-out-dir', type=str,
+                                 help='Where to store the LCOV report (by default into s2e-last)',
+                                 required=False)
+
         bb_parser = subparsers.add_parser('basic_block', cmd=BasicBlockCoverage(),
                                           help='Generate a basic block report')
         bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2', 'binaryninja'),

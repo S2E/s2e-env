@@ -314,6 +314,7 @@ class ProjectCommand(EnvCommand):
         self._project_dir = None
         self._project_desc = None
         self._project_name = None
+        self._sym_paths = []
 
     def handle_common_args(self, **options):
         """
@@ -335,10 +336,15 @@ class ProjectCommand(EnvCommand):
             raise CommandError('Unable to open project description for %s - '
                                '%s' % (os.path.basename(self._project_dir), e))
 
+        self._sym_paths = options.pop('sympath', [])
+        if not self._sym_paths:
+            self._sym_paths = []
+
     def add_arguments(self, parser):
         super(ProjectCommand, self).add_arguments(parser)
 
         parser.add_argument('project', help='The name of the project')
+        parser.add_argument('--sympath', action='append', help='Additional symbol search path', required=False)
 
     def project_path(self, *p):
         """
@@ -347,7 +353,10 @@ class ProjectCommand(EnvCommand):
         return os.path.join(self._project_dir, *p)
 
     def symbol_search_path(self):
-        return [self.project_path(), self.project_path('guestfs'), self.project_path('guest-tools')]
+        # guestfs should come last because it may contain outdated and conflicting copies of guest-tools
+        ret = [self.project_path(), self.project_path('guest-tools'), self.project_path('guestfs')]
+        ret = ret + self._sym_paths
+        return ret
 
     def recipes_path(self, *p):
         return self.project_path('recipes', *p)
