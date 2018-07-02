@@ -35,7 +35,7 @@ import sys
 from threading import Thread
 import time
 
-from s2e_env.command import ProjectCommand
+from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
 from s2e_env.server.collector_threads import CollectorThreads
@@ -182,6 +182,8 @@ class Command(ProjectCommand):
                             help='Optional arguments to the S2E launcher script')
         parser.add_argument('-c', '--cores', required=False, default=1,
                             type=int, help='Number of cores to run S2E on')
+        parser.add_argument('-s', '--single-path', action='store_true',
+                            help='Run S2E in single path mode')
         parser.add_argument('-n', '--no-tui', required=False,
                             action='store_true', help='Disable text UI')
         parser.add_argument('-t', '--timeout', required=False, default=None,
@@ -197,7 +199,8 @@ class Command(ProjectCommand):
         # TODO: automatic allocation
         qmp_socket = ('127.0.0.1', 2014)
 
-        args, env = self._setup_env(options['project_args'], options['cores'], qmp_socket)
+        args, env = self._setup_env(options['project_args'], options['cores'],
+                                    qmp_socket, options['single_path'])
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
         self._cgc = 'cgc' in self._project_desc['image']['os']['name']
@@ -262,18 +265,22 @@ class Command(ProjectCommand):
                 qmp_server.shutdown()
                 qmp_server.server_close()
 
-    def _setup_env(self, project_args, cores, qmp_socket):
+    def _setup_env(self, project_args, cores, qmp_socket, single_path):
+        if single_path and cores > 1:
+            raise CommandError('Single path mode supports one core only')
+
         qemu_build = self._project_desc['image']['qemu_build']
         qemu = self.install_path('bin',
                                  'qemu-system-%s' % qemu_build)
-        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % qemu_build)
+        libs2e_so = 'libs2e-%s-s2e%s.so' % (qemu_build, '_sp' if single_path else '')
+        libs2e_path = self.install_path('share', 'libs2e', libs2e_so)
 
         env = {
             'S2E_MAX_PROCESSES': str(cores),
             'S2E_CONFIG': 's2e-config.lua',
             'S2E_UNBUFFERED_STREAM': '1',
             'S2E_SHARED_DIR': self.install_path('share', 'libs2e'),
-            'LD_PRELOAD': libs2e,
+            'LD_PRELOAD': libs2e_path,
             'PATH': os.environ.copy()['PATH'],
             'S2E_QMP_SERVER': '%s:%d' % qmp_socket
         }

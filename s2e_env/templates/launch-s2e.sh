@@ -10,9 +10,15 @@ ENV_DIR="{{ env_dir }}"
 INSTALL_DIR="$ENV_DIR/install"
 BUILD_DIR="$ENV_DIR/build/s2e"
 BUILD=debug
+S2E_SP_SUFFIX=
 
 # Comment this out to enable QEMU GUI
 GRAPHICS=-nographic
+
+if [ "x$1" = "xs2e_sp" ]; then
+  S2E_SP_SUFFIX='_sp'
+  shift
+fi
 
 if [ "x$1" = "xdebug" ]; then
   DEBUG=1
@@ -40,7 +46,7 @@ if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
 fi
 
 QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
-LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
+LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e$S2E_SP_SUFFIX-softmmu/libs2e.so"
 
 cat >> gdb.ini <<EOF
 handle SIGUSR2 noprint
@@ -64,7 +70,7 @@ $GDB $QEMU $DRIVE \
 else
 
 QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
-LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e.so"
+LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e$S2E_SP_SUFFIX.so"
 
 LD_PRELOAD=$LIBS2E $QEMU $DRIVE \
     -k en-us $GRAPHICS -monitor null -m {{ qemu_memory }} -enable-kvm \

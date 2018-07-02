@@ -103,6 +103,7 @@ function prepare_inputs {
        export S2E_SYMFILE_RANGES="${SEED_FILE}.symranges"
     fi
 
+    {% if use_symbfile %}
     {% if enable_pov_generation %}
     # It is important to have one symbolic variable by byte to make PoV generation work.
     # One-byte variables simplify input mapping in the Recipe plugin.
@@ -110,6 +111,7 @@ function prepare_inputs {
     {% else %}
     # The symbolic file will be split into symbolic variables of up to 4k bytes each.
     ${S2ECMD} symbfile 4096 ${SYMB_FILE}
+    {% endif %}
     {% endif %}
     echo ${SYMB_FILE}
 }

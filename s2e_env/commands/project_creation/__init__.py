@@ -119,7 +119,11 @@ class Project(EnvCommand):
 
             # This will add analysis overhead, so disable unless requested by the user.
             # Also enabled by default for Decree targets.
-            'enable_pov_generation': options['enable_pov_generation']
+            'enable_pov_generation': options['enable_pov_generation'],
+
+            'use_symbfile': True,
+            'use_fork_limiter': True,
+            'use_function_models' : True,
         }
 
         for tf in options['target_files']:
@@ -155,6 +159,14 @@ class Project(EnvCommand):
 
         if config['enable_pov_generation']:
             config['use_recipes'] = True
+
+        if options['single_path']:
+            if not config['use_seeds']:
+                config['use_cupa'] = False
+            config['use_symbfile'] = False
+            config['use_test_case_generator'] = False
+            config['use_fork_limiter'] = False
+            config['use_function_models'] = False
 
         if self._target_path:
             # Do some basic analysis on the target
@@ -231,6 +243,8 @@ class Project(EnvCommand):
             'target_files': config['target_files'],
             'modules': config['modules'],
             'processes': config['processes'],
+            'use_fork_limiter': config['use_fork_limiter'],
+            'use_function_models': config['use_function_models'],
         }
 
         for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
@@ -267,6 +281,7 @@ class Project(EnvCommand):
             'target_files': config['target_files'],
             'modules': config['modules'],
             'processes': config['processes'],
+            'use_symbfile': config['use_symbfile'],
         }
 
         script_path = os.path.join(self._project_dir, template)

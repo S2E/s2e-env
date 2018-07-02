@@ -155,6 +155,7 @@ pluginsConfig.ModuleExecutionDetector = {
     logLevel="info"
 }
 
+{% if use_fork_limiter == true %}
 -------------------------------------------------------------------------------
 -- This plugin controls the forking behavior of S2E.
 
@@ -177,7 +178,7 @@ pluginsConfig.ForkLimiter = {
     -- before spawning a process.
     processForkDelay = 5,
 }
-
+{% endif %}
 -------------------------------------------------------------------------------
 -- This plugin tracks execution of processes.
 -- This is the preferred way of tracking execution and will eventually replace
@@ -311,6 +312,7 @@ pluginsConfig.SeedScheduler = {
 add_plugin("TranslationBlockCoverage")
 {% endif %}
 
+{% if use_function_models == true %}
 -------------------------------------------------------------------------------
 -- Function models help drastically reduce path explosion. A model is an
 -- expression that efficiently encodes the behavior of a function. In imperative
@@ -328,6 +330,7 @@ pluginsConfig.StaticFunctionModels = {
 g_function_models = {}
 safe_load('models.lua')
 pluginsConfig.StaticFunctionModels.modules = g_function_models
+{% endif %}
 
 {% if use_test_case_generator %}
 -------------------------------------------------------------------------------
