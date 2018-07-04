@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 
+import json
 import logging
 import os
 import sys
@@ -29,11 +30,16 @@ import sys
 # pylint: disable=no-name-in-module
 from sh import tar, ErrorReturnCode
 
+from s2e_env import CONSTANTS
 from s2e_env.command import CommandError
 from . import google
 
 
 logger = logging.getLogger(__name__)
+
+#
+# Image downloading
+#
 
 
 def _download(url, path):
@@ -90,3 +96,51 @@ class ImageDownloader(object):
         dest_file = os.path.join(dest_dir, '%s.tar.xz' % image)
         _download(url, dest_file)
         _decompress(dest_file)
+
+#
+# Image utility functions
+#
+
+def _validate_version(descriptor, filename):
+    version = descriptor.get('version')
+    required_version = CONSTANTS['required_versions']['guest_images']
+    if version != required_version:
+        raise CommandError('Need version %s for %s. Make sure that you have '
+                           'the correct revision of the guest-images '
+                           'repository' % (required_version, filename))
+
+
+def get_image_templates(img_build_dir):
+    images = os.path.join(img_build_dir, 'images.json')
+
+    try:
+        with open(images, 'r') as f:
+            template_json = json.load(f)
+    except:
+        raise CommandError('Could not parse %s. Something is wrong with the '
+                           'environment' % images)
+
+    _validate_version(template_json, images)
+
+    return template_json['images']
+
+
+def get_image_descriptor(image_dir):
+    """
+    Load the image JSON descriptor.
+
+    Args:
+        image_dir: directory containing the built image.
+    """
+    img_json_path = os.path.join(image_dir, 'image.json')
+
+    try:
+        with open(img_json_path, 'r') as f:
+            ret = json.load(f)
+            _validate_version(ret, img_json_path)
+            ret['path'] = os.path.join(image_dir, 'image.raw.s2e')
+
+            return ret
+    except Exception:
+        raise CommandError('Unable to open image description %s. Check that '
+                           'the image exists, was built, or downloaded' % img_json_path)

@@ -26,7 +26,6 @@ from __future__ import print_function
 
 import glob
 import grp
-import json
 import logging
 import os
 import pwd
@@ -40,7 +39,7 @@ from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils import repos
-from s2e_env.utils.image_download import ImageDownloader
+from s2e_env.utils.images import ImageDownloader, get_image_templates
 
 
 logger = logging.getLogger('image_build')
@@ -138,49 +137,6 @@ def _check_vmlinux():
                            'This is required for guestfish. Please run the '
                            'following command:\n\n'
                            'sudo chmod ugo+r /boot/vmlinu*')
-
-
-def _validate_version(descriptor, filename):
-    version = descriptor.get('version')
-    required_version = CONSTANTS['required_versions']['guest_images']
-    if version != required_version:
-        raise CommandError('Need version %s for %s. Make sure that you have '
-                           'the correct revision of the guest-images '
-                           'repository' % (required_version, filename))
-
-
-def get_image_templates(img_build_dir):
-    images = os.path.join(img_build_dir, 'images.json')
-    try:
-        with open(images, 'r') as f:
-            template_json = json.load(f)
-    except:
-        raise CommandError('Could not parse %s. Something is wrong with the '
-                           'environment' % images)
-
-    _validate_version(template_json, images)
-    return template_json['images']
-
-
-def get_image_descriptor(image_dir):
-    """
-    Load the image JSON descriptor.
-
-    Args:
-        image_dir: directory containing the built image.
-    """
-    img_json_path = os.path.join(image_dir, 'image.json')
-
-    try:
-        with open(img_json_path, 'r') as f:
-            ret = json.load(f)
-            _validate_version(ret, img_json_path)
-            ret['path'] = os.path.join(image_dir, 'image.raw.s2e')
-
-            return ret
-    except Exception:
-        raise CommandError('Unable to open image description %s. Check that '
-                           'the image exists, was built, or downloaded' % img_json_path)
 
 
 def _check_core_num(value):

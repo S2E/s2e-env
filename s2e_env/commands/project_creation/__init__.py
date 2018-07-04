@@ -31,9 +31,8 @@ import shutil
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.image_build import get_image_templates, get_image_descriptor
 from s2e_env.commands.recipe import Command as RecipeCommand
-from s2e_env.utils.image_download import ImageDownloader
+from s2e_env.utils.images import ImageDownloader, get_image_templates, get_image_descriptor
 from s2e_env.utils.templates import render_template
 from .config import is_valid_arch
 
