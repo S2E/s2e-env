@@ -84,7 +84,7 @@ function prepare_inputs {
             exit 1
         fi
     else
-        ${S2EGET} ${SEED_FILE}
+        ${S2EGET} ${SEED_FILE} >/dev/null
         if [ ! -f ${SEED_FILE} ]; then
            ${S2ECMD} kill 1 "Could not fetch seed file ${SEED_FILE} from the host"
         fi
@@ -95,7 +95,7 @@ function prepare_inputs {
         cp ${SEED_FILE} ${SYMB_FILE}
         {% endif %}
 
-        ${S2EGET} ${SEED_FILE}.symranges
+        ${S2EGET} ${SEED_FILE}.symranges >/dev/null
     fi
 
     # Make the file symbolic
@@ -106,10 +106,10 @@ function prepare_inputs {
     {% if enable_pov_generation %}
     # It is important to have one symbolic variable by byte to make PoV generation work.
     # One-byte variables simplify input mapping in the Recipe plugin.
-    ${S2ECMD} symbfile 1 ${SYMB_FILE}
+    ${S2ECMD} symbfile 1 ${SYMB_FILE} >/dev/null
     {% else %}
     # The symbolic file will be split into symbolic variables of up to 4k bytes each.
-    ${S2ECMD} symbfile 4096 ${SYMB_FILE}
+    ${S2ECMD} symbfile 4096 ${SYMB_FILE} >/dev/null
     {% endif %}
     echo ${SYMB_FILE}
 }
