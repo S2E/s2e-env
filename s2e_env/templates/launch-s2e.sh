@@ -48,7 +48,7 @@ set disassembly-flavor intel
 set print pretty on
 set environment S2E_CONFIG=$S2E_CONFIG
 set environment S2E_SHARED_DIR=$S2E_SHARED_DIR
-set environment LD_PRELOAD=$LIBS2E
+set exec-wrapper env 'LD_PRELOAD=$LIBS2E'
 set environment S2E_UNBUFFERED_STREAM=1
 #set environment QEMU_LOG_LEVEL=int,exec
 #set environment S2E_QMP_SERVER=127.0.0.1:3322
