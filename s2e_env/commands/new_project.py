@@ -200,7 +200,7 @@ def _handle_generic_target(target_path, **options):
 def _handle_with_file(**options):
     # Need an absolute path for the target in order to simplify
     # symlink creation.
-    target_path = options['target']
+    target_path = os.path.realpath(options['target'])
 
     # Check that the target actually exists
     if not os.path.isfile(target_path):
