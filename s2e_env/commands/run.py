@@ -268,15 +268,16 @@ class Command(ProjectCommand):
                                  'qemu-system-%s' % qemu_build)
         libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % qemu_build)
 
-        env = {
+        env = os.environ.copy()
+        env_s2e = {
             'S2E_MAX_PROCESSES': str(cores),
             'S2E_CONFIG': 's2e-config.lua',
             'S2E_UNBUFFERED_STREAM': '1',
             'S2E_SHARED_DIR': self.install_path('share', 'libs2e'),
             'LD_PRELOAD': libs2e,
-            'PATH': os.environ.copy()['PATH'],
             'S2E_QMP_SERVER': '%s:%d' % qmp_socket
         }
+        env.update(env_s2e)
 
         args = [
             qemu,
