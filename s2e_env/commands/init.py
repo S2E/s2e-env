@@ -93,8 +93,7 @@ def _install_dependencies():
     if not ubuntu_ver:
         return
 
-    install_packages = CONSTANTS['dependencies']['common'] +                    \
-                       CONSTANTS['dependencies']['ubuntu_%d' % ubuntu_ver] +    \
+    install_packages = CONSTANTS['dependencies']['common'] + \
                        CONSTANTS['dependencies']['ida']
 
     try:

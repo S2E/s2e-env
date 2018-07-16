@@ -82,10 +82,6 @@ dependencies:
 
         # s2e-env dependencies
         - lcov
-    ubuntu_16:
-        - libprocps-dev
-    ubuntu_14:
-        - libprocps3-dev
     ida:
         # IDA Pro TUI dependencies
         - lib32ncurses5
