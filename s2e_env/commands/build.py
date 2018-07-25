@@ -74,7 +74,7 @@ class Command(EnvCommand):
 
         # Set up some environment variables
         env_vars = os.environ.copy()
-        env_vars['S2EPREFIX'] = self.install_path()
+        env_vars['S2E_PREFIX'] = self.install_path()
 
         components = options['components']
         self._make = sh.Command('make').bake(directory=build_dir, file=makefile, _env=env_vars)
