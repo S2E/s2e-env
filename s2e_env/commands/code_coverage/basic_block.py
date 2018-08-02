@@ -192,18 +192,18 @@ class BasicBlockCoverage(ProjectCommand):
               'Total basic blocks: {num_bbs}\n'                         \
               'Covered basic blocks: {num_covered_bbs} ({percent:.1%})'
 
-    def _get_disas_info(self, module, actual_module_path):
+    def _get_disas_info(self, module, module_path):
         # Check if a cached version of the disassembly information exists.
         # If it does, then we don't have to disassemble the binary (which
         # may take a long time for large binaries)
-        disas_info = self._get_cached_disassembly_info(actual_module_path)
+        disas_info = self._get_cached_disassembly_info(module_path)
 
         # If no cached .disas file exists, generate a new one using the
         # given disassembler and cache the results
         if not disas_info:
-            disas_info = self._get_disassembly_info(actual_module_path)
+            disas_info = self._get_disassembly_info(module_path)
             if not disas_info:
-                raise CommandError('No disassembly information found')
+                raise CommandError('No disassembly information found for %s' % module)
 
             # Sort the basic block. This simplifies the basic block coverage
             # calculation
@@ -214,16 +214,18 @@ class BasicBlockCoverage(ProjectCommand):
 
         return disas_info
 
-    # pylint: disable=too-many-arguments
-    # TODO: reduce number of args
-    def _save_coverage(self, options, actual_module_path, module, disas_info, tb_coverage):
+    def _save_coverage(self, module_path, tb_coverage, drcov_format=False):
+        module_name = os.path.basename(module_path)
+
+        disas_info = self._get_disas_info(module_name, module_path)
+        bbs = disas_info.get('bbs', [])
+
         # Calculate basic block coverage information (based on the translation
         # block coverage recorded by S2E and the basic block information
         # extracted by a disassembler)
-        bbs = disas_info.get('bbs', [])
         bb_coverage = _get_basic_block_coverage(tb_coverage, bbs)
         if not bb_coverage:
-            raise CommandError('No basic block coverage information found')
+            raise CommandError('No basic block coverage information found for %s' % module_name)
 
         # Calculate some statistics (across all states)
         total_bbs = len(bbs)
@@ -236,13 +238,13 @@ class BasicBlockCoverage(ProjectCommand):
         #
         # Otherwise combine all the basic block coverage information
         # (across all states) into a single JSON file.
-        if options['drcov']:
-            bb_coverage_loc = self._save_drcov(actual_module_path,
+        if drcov_format:
+            bb_coverage_loc = self._save_drcov(module_path,
                                                disas_info['base_addr'],
                                                disas_info['end_addr'],
                                                bb_coverage)
         else:
-            bb_coverage_loc = self._save_basic_block_coverage(module,
+            bb_coverage_loc = self._save_basic_block_coverage(module_name,
                                                               bb_coverage,
                                                               total_bbs,
                                                               num_covered_bbs)
@@ -266,9 +268,7 @@ class BasicBlockCoverage(ProjectCommand):
                 logger.error(e)
                 continue
 
-            module = os.path.basename(actual_module_path)
-            disas_info = self._get_disas_info(module, actual_module_path)
-            self._save_coverage(options, actual_module_path, module, disas_info, tb_coverage)
+            self._save_coverage(actual_module_path, tb_coverage, options['drcov'])
 
     def _initialize_disassembler(self):
         """

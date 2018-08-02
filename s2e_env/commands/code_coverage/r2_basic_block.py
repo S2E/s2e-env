@@ -102,7 +102,7 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
         bbs = []
         for func in r2.cmdj('aflj'):
             func_name = func['name']
-            func_graph = r2.cmdj('agj 0x%x' % func['offset'])
+            func_graph = r2.cmdj('agj %#x' % func['offset'])
 
             if not func_graph:
                 logger.warn('Function %s has an empty graph. Skipping...',
