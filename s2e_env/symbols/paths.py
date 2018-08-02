@@ -75,7 +75,7 @@ def guess_target_path(search_paths, target):
                 return p
             tried.append(p)
 
-    raise Exception('Could not find %s' % tried)
+    raise Exception('Could not find %s' % ', '.join(tried))
 
 
 def _guess_rel_path(search_paths, path):

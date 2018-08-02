@@ -84,7 +84,8 @@ def _tb_to_uint64(tb):
 def aggregate_tb_files_per_state(tb_files):
     """
     Aggregate translation block coverage information from all files and
-    put them in a single dict.
+    put them in a single dict that maps module paths to their translation block
+    coverage.
     """
     ret = {}
     for f in tb_files:
