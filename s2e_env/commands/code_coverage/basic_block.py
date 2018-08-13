@@ -43,10 +43,10 @@ class BasicBlock(object):
     Immutable basic block representation.
     """
 
-    def __init__(self, start_addr, end_addr, function):
+    def __init__(self, start_addr, end_addr, function=None):
         self._start_addr = start_addr
         self._end_addr = end_addr
-        self._function = function
+        self._function = function if function else ''
 
     @property
     def start_addr(self):
@@ -59,6 +59,9 @@ class BasicBlock(object):
     @property
     def function(self):
         return self._function
+
+    def __str__(self):
+        return 'BB(start=%#x, end=%#x, function=%s)' % (self._start_addr, self._end_addr, self._function)
 
 
 class BasicBlockEncoder(json.JSONEncoder):
