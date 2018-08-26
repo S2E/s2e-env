@@ -116,7 +116,7 @@ def get_arch(target_path):
     return None, None
 
 
-def _gen_win_driver_project(target_path, file_paths, **options):
+def _gen_win_driver_project(target_path, file_paths, *args, **options):
     first_sys_file = None
     for f in file_paths:
         if f.endswith('.sys'):
@@ -142,10 +142,10 @@ def _gen_win_driver_project(target_path, file_paths, **options):
     options['modules'] = [(os.path.basename(first_sys_file), True)]
     options['processes'] = []
 
-    call_command(Project(WindowsDriverProjectConfiguration), **options)
+    call_command(Project(WindowsDriverProjectConfiguration), *args, **options)
 
 
-def _handle_inf(target_path, **options):
+def _handle_inf(target_path, *args, **options):
     logger.info('Detected Windows INF file, attempting to create a driver project...')
     driver = Driver(target_path)
     driver.analyze()
@@ -169,15 +169,15 @@ def _handle_inf(target_path, **options):
         logger.info('    %s', full_path)
         file_paths.append(full_path)
 
-    _gen_win_driver_project(target_path, file_paths, **options)
+    _gen_win_driver_project(target_path, file_paths, *args, **options)
 
 
-def _handle_sys(target_path, **options):
+def _handle_sys(target_path, *args, **options):
     logger.info('Detected Windows SYS file, attempting to create a driver project...')
-    _gen_win_driver_project(target_path, [target_path], **options)
+    _gen_win_driver_project(target_path, [target_path], *args, **options)
 
 
-def _handle_generic_target(target_path, **options):
+def _handle_generic_target(target_path, *args, **options):
     arch, proj_config_class = get_arch(target_path)
     if not arch:
         raise CommandError('%s is not a valid target for S2E analysis' % target_path)
@@ -195,10 +195,10 @@ def _handle_generic_target(target_path, **options):
     if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
         options['processes'].append(os.path.basename(target_path))
 
-    call_command(Project(proj_config_class), **options)
+    call_command(Project(proj_config_class), *args, **options)
 
 
-def _handle_with_file(**options):
+def _handle_with_file(*args, **options):
     # Need an absolute path for the target in order to simplify
     # symlink creation.
     target_path = os.path.realpath(options['target'])
@@ -210,16 +210,16 @@ def _handle_with_file(**options):
     if target_path.endswith('.inf'):
         # Don't call realpath on an inf file. Doing so will force
         # lookup of binary files in the same directory as the actual inf file.
-        _handle_inf(target_path, **options)
+        _handle_inf(target_path, *args, **options)
     elif target_path.endswith('.sys'):
         target_path = os.path.realpath(target_path)
-        _handle_sys(target_path, **options)
+        _handle_sys(target_path, *args, **options)
     else:
         target_path = os.path.realpath(target_path)
-        _handle_generic_target(target_path, **options)
+        _handle_generic_target(target_path, *args, **options)
 
 
-def _handle_empty_project(**options):
+def _handle_empty_project(*args, **options):
     if not options['no_target']:
         raise CommandError('No target binary specified. Use the --no-target option to create an empty project.')
 
@@ -242,7 +242,7 @@ def _handle_empty_project(**options):
     options['modules'] = []
     options['processes'] = []
 
-    call_command(Project(PROJECT_CONFIGS[options['type']]), **options)
+    call_command(Project(PROJECT_CONFIGS[options['type']]), *args, **options)
 
 
 class Command(EnvCommand):
@@ -303,6 +303,6 @@ class Command(EnvCommand):
 
     def handle(self, *args, **options):
         if options['target']:
-            _handle_with_file(**options)
+            _handle_with_file(*args, **options)
         else:
-            _handle_empty_project(**options)
+            _handle_empty_project(*args, **options)
