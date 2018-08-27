@@ -60,10 +60,6 @@ PROJECT_CONFIGS = {
 }
 
 
-def _get_configs():
-    return PROJECT_CONFIGS.keys()
-
-
 def _parse_sym_args(sym_args_str):
     """
     Parses a list of argument indices to make symbolic.
@@ -87,7 +83,7 @@ def _parse_sym_args(sym_args_str):
     return sym_args
 
 
-def get_arch(target_path):
+def _get_arch(target_path):
     # Resolve possible symlinks
     target_path = os.path.realpath(target_path)
 
@@ -128,7 +124,7 @@ def _gen_win_driver_project(target_path, file_paths, *args, **options):
                            'Make sure the INF file is valid and belongs to a Windows driver.')
 
     # Pick the architecture of the first sys file
-    arch, _ = get_arch(first_sys_file)
+    arch, _ = _get_arch(first_sys_file)
     if arch is None:
         raise CommandError('Could not determine architecture for %s' % first_sys_file)
 
@@ -179,7 +175,7 @@ def _handle_sys(target_path, *args, **options):
 
 
 def _handle_generic_target(target_path, *args, **options):
-    arch, proj_config_class = get_arch(target_path)
+    arch, proj_config_class = _get_arch(target_path)
     if not arch:
         raise CommandError('%s is not a valid target for S2E analysis' % target_path)
 
@@ -231,8 +227,9 @@ def _handle_empty_project(*args, **options):
     if not options['name']:
         raise CommandError('Project name missing. Use the -n option to specify one.')
 
-    if options['type'] not in _get_configs():
-        raise CommandError('The project type is invalid. Please use %s for the --type option.' % _get_configs())
+    configs = PROJECT_CONFIGS.keys()
+    if options['type'] not in configs:
+        raise CommandError('The project type is invalid. Please use %s for the --type option.' % configs)
 
     options['target'] = None
     options['target_files'] = []
@@ -285,7 +282,7 @@ class Command(EnvCommand):
 
         parser.add_argument('--type', required=False, default=None,
                             help='Project type (%s), valid only when creating empty projects' %
-                            ','.join(_get_configs()))
+                            ','.join(PROJECT_CONFIGS.keys()))
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
