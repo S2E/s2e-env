@@ -186,9 +186,56 @@ via the `call_command` function.
 Example:
 
 ```python
-from s2e_env.manage import call_command
 from s2e_env.commands.new_project import Command as NewProjectCommand
+from s2e_env.manage import call_command
+
 
 def create_s2e_project(target_path, s2e_env_path):
     call_command(NewProjectCommand(), target_path, env=s2e_env_path, force=True)
+```
+
+## Custom projects
+
+Occasionally the default analysis projects (e.g., Windows driver, Linux
+application, etc.) may not meet your requirements. In these cases, a custom
+project may be created by extending the
+`s2e_env.commands.project_creation.abstract_project.AbstractProject` class.
+This child class **must** implement the following functions:
+
+ - `_make_config`: Generates a configuration dictionary that describes the
+   project. The contents of this dictionary are up to the user; and
+ - `_create`: Creates the actual project on disk. This should including,
+   making the project directory, and creating the files necessary to run the
+   project in this project directory. The project creation is guided by the
+   configuration dictionary generated in `_make_config`.
+
+Optionally, the user may also implement:
+
+ - `_create_instructions`: Return a string that is displayed to the user upon
+   successful creation of a project; and
+ - `_is_valid_image`: If an image is not specified, this method is used as a
+   predicate when automatically selecting an image.
+
+Currently, custom projects can only be used programmatically as follows:
+
+```python
+import os
+
+from s2e_env.commands.new_project import Command as NewProjectCommand
+from s2e_env.commands.project_creation.abstract_project import AbstractProject
+from s2e_env.manage import call_command
+
+
+class MyProject(AbstractProject):
+    def _make_config(self, *args, **kwargs):
+        return dict(project_dir='/path/to/my/project')
+
+    def _create(self, config, force=False):
+        os.mkdir(config['project_dir'])
+
+    def _create_instructions(self, config):
+        return 'Your project has been successfully created in %s' % config['project_dir']
+
+
+call_command(NewProjectCommand(), env='/path/to/s2e', project_class=MyProject)
 ```
