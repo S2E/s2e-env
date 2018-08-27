@@ -142,7 +142,8 @@ def _gen_win_driver_project(target_path, file_paths, *args, **options):
     options['modules'] = [(os.path.basename(first_sys_file), True)]
     options['processes'] = []
 
-    call_command(Project(WindowsDriverProjectConfiguration), *args, **options)
+    cfg = WindowsDriverProjectConfiguration()
+    call_command(Project(cfg), *args, **options)
 
 
 def _handle_inf(target_path, *args, **options):
@@ -195,7 +196,8 @@ def _handle_generic_target(target_path, *args, **options):
     if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
         options['processes'].append(os.path.basename(target_path))
 
-    call_command(Project(proj_config_class), *args, **options)
+    cfg = proj_config_class()
+    call_command(Project(cfg), *args, **options)
 
 
 def _handle_with_file(*args, **options):
@@ -242,7 +244,8 @@ def _handle_empty_project(*args, **options):
     options['modules'] = []
     options['processes'] = []
 
-    call_command(Project(PROJECT_CONFIGS[options['type']]), *args, **options)
+    cfg = PROJECT_CONFIGS[options['type']]()
+    call_command(Project(cfg), *args, **options)
 
 
 class Command(EnvCommand):

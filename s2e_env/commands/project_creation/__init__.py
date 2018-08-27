@@ -55,7 +55,7 @@ class Project(EnvCommand):
     def __init__(self, cfg):
         super(Project, self).__init__()
 
-        self._configurator = cfg()
+        self._configurator = cfg
         self._target_path = None
         self._project_dir = None
         self._img_json = None
