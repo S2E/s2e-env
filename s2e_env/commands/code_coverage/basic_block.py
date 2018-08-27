@@ -285,7 +285,7 @@ class BasicBlockCoverage(ProjectCommand):
         Returns:
             A ``dict`` containing disassembly information.
         """
-        raise NotImplementedError('subclasses of BasicBlockCoverage must '
+        raise NotImplementedError('Subclasses of BasicBlockCoverage must '
                                   'provide a _get_disassembly_info method')
 
     def _get_cached_disassembly_info(self, module):
