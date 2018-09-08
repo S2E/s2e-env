@@ -127,10 +127,13 @@ def get_image_templates(img_build_dir):
 
 def get_image_descriptor(image_dir):
     """
-    Load the image JSON descriptor.
+    Load the image's JSON descriptor.
 
     Args:
-        image_dir: directory containing the built image.
+        image_dir: directory containing a built image.
+
+    Returns:
+        A dictionary that describes the given image.
     """
     img_json_path = os.path.join(image_dir, 'image.json')
 

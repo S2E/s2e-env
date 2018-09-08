@@ -84,9 +84,17 @@ def _parse_sym_args(sym_args_str):
 
 
 def _get_arch(target_path):
-    # Resolve possible symlinks
-    target_path = os.path.realpath(target_path)
+    """
+    Check that the given target is supported by S2E.
 
+    The target's magic is checked to see if it is a supported file type (e.g.
+    ELF, PE, etc.). The architecture that the target was compiled for (e.g.
+    i386, x64, etc.) is also checked.
+
+    Returns:
+        A tuple containing the target's architecture and a project
+        configuration class is returned.
+    """
     default_magic = Magic()
     magic_checks = [
         (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
@@ -121,18 +129,18 @@ def _gen_win_driver_project(target_path, file_paths, *args, **options):
     # TODO: prompt the user to select the right driver
     if not first_sys_file:
         raise CommandError('Could not find any *.sys file in the INF file. '
-                           'Make sure the INF file is valid and belongs to a Windows driver.')
+                           'Make sure the INF file is valid and belongs to a '
+                           'Windows driver')
 
-    # Pick the architecture of the first sys file
+    # Determine the architecture of the first sys file
+    first_sys_file = os.path.realpath(first_sys_file)
     arch, _ = _get_arch(first_sys_file)
-    if arch is None:
-        raise CommandError('Could not determine architecture for %s' % first_sys_file)
+    if not arch:
+        raise CommandError('Could not determine architecture for %s' %
+                           first_sys_file)
 
-    options['target'] = target_path
-    options['target_arch'] = arch
-
-    # All the files to download into the guest.
     options['target_files'] = list(set([target_path] + file_paths))
+    options['target_arch'] = arch
 
     # TODO: support multiple kernel drivers
     options['modules'] = [(os.path.basename(first_sys_file), True)]
@@ -179,7 +187,6 @@ def _handle_generic_target(target_path, *args, **options):
     if not arch:
         raise CommandError('%s is not a valid target for S2E analysis' % target_path)
 
-    options['target'] = target_path
     options['target_files'] = [target_path]
     options['target_arch'] = arch
 
@@ -196,14 +203,10 @@ def _handle_generic_target(target_path, *args, **options):
     call_command(Project(cfg), *args, **options)
 
 
-def _handle_with_file(*args, **options):
-    # Need an absolute path for the target in order to simplify
-    # symlink creation.
-    target_path = os.path.realpath(options['target'])
-
-    # Check that the target actually exists
+def _handle_with_file(target_path, *args, **options):
+    # Check that the target is a valid file
     if not os.path.isfile(target_path):
-        raise CommandError('Target %s does not exist' % target_path)
+        raise CommandError('Target %s is not valid' % target_path)
 
     if target_path.endswith('.inf'):
         # Don't call realpath on an inf file. Doing so will force
@@ -219,19 +222,22 @@ def _handle_with_file(*args, **options):
 
 def _handle_empty_project(*args, **options):
     if not options['no_target']:
-        raise CommandError('No target binary specified. Use the --no-target option to create an empty project.')
+        raise CommandError('No target binary specified. Use the -m option to '
+                           'create an empty project')
 
     if not options['image']:
-        raise CommandError('An empty project requires a VM image. Use the -i option to specify the image.')
+        raise CommandError('An empty project requires a VM image. Use the -i '
+                           'option to specify the image')
 
     if not options['name']:
-        raise CommandError('Project name missing. Use the -n option to specify one.')
+        raise CommandError('An empty project requires a name. Use the -n '
+                           'option to specify one')
 
     configs = PROJECT_CONFIGS.keys()
     if options['type'] not in configs:
-        raise CommandError('The project type is invalid. Please use %s for the --type option.' % configs)
+        raise CommandError('An empty project requires a type. Use the -t '
+                           'option and specify one from %s' % configs)
 
-    options['target'] = None
     options['target_files'] = []
     options['target_arch'] = None
 
@@ -265,7 +271,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-n', '--name', required=False, default=None,
                             help='The name of the project. Defaults to the '
-                                 'name of the target program.')
+                                 'name of the target program')
 
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
@@ -276,11 +282,11 @@ class Command(EnvCommand):
                             action='store_true',
                             help='Download a suitable image if it is not available')
 
-        parser.add_argument('--no-target', required=False, default=False,
+        parser.add_argument('-m', '--no-target', required=False, default=False,
                             action='store_true',
-                            help='Create a bare targetless project, when no binary is needed')
+                            help='Create an empty, target-less project. Used when no binary is needed')
 
-        parser.add_argument('--type', required=False, default=None,
+        parser.add_argument('-t', '--type', required=False, default=None,
                             help='Project type (%s), valid only when creating empty projects' %
                             ','.join(PROJECT_CONFIGS.keys()))
 
@@ -290,7 +296,7 @@ class Command(EnvCommand):
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
-        parser.add_argument('--enable-pov-generation', action='store_true', default=False,
+        parser.add_argument('--enable-pov-generation', action='store_true',
                             help='Enables PoV generation')
 
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',

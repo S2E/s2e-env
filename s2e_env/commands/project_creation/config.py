@@ -56,7 +56,7 @@ class ProjectConfiguration(object):
         """
         pass
 
-    def analyze(self, config):
+    def analyze(self, target_path, config):
         """
         Perform static analysis on the target binary.
 
@@ -101,8 +101,8 @@ class WindowsDLLProjectConfiguration(WindowsProjectConfiguration):
             logger.warn('No DLL entry point provided - defaulting to ``DllEntryPoint``')
             config['target_args'] = ['DllEntryPoint']
 
-    def analyze(self, config):
-        with PEAnalysis(config['target_path']) as pe:
+    def analyze(self, target_path, config):
+        with PEAnalysis(target_path) as pe:
             config['dll_exports'] = pe.get_exports()
 
 
@@ -112,7 +112,7 @@ class WindowsDriverProjectConfiguration(WindowsProjectConfiguration):
     PROJECT_TYPE = 'windows'
 
     def is_valid_binary(self, target_arch, target_path, os_desc):
-        # Windows drivers must match the OS's bitness
+        # Windows drivers must match the OS's bit-ness
         return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
 
     def validate_configuration(self, config):
@@ -130,8 +130,8 @@ class LinuxProjectConfiguration(ProjectConfiguration):
     def is_valid_binary(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'elf' in os_desc['binary_formats']
 
-    def analyze(self, config):
-        with ELFAnalysis(config['target_path']) as elf:
+    def analyze(self, target_path, config):
+        with ELFAnalysis(target_path) as elf:
             config['dynamically_linked'] = elf.is_dynamically_linked()
             config['modelled_functions'] = elf.get_modelled_functions()
 
