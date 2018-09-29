@@ -35,7 +35,6 @@ from s2e_env.commands.recipe import Command as RecipeCommand
 from s2e_env.manage import call_command
 from s2e_env.utils.images import ImageDownloader, get_image_templates, get_image_descriptor
 from s2e_env.utils.templates import render_template
-from .config import is_valid_arch
 
 
 logger = logging.getLogger('new_project')
@@ -61,16 +60,73 @@ def _check_project_dir(project_dir, force=False):
                            os.path.basename(project_dir))
 
 
+def is_valid_arch(target_arch, os_desc):
+    """
+    Check that the image's architecture is consistent with the target binary.
+    """
+    return not (target_arch == 'x86_64' and os_desc['arch'] != 'x86_64')
+
+
+def _save_json_description(project_dir, config):
+    """
+    Create a JSON description of the project.
+
+    This information can be used by other commands.
+    """
+    logger.info('Creating JSON description')
+
+    project_desc_path = os.path.join(project_dir, 'project.json')
+    with open(project_desc_path, 'w') as f:
+        s = json.dumps(config, sort_keys=True, indent=4)
+        f.write(s)
+
+
+def _symlink_target_files(project_dir, files):
+    """
+    Create symlinks to the files that compose the program.
+    """
+    for f in files:
+        logger.info('Creating a symlink to %s', f)
+        target_file = os.path.basename(f)
+        os.symlink(f, os.path.join(project_dir, target_file))
+
+
+def _symlink_guestfs(project_dir, config):
+    """
+    Create a symlink to the guestfs directory.
+
+    Return ``True`` if the guestfs directory exists, or ``False`` otherwise.
+    """
+    guestfs_path = config['guestfs_path']
+    logger.info('Creating a symlink to %s', guestfs_path)
+    os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))
+
+    return True
+
+
+def _create_instructions(config):
+    """
+    Create instructions for the user on how to use their project.
+    """
+    instructions = render_template(config, 'instructions.txt')
+
+    # Due to how templates work, there may be many useless new lines, remove
+    # them here
+    return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)
+
+
 class Project(EnvCommand):
     """
     Helper class used by the ``new_project`` command to create a specific
     project.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, project_type, bootstrap_template, lua_template):
         super(Project, self).__init__()
 
-        self._configurator = cfg
+        self._project_type = project_type
+        self._bootstrap_template = bootstrap_template
+        self._lua_template = lua_template
 
     def handle(self, *args, **options):
         # Check that the target files are valid
@@ -112,7 +168,7 @@ class Project(EnvCommand):
         config = {
             'creation_time': str(datetime.datetime.now()),
             'project_dir': project_dir,
-            'project_type': self._configurator.PROJECT_TYPE,
+            'project_type': self._project_type,
             'image': img_desc,
             'target': os.path.basename(target_path) if target_path else None,
             'target_arch': target_arch,
@@ -124,9 +180,9 @@ class Project(EnvCommand):
             # List of module names that go into ModuleExecutionDetector
             'modules': options['modules'],
 
-            # List of binaries that go into ProcessExecutionDetector
-            # These are normally executable files
-            'processes': options['processes'],
+            # List of binaries that go into ProcessExecutionDetector. These are
+            # normally executable files
+            'processes': [os.path.basename(target_path)] if target_path else [],
 
             # Target arguments to be made symbolic
             'sym_args': options['sym_args'],
@@ -138,7 +194,7 @@ class Project(EnvCommand):
             'use_seeds': options['use_seeds'],
             'seeds_dir': os.path.join(project_dir, 'seeds'),
 
-            # The use of recipes is set by the configurator
+            # The use of recipes is set by the specific project
             'use_recipes': False,
             'recipes_dir': os.path.join(project_dir, 'recipes'),
 
@@ -146,11 +202,11 @@ class Project(EnvCommand):
             'has_guestfs': guestfs_path is not None,
             'guestfs_path': guestfs_path,
 
-            # These options are determined by the configurator's analysis
+            # These options are determined by a static analysis of the target
             'dynamically_linked': False,
             'modelled_functions': False,
 
-            # Configurators can silence warnings in case they have specific
+            # Specific projects can silence warnings in case they have specific
             # hard-coded options
             'warn_seeds': True,
             'warn_input_file': True,
@@ -168,7 +224,7 @@ class Project(EnvCommand):
 
         # Do some basic analysis on the target (if it exists)
         if target_path:
-            self._configurator.analyze(target_path, config)
+            self._analyze_target(target_path, config)
 
         if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
             os.mkdir(config['seeds_dir'])
@@ -176,20 +232,20 @@ class Project(EnvCommand):
         if config['enable_pov_generation']:
             config['use_recipes'] = True
 
-        # The configurator may modify the config dictionary here. After this
-        # point the config should NOT be modified
-        self._configurator.validate_configuration(config)
+        # The config dictionary may be modified here. After this point the
+        # config dictionary should NOT be modified
+        self._validate_config(config)
 
         # Create symlinks to the target files (if they exist)
         if target_files:
-            self._symlink_target_files(project_dir, target_files)
+            _symlink_target_files(project_dir, target_files)
 
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools(project_dir, config)
 
         # Create a symlink to guestfs (if it exists)
         if guestfs_path:
-            self._symlink_guestfs(project_dir, config)
+            _symlink_guestfs(project_dir, config)
 
         # Render the templates
         self._create_launch_script(project_dir, config)
@@ -197,13 +253,12 @@ class Project(EnvCommand):
         self._create_bootstrap(project_dir, config)
 
         # Record some basic information on the project
-        self._save_json_description(project_dir, config)
+        _save_json_description(project_dir, config)
 
         # Generate recipes for PoV generation
         if config['use_recipes']:
             os.makedirs(config['recipes_dir'])
-            call_command(RecipeCommand(), env=options['env'],
-                         project=os.path.basename(project_dir))
+            call_command(RecipeCommand(), [], project=os.path.basename(project_dir))
 
         # Display messages/instructions to the user
         display_marker_warning = target_path and \
@@ -228,7 +283,35 @@ class Project(EnvCommand):
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
 
-        logger.success(self._create_instructions(config))
+        logger.success(_create_instructions(config))
+
+    def _is_image_valid(self, target_arch, target_path, os_desc):
+        """
+        Validate a binary against a particular image description.
+
+        This validation may vary depending on the binary and image type.
+        Returns ``True`` if the binary is valid and ``False`` otherwise.
+        """
+        raise NotImplementedError('Subclasses of Project must provide an '
+                                  '_is_image_valid method')
+
+    def _validate_config(self, config):
+        """
+        Validate a project's configuration options.
+
+        This method may modify values in the ``config`` dictionary. If an
+        invalid configuration is found, a ``CommandError` should be thrown.
+        """
+        pass
+
+    def _analyze_target(self, target_path, config):
+        """
+        Perform static analysis on the target binary.
+
+        The results of this analysis can be used to add and/or modify values in
+        the ``config`` dictionary.
+        """
+        pass
 
     def _create_launch_script(self, project_dir, config):
         """
@@ -259,7 +342,7 @@ class Project(EnvCommand):
         context = {
             'creation_time': config['creation_time'],
             'target': config['target'],
-            'target_lua_template': self._configurator.LUA_TEMPLATE,
+            'target_lua_template': self._lua_template,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
@@ -298,7 +381,7 @@ class Project(EnvCommand):
             'target': config['target'],
             'target_args': parsed_args,
             'sym_args': config['sym_args'],
-            'target_bootstrap_template': self._configurator.BOOTSTRAP_TEMPLATE,
+            'target_bootstrap_template': self._bootstrap_template,
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
@@ -341,8 +424,8 @@ class Project(EnvCommand):
         may be downloaded.
 
         Returns:
-            A dictionary that describes the image that will be used, based on
-            the image's JSON descriptor.
+            A dictionary that describes the image that will be used, from
+            `$S2EDIR/source/guest-images/images.json`.
         """
         # Load the image JSON description. If it is not given, guess the image
         image = options['image']
@@ -364,7 +447,7 @@ class Project(EnvCommand):
                     'a suitable image for a %s binary...', target_arch)
 
         for k, v in templates.iteritems():
-            if self._configurator.is_valid_binary(target_arch, target_path, v['os']):
+            if self._is_image_valid(target_arch, target_path, v['os']):
                 logger.warning('Found %s, which looks suitable for this '
                                'binary. Please use -i if you want to use '
                                'another image', k)
@@ -393,57 +476,19 @@ class Project(EnvCommand):
 
         return guestfs_path if os.path.exists(guestfs_path) else None
 
-    def _save_json_description(self, project_dir, config):
-        """
-        Create a JSON description of the project.
-
-        This information can be used by other commands.
-        """
-        logger.info('Creating JSON description')
-
-        project_desc_path = os.path.join(project_dir, 'project.json')
-        with open(project_desc_path, 'w') as f:
-            s = json.dumps(config, sort_keys=True, indent=4)
-            f.write(s)
-
-    def _symlink_target_files(self, project_dir, files):
-        """
-        Create symlinks to the files that compose the program.
-        """
-        for f in files:
-            logger.info('Creating a symlink to %s', f)
-            target_file = os.path.basename(f)
-            os.symlink(f, os.path.join(project_dir, target_file))
-
-    def _symlink_guest_tools(self, project_dir, config):
+    def _symlink_guest_tools(self, project_dir, img_desc):
         """
         Create a symlink to the guest tools directory.
+
+        Args:
+            project_dir: The project directory.
+            img_desc: A dictionary that describes the image that will be used,
+                      from `$S2EDIR/source/guest-images/images.json`.
         """
-        img_arch = config['image']['qemu_build']
+        img_arch = img_desc['qemu_build']
         guest_tools_path = \
             self.install_path('bin', CONSTANTS['guest_tools'][img_arch])
 
         logger.info('Creating a symlink to %s', guest_tools_path)
         os.symlink(guest_tools_path,
                    os.path.join(project_dir, 'guest-tools'))
-
-    def _symlink_guestfs(self, project_dir, config):
-        """
-        Create a symlink to the guestfs directory.
-
-        Return ``True`` if the guestfs directory exists, or ``False``
-        otherwise.
-        """
-        guestfs_path = config['guestfs_path']
-        logger.info('Creating a symlink to %s', guestfs_path)
-        os.symlink(guestfs_path,
-                   os.path.join(project_dir, 'guestfs'))
-
-        return True
-
-    def _create_instructions(self, config):
-        instructions = render_template(config, 'instructions.txt')
-
-        # Due to how templates work, there may be many useless new lines, remove
-        # them here
-        return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)

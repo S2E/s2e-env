@@ -29,10 +29,9 @@ import re
 from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.project_creation import Project
-from s2e_env.commands.project_creation.config import \
-    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration, \
-    WindowsDriverProjectConfiguration
+from s2e_env.commands.project_creation.cgc_project import CGCProject
+from s2e_env.commands.project_creation.linux_project import LinuxProject
+from s2e_env.commands.project_creation.windows_project import WindowsProject, WindowsDLLProject, WindowsDriverProject
 from s2e_env.infparser.driver import Driver
 from s2e_env.manage import call_command
 
@@ -53,10 +52,10 @@ MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
 DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 
-PROJECT_CONFIGS = {
-    'cgc': CGCProjectConfiguration,
-    'linux': LinuxProjectConfiguration,
-    'windows': WindowsProjectConfiguration
+PROJECT_CLASSES = {
+    'cgc': CGCProject,
+    'linux': LinuxProject,
+    'windows': WindowsProject,
 }
 
 
@@ -92,35 +91,34 @@ def _get_arch(target_path):
     i386, x64, etc.) is also checked.
 
     Returns:
-        A tuple containing the target's architecture and a project
-        configuration class is returned.
+        A tuple containing the target's architecture and a project class is
+        returned.
     """
     default_magic = Magic()
     magic_checks = [
-        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
-        (default_magic, ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
-        (default_magic, ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
-        (default_magic, DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
-        (default_magic, DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
-        (default_magic, PE32_REGEX, WindowsProjectConfiguration, 'i386'),
-        (default_magic, PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
-        (default_magic, MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
+        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
+        (default_magic, ELF32_REGEX, LinuxProject, 'i386'),
+        (default_magic, ELF64_REGEX, LinuxProject, 'x86_64'),
+        (default_magic, DLL32_REGEX, WindowsDLLProject, 'i386'),
+        (default_magic, DLL64_REGEX, WindowsDLLProject, 'x86_64'),
+        (default_magic, PE32_REGEX, WindowsProject, 'i386'),
+        (default_magic, PE64_REGEX, WindowsProject, 'x86_64'),
+        (default_magic, MSDOS_REGEX, WindowsProject, 'i386')
     ]
 
     # Check the target program against the valid file types
-    for magic_check, regex, proj_config_class, arch in magic_checks:
+    for magic_check, regex, proj_class, arch in magic_checks:
         magic = magic_check.from_file(target_path)
         matches = regex.match(magic)
 
-        # If we find a match, create that project. The user instructions
-        # are returned
+        # If we find a match, create that project
         if matches:
-            return arch, proj_config_class
+            return arch, proj_class
 
     return None, None
 
 
-def _gen_win_driver_project(target_path, file_paths, *args, **options):
+def _handle_win_driver_project(target_path, file_paths, *args, **options):
     first_sys_file = None
     for f in file_paths:
         if f.endswith('.sys'):
@@ -144,14 +142,13 @@ def _gen_win_driver_project(target_path, file_paths, *args, **options):
 
     # TODO: support multiple kernel drivers
     options['modules'] = [(os.path.basename(first_sys_file), True)]
-    options['processes'] = []
 
-    cfg = WindowsDriverProjectConfiguration()
-    call_command(Project(cfg), *args, **options)
+    call_command(WindowsDriverProject(), *args, **options)
 
 
-def _handle_inf(target_path, *args, **options):
+def _extract_inf_files(target_path):
     logger.info('Detected Windows INF file, attempting to create a driver project...')
+
     driver = Driver(target_path)
     driver.analyze()
     driver_files = driver.get_files()
@@ -174,33 +171,27 @@ def _handle_inf(target_path, *args, **options):
         logger.info('    %s', full_path)
         file_paths.append(full_path)
 
-    _gen_win_driver_project(target_path, file_paths, *args, **options)
+    return file_paths
 
 
-def _handle_sys(target_path, *args, **options):
+def _extract_sys_files(target_path):
     logger.info('Detected Windows SYS file, attempting to create a driver project...')
-    _gen_win_driver_project(target_path, [target_path], *args, **options)
+    return [target_path]
 
 
-def _handle_generic_target(target_path, *args, **options):
-    arch, proj_config_class = _get_arch(target_path)
+def _handle_generic_project(target_path, *args, **options):
+    arch, proj_class = _get_arch(target_path)
     if not arch:
         raise CommandError('%s is not a valid target for S2E analysis' % target_path)
 
     options['target_files'] = [target_path]
     options['target_arch'] = arch
 
-    # The module list is a list of tuples where the first element is
-    # the module name and the second element is True if the module is
-    # a kernel module
+    # The module list is a list of tuples where the first element is the module
+    # name and the second element is True if the module is a kernel module
     options['modules'] = [(os.path.basename(target_path), False)]
 
-    options['processes'] = []
-    if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
-        options['processes'].append(os.path.basename(target_path))
-
-    cfg = proj_config_class()
-    call_command(Project(cfg), *args, **options)
+    call_command(proj_class(), *args, **options)
 
 
 def _handle_with_file(target_path, *args, **options):
@@ -211,13 +202,15 @@ def _handle_with_file(target_path, *args, **options):
     if target_path.endswith('.inf'):
         # Don't call realpath on an inf file. Doing so will force
         # lookup of binary files in the same directory as the actual inf file.
-        _handle_inf(target_path, *args, **options)
+        file_paths = _extract_inf_files(target_path)
+        _handle_win_driver_project(target_path, file_paths)
     elif target_path.endswith('.sys'):
         target_path = os.path.realpath(target_path)
-        _handle_sys(target_path, *args, **options)
+        file_paths = _extract_sys_files(target_path, *args, **options)
+        _handle_win_driver_project(target_path, file_paths, *args, **options)
     else:
         target_path = os.path.realpath(target_path)
-        _handle_generic_target(target_path, *args, **options)
+        _handle_generic_project(target_path, *args, **options)
 
 
 def _handle_empty_project(*args, **options):
@@ -233,10 +226,10 @@ def _handle_empty_project(*args, **options):
         raise CommandError('An empty project requires a name. Use the -n '
                            'option to specify one')
 
-    configs = PROJECT_CONFIGS.keys()
-    if options['type'] not in configs:
+    project_types = PROJECT_CLASSES.keys()
+    if options['type'] not in project_types:
         raise CommandError('An empty project requires a type. Use the -t '
-                           'option and specify one from %s' % configs)
+                           'option and specify one from %s' % project_types)
 
     options['target_files'] = []
     options['target_arch'] = None
@@ -245,10 +238,9 @@ def _handle_empty_project(*args, **options):
     # the module name and the second element is True if the module is
     # a kernel module
     options['modules'] = []
-    options['processes'] = []
 
-    cfg = PROJECT_CONFIGS[options['type']]()
-    call_command(Project(cfg), *args, **options)
+    project = PROJECT_CLASSES[options['type']]
+    call_command(project(), *args, **options)
 
 
 class Command(EnvCommand):
@@ -288,7 +280,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-t', '--type', required=False, default=None,
                             help='Project type (%s), valid only when creating empty projects' %
-                            ','.join(PROJECT_CONFIGS.keys()))
+                            ','.join(PROJECT_CLASSES.keys()))
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
