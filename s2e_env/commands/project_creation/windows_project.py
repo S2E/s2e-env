@@ -36,7 +36,7 @@ class WindowsProject(Project):
         super(WindowsProject, self).__init__('windows', bootstrap_template,
                                              's2e-config.windows.lua')
 
-    def _is_image_valid(self, target_arch, target_path, os_desc):
+    def _is_valid_image(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
     def _validate_config(self, config):
@@ -48,11 +48,11 @@ class WindowsDLLProject(WindowsProject):
     def __init__(self):
         super(WindowsDLLProject, self).__init__('bootstrap.windows_dll.sh')
 
-    def _is_image_valid(self, target_arch, target_path, os_desc):
+    def _is_valid_image(self, target_arch, target_path, os_desc):
         if not target_path.endswith('.dll'):
             raise CommandError('Invalid DLL name - requires .dll extension')
 
-        return super(WindowsDLLProject, self)._is_image_valid(target_arch, target_path, os_desc)
+        return super(WindowsDLLProject, self)._is_valid_image(target_arch, target_path, os_desc)
 
     def _validate_config(self, config):
         super(WindowsDLLProject, self)._validate_config(config)
@@ -77,7 +77,7 @@ class WindowsDriverProject(WindowsProject):
     def __init__(self):
         super(WindowsDriverProject, self).__init__('bootstrap.windows_driver.sh')
 
-    def _is_image_valid(self, target_arch, target_path, os_desc):
+    def _is_valid_image(self, target_arch, target_path, os_desc):
         # Windows drivers must match the OS's bit-ness
         return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
 

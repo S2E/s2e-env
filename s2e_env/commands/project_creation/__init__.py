@@ -29,12 +29,11 @@ import os
 import re
 import shutil
 
-from s2e_env import CONSTANTS
-from s2e_env.command import EnvCommand, CommandError
+from s2e_env.command import CommandError
 from s2e_env.commands.recipe import Command as RecipeCommand
 from s2e_env.manage import call_command
-from s2e_env.utils.images import ImageDownloader, get_image_templates, get_image_descriptor
 from s2e_env.utils.templates import render_template
+from .abstract_project import AbstractProject
 
 
 logger = logging.getLogger('new_project')
@@ -91,34 +90,26 @@ def _symlink_target_files(project_dir, files):
         os.symlink(f, os.path.join(project_dir, target_file))
 
 
-def _symlink_guestfs(project_dir, config):
+def _symlink_guestfs(project_dir, guestfs_path):
     """
     Create a symlink to the guestfs directory.
 
     Return ``True`` if the guestfs directory exists, or ``False`` otherwise.
     """
-    guestfs_path = config['guestfs_path']
     logger.info('Creating a symlink to %s', guestfs_path)
     os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))
 
     return True
 
 
-def _create_instructions(config):
+class Project(AbstractProject):
     """
-    Create instructions for the user on how to use their project.
-    """
-    instructions = render_template(config, 'instructions.txt')
-
-    # Due to how templates work, there may be many useless new lines, remove
-    # them here
-    return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)
-
-
-class Project(EnvCommand):
-    """
-    Helper class used by the ``new_project`` command to create a specific
-    project.
+    Base class used by the ``new_project`` command to create a specific
+    project. The ``make_project`` method builds up a configuration dictionary
+    that is then used to generate the required files for the project. CGC,
+    Linux and Windows projects extend this class. These projects implement
+    methods to validate the configuration dictionary and do basic static
+    analysis on the target.
     """
 
     def __init__(self, project_type, bootstrap_template, lua_template):
@@ -128,7 +119,7 @@ class Project(EnvCommand):
         self._bootstrap_template = bootstrap_template
         self._lua_template = lua_template
 
-    def handle(self, *args, **options):
+    def _make_config(self, *args, **options):
         # Check that the target files are valid
         target_files = options['target_files']
         if target_files:
@@ -148,7 +139,9 @@ class Project(EnvCommand):
         target_arch = options['target_arch']
 
         # Decide on the image to be used
-        img_desc = self._select_image(target_path, target_arch, options)
+        img_desc = self._select_image(target_path, target_arch,
+                                      options.get('image'),
+                                      options.get('download_image', False))
 
         # Check architecture consistency (if the target has been specified)
         if target_path and not is_valid_arch(target_arch, img_desc['os']):
@@ -161,8 +154,12 @@ class Project(EnvCommand):
         if not guestfs_path:
             logger.warn('No guestfs available. The VMI plugin may not run optimally')
 
-        # Create an empty project directory
-        project_dir = self._create_project_dir(target_path, options)
+        # Generate the name of the project directory. The default project name
+        # is the target program name without any file extension
+        project_name = options.get('name')
+        if not project_name:
+            project_name, _ = os.path.splitext(os.path.basename(target_path))
+        project_dir = self.env_path('projects', project_name)
 
         # Prepare the project configuration
         config = {
@@ -170,28 +167,29 @@ class Project(EnvCommand):
             'project_dir': project_dir,
             'project_type': self._project_type,
             'image': img_desc,
-            'target': os.path.basename(target_path) if target_path else None,
+            'target_path': target_path,
             'target_arch': target_arch,
-            'target_args': options['target_args'],
+            'target_args': options.get('target_args', []),
 
-            # This contains all the files that must be downloaded into the guest
-            'target_files': [os.path.basename(tf) for tf in target_files],
+            # This contains paths to all the files that must be downloaded into
+            # the guest
+            'target_files': target_files,
 
             # List of module names that go into ModuleExecutionDetector
-            'modules': options['modules'],
+            'modules': options.get('modules', []),
 
             # List of binaries that go into ProcessExecutionDetector. These are
             # normally executable files
             'processes': [os.path.basename(target_path)] if target_path else [],
 
             # Target arguments to be made symbolic
-            'sym_args': options['sym_args'],
+            'sym_args': options.get('sym_args', []),
 
             # See _create_bootstrap for an explanation of the @@ marker
-            'use_symb_input_file': '@@' in options['target_args'],
+            'use_symb_input_file': '@@' in options.get('target_args', []),
 
             # The use of seeds is specified on the command line
-            'use_seeds': options['use_seeds'],
+            'use_seeds': options.get('use_seeds', False),
             'seeds_dir': os.path.join(project_dir, 'seeds'),
 
             # The use of recipes is set by the specific project
@@ -219,15 +217,12 @@ class Project(EnvCommand):
 
             # This will add analysis overhead, so disable unless requested by
             # the user. Also enabled by default for Decree targets.
-            'enable_pov_generation': options['enable_pov_generation']
+            'enable_pov_generation': options.get('enable_pov_generation', False),
         }
 
         # Do some basic analysis on the target (if it exists)
         if target_path:
             self._analyze_target(target_path, config)
-
-        if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
-            os.mkdir(config['seeds_dir'])
 
         if config['enable_pov_generation']:
             config['use_recipes'] = True
@@ -236,23 +231,37 @@ class Project(EnvCommand):
         # config dictionary should NOT be modified
         self._validate_config(config)
 
+        return config
+
+    def _create(self, config, force=False):
+        project_dir = config['project_dir']
+
+        # Check if the project directory already exists
+        _check_project_dir(project_dir, force)
+
+        # Create the project directory
+        os.mkdir(project_dir)
+
+        if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
+            os.mkdir(config['seeds_dir'])
+
         # Create symlinks to the target files (if they exist)
-        if target_files:
-            _symlink_target_files(project_dir, target_files)
+        if config['target_files']:
+            _symlink_target_files(project_dir, config['target_files'])
 
         # Create a symlink to the guest tools directory
-        self._symlink_guest_tools(project_dir, config)
+        self._symlink_guest_tools(project_dir, config['image'])
 
         # Create a symlink to guestfs (if it exists)
-        if guestfs_path:
-            _symlink_guestfs(project_dir, config)
+        if config['guestfs_path']:
+            _symlink_guestfs(project_dir, config['guestfs_path'])
 
         # Render the templates
         self._create_launch_script(project_dir, config)
         self._create_lua_config(project_dir, config)
         self._create_bootstrap(project_dir, config)
 
-        # Record some basic information on the project
+        # Save the project configuration as JSON
         _save_json_description(project_dir, config)
 
         # Generate recipes for PoV generation
@@ -261,7 +270,7 @@ class Project(EnvCommand):
             call_command(RecipeCommand(), [], project=os.path.basename(project_dir))
 
         # Display messages/instructions to the user
-        display_marker_warning = target_path and \
+        display_marker_warning = config['target_path'] and \
                                  config['warn_input_file'] and \
                                  not (config['use_symb_input_file'] or config['sym_args'])
 
@@ -274,7 +283,7 @@ class Project(EnvCommand):
                            'Example: %s @@\n\n'
                            'You can also make arguments symbolic using the '
                            '``S2E_SYM_ARGS`` environment variable in the '
-                           'bootstrap file', target_path)
+                           'bootstrap file', config['target_path'])
 
         if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
             logger.warning('Seed files have been enabled, however you did not '
@@ -283,17 +292,12 @@ class Project(EnvCommand):
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
 
-        logger.success(_create_instructions(config))
+    def _create_instructions(self, config):
+        instructions = render_template(config, 'instructions.txt')
 
-    def _is_image_valid(self, target_arch, target_path, os_desc):
-        """
-        Validate a binary against a particular image description.
-
-        This validation may vary depending on the binary and image type.
-        Returns ``True`` if the binary is valid and ``False`` otherwise.
-        """
-        raise NotImplementedError('Subclasses of Project must provide an '
-                                  '_is_image_valid method')
+        # Due to how templates work, there may be many useless new lines,
+        # remove them here
+        return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)
 
     def _validate_config(self, config):
         """
@@ -339,9 +343,10 @@ class Project(EnvCommand):
         """
         logger.info('Creating S2E configuration')
 
+        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': config['target'],
+            'target': os.path.basename(target_path) if target_path else None,
             'target_lua_template': self._lua_template,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
@@ -352,7 +357,7 @@ class Project(EnvCommand):
             'has_guestfs': config['has_guestfs'],
             'guestfs_path': config['guestfs_path'],
             'recipes_dir': config['recipes_dir'],
-            'target_files': config['target_files'],
+            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
@@ -376,9 +381,10 @@ class Project(EnvCommand):
         parsed_args = ['${SYMB_FILE}' if arg == '@@' else arg
                        for arg in config['target_args']]
 
+        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': config['target'],
+            'target': os.path.basename(target_path) if target_path else None,
             'target_args': parsed_args,
             'sym_args': config['sym_args'],
             'target_bootstrap_template': self._bootstrap_template,
@@ -389,7 +395,7 @@ class Project(EnvCommand):
             'enable_pov_generation': config['enable_pov_generation'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
-            'target_files': config['target_files'],
+            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
@@ -397,98 +403,3 @@ class Project(EnvCommand):
         template = 'bootstrap.sh'
         script_path = os.path.join(project_dir, template)
         render_template(context, template, script_path)
-
-    def _create_project_dir(self, target_path, options):
-        project_name = options['name']
-        if not project_name:
-            # The default project name is the target program without any file
-            # extension
-            project_name, _ = os.path.splitext(os.path.basename(target_path))
-
-        project_dir = self.env_path('projects', project_name)
-
-        # Check if the project directory already exists
-        _check_project_dir(project_dir, options['force'])
-
-        # Create the project directory
-        os.mkdir(project_dir)
-
-        return project_dir
-
-    def _select_image(self, target_path, target_arch, options):
-        """
-        Select the image to use for this project.
-
-        If an image was specified, use it. Otherwise select an image to use
-        based on the target's architecture. If the image is not available, it
-        may be downloaded.
-
-        Returns:
-            A dictionary that describes the image that will be used, from
-            `$S2EDIR/source/guest-images/images.json`.
-        """
-        # Load the image JSON description. If it is not given, guess the image
-        image = options['image']
-        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        img_templates = get_image_templates(img_build_dir)
-
-        if not image:
-            image = self._guess_image(target_path, img_templates, target_arch)
-
-        return self._get_or_download_image(img_templates, image, options['download_image'])
-
-    def _guess_image(self, target_path, templates, target_arch):
-        """
-        At this stage, images may not exist, so we get the list of images
-        from images.json (in the guest-images repo) rather than from the images
-        folder.
-        """
-        logger.info('No image was specified (-i option). Attempting to guess '
-                    'a suitable image for a %s binary...', target_arch)
-
-        for k, v in templates.iteritems():
-            if self._is_image_valid(target_arch, target_path, v['os']):
-                logger.warning('Found %s, which looks suitable for this '
-                               'binary. Please use -i if you want to use '
-                               'another image', k)
-                return k
-
-        raise CommandError('No suitable image available for this binary')
-
-    def _get_or_download_image(self, templates, image, do_download=True):
-        img_path = self.image_path(image)
-
-        try:
-            return get_image_descriptor(img_path)
-        except CommandError:
-            if not do_download:
-                raise
-
-        logger.info('Image %s missing, attempting to download...', image)
-        image_downloader = ImageDownloader(templates)
-        image_downloader.download_images([image], self.image_path())
-
-        return get_image_descriptor(img_path)
-
-    def _select_guestfs(self, img_desc):
-        image_dir = os.path.dirname(img_desc['path'])
-        guestfs_path = self.image_path(image_dir, 'guestfs')
-
-        return guestfs_path if os.path.exists(guestfs_path) else None
-
-    def _symlink_guest_tools(self, project_dir, img_desc):
-        """
-        Create a symlink to the guest tools directory.
-
-        Args:
-            project_dir: The project directory.
-            img_desc: A dictionary that describes the image that will be used,
-                      from `$S2EDIR/source/guest-images/images.json`.
-        """
-        img_arch = img_desc['qemu_build']
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][img_arch])
-
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path,
-                   os.path.join(project_dir, 'guest-tools'))
