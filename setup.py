@@ -52,7 +52,7 @@ setup(
         'sh',
         'termcolor',
         'pytrie',
-        'pwntools'
+        'pwntools==3.12.0'
     ],
     packages=find_packages(),
     dependency_links=[
