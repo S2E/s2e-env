@@ -88,7 +88,7 @@ class Command(EnvCommand):
             # Run make
             if options['debug']:
                 logger.info('Building S2E (debug) in %s', build_dir)
-                self._make('all-debug', _out=sys.stdout, _err=sys.stderr, _fg=True)
+                self._make('install-debug', _out=sys.stdout, _err=sys.stderr, _fg=True)
             else:
                 logger.info('Building S2E (release) in %s', build_dir)
                 self._make('install', _out=sys.stdout, _err=sys.stderr, _fg=True)
