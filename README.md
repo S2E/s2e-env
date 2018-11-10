@@ -24,7 +24,7 @@ disassemblers include:
 
 # Install
 
-```
+```console
 git clone https://github.com/S2E/s2e-env.git
 cd s2e-env
 pip install . --process-dependency-links
@@ -34,6 +34,14 @@ If you wish to install `s2e-env` to a Python
 [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/),
 please create and activate this virtualenv before installing `s2e-env` with
 pip.
+
+# Tests
+
+Tests can be run via
+
+```console
+python setup.py test
+```
 
 # Configuring
 
