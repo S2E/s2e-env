@@ -42,7 +42,8 @@ fi
 QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
 LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
 
-cat >> gdb.ini <<EOF
+cat > gdb.ini <<EOF
+handle SIGUSR1 noprint
 handle SIGUSR2 noprint
 set disassembly-flavor intel
 set print pretty on
