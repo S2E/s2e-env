@@ -98,7 +98,8 @@ class DebugInfo(object):
         """
         To be implemented by clients
         """
-        raise NotImplementedError('This function must be implemented by subclasses')
+        raise NotImplementedError('Subclasses of DebugInfo must provide a '
+                                  'parse method')
 
     def parse_all_info(self):
         """

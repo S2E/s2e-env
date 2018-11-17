@@ -1,0 +1,142 @@
+"""
+Copyright (c) 2018 Adrian Herrera
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+
+import os
+from tempfile import gettempdir
+from unittest import TestCase
+
+from mock import MagicMock
+
+from s2e_env.commands.project_creation.cgc_project import CGCProject
+from . import DATA_DIR
+
+
+CGC_IMAGE_DESC = {
+    'path': os.path.join(gettempdir(), 'image.raw.s2e'),
+    'name': 'Debian i386 image with CGC kernel and user-space packages',
+    'image_group': 'linux',
+    'url': 'localhost',
+    'iso': {
+        'url': 'localhost'
+    },
+    'os': {
+        'name': 'cgc_debian',
+        'version': '9.2.1',
+        'arch': 'i386',
+        'build': '',
+        'binary_formats': ['decree']
+    },
+    'hw': {
+        'default_disk_size': '4G',
+        'default_snapshot_size': '256M',
+        'nic': 'e1000'
+    }
+}
+
+CADET_00001 = 'CADET_00001'
+CADET_00001_PATH = os.path.join(DATA_DIR, CADET_00001)
+
+
+class CGCProjectTestCase(TestCase):
+    def setUp(self):
+        self._cgc_project = CGCProject()
+        self._cgc_project._select_image = MagicMock(return_value=CGC_IMAGE_DESC)
+        self._cgc_project._env_dir = MagicMock(return_value=gettempdir())
+
+    def test_empty_project_config(self):
+        """Test empty CGC project creation."""
+        args = {
+            'image': 'cgc_debian-9.2.1-i386',
+            'name': 'test',
+            'target_files': [],
+            'target_arch': None,
+        }
+
+        config = self._cgc_project._make_config(**args)
+
+        # Assert that we have actually created a CGC project
+        self.assertEqual(config['project_type'], 'cgc')
+
+        # Assert that the projet has no target
+        self.assertIsNone(config['target_path'])
+        self.assertIsNone(config['target_arch'])
+        self.assertFalse(config['target_files'])
+
+        # Should be empty when no target is specified
+        self.assertFalse(config['processes'])
+
+        # CGC binaries have no input files
+        self.assertFalse(config['target_args'])
+        self.assertFalse(config['sym_args'])
+        self.assertFalse(config['use_symb_input_file'])
+        self.assertFalse(config['warn_input_file'])
+        self.assertFalse(config['warn_seeds'])
+
+        # CGC projects should always have POV generation, seeds and recipes
+        # enabled
+        self.assertTrue(config['enable_pov_generation'])
+        self.assertTrue(config['use_seeds'])
+        self.assertTrue(config['use_recipes'])
+
+        # CGC has its own test case generation system
+        self.assertFalse(config['use_test_case_generator'])
+
+    def test_cadet0001_project_config(self):
+        """
+        Test CGC project creation given a CGC binary and nothing else. No
+        image, project name, etc. is provided.
+        """
+        args = {
+            'target_files': [CADET_00001_PATH],
+            'target_arch': 'i386',
+        }
+
+        config = self._cgc_project._make_config(**args)
+
+        # Assert that we have actually created a CGC project
+        self.assertEqual(config['project_type'], 'cgc')
+
+        # Assert that the target is the one given (CADET_00001)
+        self.assertEqual(config['target_path'], CADET_00001_PATH)
+        self.assertEqual(config['target_arch'], 'i386')
+        self.assertListEqual(config['target_files'], [CADET_00001_PATH])
+        self.assertListEqual(config['processes'], [CADET_00001])
+
+        # Assert that the CGC image has been selected
+        self.assertDictEqual(config['image'], CGC_IMAGE_DESC)
+
+        # CGC binaries have no input files
+        self.assertFalse(config['target_args'])
+        self.assertFalse(config['sym_args'])
+        self.assertFalse(config['use_symb_input_file'])
+        self.assertFalse(config['warn_input_file'])
+        self.assertFalse(config['warn_seeds'])
+
+        # CGC projects should always have POV generation, seeds and recipes
+        # enabled
+        self.assertTrue(config['enable_pov_generation'])
+        self.assertTrue(config['use_seeds'])
+        self.assertTrue(config['use_recipes'])
+
+        # CGC has its own test case generation system
+        self.assertFalse(config['use_test_case_generator'])

@@ -171,7 +171,7 @@ class TraceEntry(object):
         ```
         """
         raise NotImplementedError('Subclasses of TraceEntry must provide a '
-                                  'serialize() method')
+                                  'serialize method')
 
 
 class TraceItemHeader(TraceEntry):
@@ -791,7 +791,7 @@ class TraceTestCase(TraceEntry):
         return TraceTestCase(data)
 
     def serialize(self):
-        raise NotImplementedError()
+        raise NotImplementedError('Unable to serialize trace test cases')
 
     def _read_test_case_item(self):
         name_size, data_size = struct.unpack(TraceTestCase.HEADER_FORMAT, self._data[:TraceTestCase.HEADER_SIZE])

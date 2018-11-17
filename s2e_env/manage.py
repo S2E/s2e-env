@@ -72,11 +72,11 @@ def call_command(command_name, *args, **options):
     unless the command object is required for further processing or testing.
     """
     if isinstance(command_name, BaseCommand):
-        # Command object passed in.
+        # Command object passed in
         command = command_name
         command_name = command.__class__.__module__.split('.')[-1]
     else:
-        # Load the command object by name.
+        # Load the command object by name
         command = load_command_class(command_name)
 
     # Simulate argument parsing to get the option defaults

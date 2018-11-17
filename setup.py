@@ -54,6 +54,9 @@ setup(
         'pytrie',
         'pwntools==3.12.0'
     ],
+    test_requires=[
+        'mock',
+    ],
     packages=find_packages(),
     dependency_links=[
         'git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+s2e',

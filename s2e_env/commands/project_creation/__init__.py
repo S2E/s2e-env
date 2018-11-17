@@ -29,83 +29,182 @@ import os
 import re
 import shutil
 
-from s2e_env import CONSTANTS
-from s2e_env.command import EnvCommand, CommandError
+from s2e_env.command import CommandError
 from s2e_env.commands.recipe import Command as RecipeCommand
-from s2e_env.utils.images import ImageDownloader, get_image_templates, get_image_descriptor
+from s2e_env.manage import call_command
 from s2e_env.utils.templates import render_template
-from .config import is_valid_arch
+from .abstract_project import AbstractProject
 
 
 logger = logging.getLogger('new_project')
 
 
-def _create_instructions(context):
-    ret = render_template(context, 'instructions.txt')
-    # Due to how templates work, there may be many useless new lines, remove
-    # them here
-    return re.sub(r'([\r\n][\r\n])+', r'\n\n', ret)
+def _check_project_dir(project_dir, force=False):
+    """
+    Check if a project directory with the given name already exists.
+
+    If such a project exists, only continue if the ``force`` flag has been
+    specified.
+    """
+    if not os.path.isdir(project_dir):
+        return
+
+    if force:
+        logger.info('\'%s\' already exists - removing',
+                    os.path.basename(project_dir))
+        shutil.rmtree(project_dir)
+    else:
+        raise CommandError('\'%s\' already exists. Either remove this '
+                           'project or use the force option' %
+                           os.path.basename(project_dir))
 
 
-class Project(EnvCommand):
+def is_valid_arch(target_arch, os_desc):
     """
-    Helper class used by the ``new_project`` command to create a specific
-    project.
+    Check that the image's architecture is consistent with the target binary.
     """
-    def __init__(self, cfg):
+    return not (target_arch == 'x86_64' and os_desc['arch'] != 'x86_64')
+
+
+def _save_json_description(project_dir, config):
+    """
+    Create a JSON description of the project.
+
+    This information can be used by other commands.
+    """
+    logger.info('Creating JSON description')
+
+    project_desc_path = os.path.join(project_dir, 'project.json')
+    with open(project_desc_path, 'w') as f:
+        s = json.dumps(config, sort_keys=True, indent=4)
+        f.write(s)
+
+
+def _symlink_target_files(project_dir, files):
+    """
+    Create symlinks to the files that compose the program.
+    """
+    for f in files:
+        logger.info('Creating a symlink to %s', f)
+        target_file = os.path.basename(f)
+        os.symlink(f, os.path.join(project_dir, target_file))
+
+
+def _symlink_guestfs(project_dir, guestfs_path):
+    """
+    Create a symlink to the guestfs directory.
+
+    Return ``True`` if the guestfs directory exists, or ``False`` otherwise.
+    """
+    logger.info('Creating a symlink to %s', guestfs_path)
+    os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))
+
+    return True
+
+
+class Project(AbstractProject):
+    """
+    Base class used by the ``new_project`` command to create a specific
+    project. The ``make_project`` method builds up a configuration dictionary
+    that is then used to generate the required files for the project. CGC,
+    Linux and Windows projects extend this class. These projects implement
+    methods to validate the configuration dictionary and do basic static
+    analysis on the target.
+    """
+
+    def __init__(self, project_type, bootstrap_template, lua_template):
         super(Project, self).__init__()
 
-        self._configurator = cfg()
-        self._target_path = None
-        self._project_dir = None
-        self._img_json = None
+        self._project_type = project_type
+        self._bootstrap_template = bootstrap_template
+        self._lua_template = lua_template
 
-    def handle(self, *args, **options):
-        self._validate_and_create_project(options)
+    def _make_config(self, *args, **options):
+        # Check that the target files are valid
+        target_files = options['target_files']
+        if target_files:
+            for tf in target_files:
+                if not os.path.isfile(tf):
+                    raise CommandError('Target file %s is not valid' % tf)
+        else:
+            logger.warn('Creating a project without a target file. You must '
+                        'manually edit bootstrap.sh')
 
-        # Prepare the configuration for file templates
+        # The target program that will be executed is the first target file
+        if target_files:
+            target_path = target_files[0]
+        else:
+            target_path = None
+
+        target_arch = options['target_arch']
+
+        # Decide on the image to be used
+        img_desc = self._select_image(target_path, target_arch,
+                                      options.get('image'),
+                                      options.get('download_image', False))
+
+        # Check architecture consistency (if the target has been specified)
+        if target_path and not is_valid_arch(target_arch, img_desc['os']):
+            raise CommandError('Binary is %s while VM image is %s. Please '
+                               'choose another image' % (target_arch,
+                                                         img_desc['os']['arch']))
+
+        # Determine if guestfs is available for this image
+        guestfs_path = self._select_guestfs(img_desc)
+        if not guestfs_path:
+            logger.warn('No guestfs available. The VMI plugin may not run optimally')
+
+        # Generate the name of the project directory. The default project name
+        # is the target program name without any file extension
+        project_name = options.get('name')
+        if not project_name:
+            project_name, _ = os.path.splitext(os.path.basename(target_path))
+        project_dir = self.env_path('projects', project_name)
+
+        # Prepare the project configuration
         config = {
             'creation_time': str(datetime.datetime.now()),
-            'project_dir': self._project_dir,
-            'project_type': self._configurator.PROJECT_TYPE,
-            'image': self._img_json,
-            'target': os.path.basename(self._target_path) if self._target_path else None,
-            'target_path': self._target_path,
-            'target_arch': options['target_arch'],
-            'target_args': options['target_args'],
+            'project_dir': project_dir,
+            'project_type': self._project_type,
+            'image': img_desc,
+            'target_path': target_path,
+            'target_arch': target_arch,
+            'target_args': options.get('target_args', []),
 
-            # These contain all the files that must be downloaded into the guest
-            'target_files': [],
+            # This contains paths to all the files that must be downloaded into
+            # the guest
+            'target_files': target_files,
 
             # List of module names that go into ModuleExecutionDetector
-            'modules': options['modules'],
+            'modules': options.get('modules', []),
 
-            # List of binaries that go into ProcessExecutionDetector
-            # These are normally executable files
-            'processes': options['processes'],
+            # List of binaries that go into ProcessExecutionDetector. These are
+            # normally executable files
+            'processes': [os.path.basename(target_path)] if target_path else [],
 
-            'sym_args': options['sym_args'],
+            # Target arguments to be made symbolic
+            'sym_args': options.get('sym_args', []),
 
             # See _create_bootstrap for an explanation of the @@ marker
-            'use_symb_input_file': '@@' in options['target_args'],
+            'use_symb_input_file': '@@' in options.get('target_args', []),
 
             # The use of seeds is specified on the command line
-            'use_seeds': options['use_seeds'],
-            'seeds_dir': os.path.join(self._project_dir, 'seeds'),
+            'use_seeds': options.get('use_seeds', False),
+            'seeds_dir': os.path.join(project_dir, 'seeds'),
 
-            # The use of recipes is set by the configurator
+            # The use of recipes is set by the specific project
             'use_recipes': False,
-            'recipes_dir': os.path.join(self._project_dir, 'recipes'),
+            'recipes_dir': os.path.join(project_dir, 'recipes'),
 
             # The use of guestfs is dependent on the specific image
-            'has_guestfs': True,
-            'guestfs_dir': os.path.join(self._project_dir, 'guestfs'),
+            'has_guestfs': guestfs_path is not None,
+            'guestfs_path': guestfs_path,
 
-            # These options are determined by the configurator's analysis
+            # These options are determined by a static analysis of the target
             'dynamically_linked': False,
             'modelled_functions': False,
 
-            # Configurators can silence warnings in case they have specific
+            # Specific projects can silence warnings in case they have specific
             # hard-coded options
             'warn_seeds': True,
             'warn_input_file': True,
@@ -116,31 +215,75 @@ class Project(EnvCommand):
             'use_test_case_generator': True,
             'use_fault_injection': False,
 
-            # This will add analysis overhead, so disable unless requested by the user.
-            # Also enabled by default for Decree targets.
-            'enable_pov_generation': options['enable_pov_generation']
+            # This will add analysis overhead, so disable unless requested by
+            # the user. Also enabled by default for Decree targets.
+            'enable_pov_generation': options.get('enable_pov_generation', False),
         }
 
-        for tf in options['target_files']:
-            if not os.path.exists(tf):
-                raise CommandError('%s does not exist' % tf)
+        # Do some basic analysis on the target (if it exists)
+        if target_path:
+            self._analyze_target(target_path, config)
 
-            config['target_files'].append(os.path.basename(tf))
+        if config['enable_pov_generation']:
+            config['use_recipes'] = True
 
-        # The configurator may modify the config dictionary here
-        self._configurator.validate_configuration(config)
+        # The config dictionary may be modified here. After this point the
+        # config dictionary should NOT be modified
+        self._validate_config(config)
 
-        display_marker_warning = self._target_path and \
+        return config
+
+    def _create(self, config, force=False):
+        project_dir = config['project_dir']
+
+        # Check if the project directory already exists
+        _check_project_dir(project_dir, force)
+
+        # Create the project directory
+        os.mkdir(project_dir)
+
+        if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
+            os.mkdir(config['seeds_dir'])
+
+        # Create symlinks to the target files (if they exist)
+        if config['target_files']:
+            _symlink_target_files(project_dir, config['target_files'])
+
+        # Create a symlink to the guest tools directory
+        self._symlink_guest_tools(project_dir, config['image'])
+
+        # Create a symlink to guestfs (if it exists)
+        if config['guestfs_path']:
+            _symlink_guestfs(project_dir, config['guestfs_path'])
+
+        # Render the templates
+        self._create_launch_script(project_dir, config)
+        self._create_lua_config(project_dir, config)
+        self._create_bootstrap(project_dir, config)
+
+        # Save the project configuration as JSON
+        _save_json_description(project_dir, config)
+
+        # Generate recipes for PoV generation
+        if config['use_recipes']:
+            os.makedirs(config['recipes_dir'])
+            call_command(RecipeCommand(), [], project=os.path.basename(project_dir))
+
+        # Display messages/instructions to the user
+        display_marker_warning = config['target_path'] and \
                                  config['warn_input_file'] and \
                                  not (config['use_symb_input_file'] or config['sym_args'])
 
         if display_marker_warning:
-            logger.warning('You did not specify the input file marker @@. This marker is automatically substituted by '
-                           'a file with symbolic content. You will have to manually edit the bootstrap file in order '
-                           'to run the program on multiple paths.\n\n'
+            logger.warning('You did not specify the input file marker @@. '
+                           'This marker is automatically substituted by a '
+                           'file with symbolic content. You will have to '
+                           'manually edit the bootstrap file in order to run '
+                           'the program on multiple paths.\n\n'
                            'Example: %s @@\n\n'
-                           'You can also make arguments symbolic using the ``S2E_SYM_ARGS`` environment variable in '
-                           'the bootstrap file', self._target_path)
+                           'You can also make arguments symbolic using the '
+                           '``S2E_SYM_ARGS`` environment variable in the '
+                           'bootstrap file', config['target_path'])
 
         if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
             logger.warning('Seed files have been enabled, however you did not '
@@ -149,75 +292,62 @@ class Project(EnvCommand):
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
 
-        if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
-            os.mkdir(config['seeds_dir'])
+    def _create_instructions(self, config):
+        instructions = render_template(config, 'instructions.txt')
 
-        if config['enable_pov_generation']:
-            config['use_recipes'] = True
+        # Due to how templates work, there may be many useless new lines,
+        # remove them here
+        return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)
 
-        if self._target_path:
-            # Do some basic analysis on the target
-            self._configurator.analyze(config)
+    def _validate_config(self, config):
+        """
+        Validate a project's configuration options.
 
-            # Create a symlink to the target program
-            self._symlink_target_files(options['target_files'])
+        This method may modify values in the ``config`` dictionary. If an
+        invalid configuration is found, a ``CommandError` should be thrown.
+        """
+        pass
 
-        # Create a symlink to the guest tools directory
-        self._symlink_guest_tools()
+    def _analyze_target(self, target_path, config):
+        """
+        Perform static analysis on the target binary.
 
-        # Create a symlink to guestfs (if it exists)
-        if not self._symlink_guestfs():
-            config['has_guestfs'] = False
+        The results of this analysis can be used to add and/or modify values in
+        the ``config`` dictionary.
+        """
+        pass
 
-        # Render the templates
-        logger.info('Creating launch script')
-        self._create_launch_script(config)
-
-        logger.info('Creating S2E configuration')
-        self._create_lua_config(config)
-
-        logger.info('Creating S2E bootstrap script')
-        self._create_bootstrap(config)
-
-        # Record some basic information on the project
-        self._save_json_description(config)
-
-        if config['use_recipes']:
-            os.makedirs(config['recipes_dir'])
-            project_name = os.path.basename(self._project_dir)
-            cmd = RecipeCommand()
-            cmd.handle_common_args(env=options['env'], project=project_name)
-            cmd.handle()
-
-        # Return the instructions to the user
-        logger.success(_create_instructions(config))
-
-    def _create_launch_script(self, config):
+    def _create_launch_script(self, project_dir, config):
         """
         Create the S2E launch script.
         """
-        template = 'launch-s2e.sh'
-        script_path = os.path.join(self._project_dir, template)
+        logger.info('Creating launch script')
+
         context = {
             'creation_time': config['creation_time'],
             'env_dir': self.env_path(),
             'rel_image_path': os.path.relpath(config['image']['path'], self.env_path()),
-            'qemu_arch': self._qemu_arch,
+            'qemu_arch': config['image']['qemu_build'],
             'qemu_memory': config['image']['memory'],
             'qemu_snapshot': config['image']['snapshot'],
             'qemu_extra_flags': config['image']['qemu_extra_flags'],
         }
 
+        template = 'launch-s2e.sh'
+        script_path = os.path.join(project_dir, template)
         render_template(context, template, script_path, executable=True)
 
-    def _create_lua_config(self, config):
+    def _create_lua_config(self, project_dir, config):
         """
         Create the S2E Lua config.
         """
+        logger.info('Creating S2E configuration')
+
+        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': config['target'],
-            'target_lua_template': self._configurator.LUA_TEMPLATE,
+            'target': os.path.basename(target_path) if target_path else None,
+            'target_lua_template': self._lua_template,
             'project_dir': config['project_dir'],
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
@@ -225,21 +355,23 @@ class Project(EnvCommand):
             'enable_pov_generation': config['enable_pov_generation'],
             'seeds_dir': config['seeds_dir'],
             'has_guestfs': config['has_guestfs'],
-            'guestfs_dir': config['guestfs_dir'],
+            'guestfs_path': config['guestfs_path'],
             'recipes_dir': config['recipes_dir'],
-            'target_files': config['target_files'],
+            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
 
         for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
-            output_path = os.path.join(self._project_dir, f)
+            output_path = os.path.join(project_dir, f)
             render_template(context, f, output_path)
 
-    def _create_bootstrap(self, config):
+    def _create_bootstrap(self, project_dir, config):
         """
         Create the S2E bootstrap script.
         """
+        logger.info('Creating S2E bootstrap script')
+
         # The target arguments are specified using a format similar to the
         # American Fuzzy Lop fuzzer. Options are specified as normal, however
         # for programs that take input from a file, '@@' is used to mark the
@@ -249,13 +381,13 @@ class Project(EnvCommand):
         parsed_args = ['${SYMB_FILE}' if arg == '@@' else arg
                        for arg in config['target_args']]
 
-        template = 'bootstrap.sh'
+        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': config['target'],
+            'target': os.path.basename(target_path) if target_path else None,
             'target_args': parsed_args,
             'sym_args': config['sym_args'],
-            'target_bootstrap_template': self._configurator.BOOTSTRAP_TEMPLATE,
+            'target_bootstrap_template': self._bootstrap_template,
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
@@ -263,167 +395,11 @@ class Project(EnvCommand):
             'enable_pov_generation': config['enable_pov_generation'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
-            'target_files': config['target_files'],
+            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
 
-        script_path = os.path.join(self._project_dir, template)
+        template = 'bootstrap.sh'
+        script_path = os.path.join(project_dir, template)
         render_template(context, template, script_path)
-
-    def _validate_and_create_project(self, options):
-        self._target_path = options['target']
-        if not self._target_path:
-            logger.warn('Creating a project without a target file, you will have to manually edit bootstrap.sh')
-
-        project_name = options['name']
-
-        if self._target_path:
-            # Check that the analysis target is valid
-            if not os.path.isfile(self._target_path):
-                raise CommandError('Cannot analyze %s because it does not seem to '
-                                   'exist' % self._target_path)
-
-            # The default project name is the target program to be analyzed
-            # (without any file extension)
-            if not project_name:
-                project_name, _ = \
-                    os.path.splitext(os.path.basename(self._target_path))
-
-        self._project_dir = self.env_path('projects', project_name)
-
-        # Load the image JSON description. If it is not given, guess the image
-        image = options['image']
-        img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        templates = get_image_templates(img_build_dir)
-
-        if not image:
-            image = self._guess_image(templates, options['target_arch'])
-
-        self._img_json = self._get_or_download_image(templates, image, options['download_image'])
-
-        if self._target_path:
-            # Check architecture consistency
-            if not is_valid_arch(options['target_arch'], self._img_json['os']):
-                raise CommandError('Binary is x86_64 while VM image is %s. Please '
-                                   'choose another image' % self._img_json['os']['arch'])
-
-        # Check if the project dir already exists
-        # Do this after all checks have completed
-        self._check_project_dir(options['force'])
-
-        # Create the project directory
-        os.mkdir(self._project_dir)
-
-    def _guess_image(self, templates, target_arch):
-        """
-        At this stage, images may not exist, so we get the list of images
-        from images.json (in the guest-images repo) rather than from the images
-        folder.
-        """
-        logger.info('No image was specified (-i option). Attempting to guess '
-                    'a suitable image for a %s binary', target_arch)
-
-        for k, v in templates.iteritems():
-            if self._configurator.is_valid_binary(target_arch, self._target_path, v['os']):
-                logger.warning('Found %s, which looks suitable for this '
-                               'binary. Please use -i if you want to use '
-                               'another image', k)
-                return k
-
-        raise CommandError('No suitable image available for this binary')
-
-    def _get_or_download_image(self, templates, image, do_download=True):
-        img_json_path = self.image_path(image)
-
-        try:
-            return get_image_descriptor(img_json_path)
-        except CommandError:
-            if not do_download:
-                raise
-
-        logger.info('Image %s missing, attempting to download...', image)
-        image_downloader = ImageDownloader(templates)
-        image_downloader.download_images([image], self.image_path())
-
-        return get_image_descriptor(img_json_path)
-
-    def _check_project_dir(self, force=False):
-        """
-        Check if a project dir with the given name already exists.
-
-        If such a project exists, only continue if the ``force`` flag has been
-        specified.
-        """
-        if not os.path.isdir(self._project_dir):
-            return
-
-        if force:
-            logger.info('\'%s\' already exists - removing',
-                        os.path.basename(self._project_dir))
-            shutil.rmtree(self._project_dir)
-        else:
-            raise CommandError('\'%s\' already exists. Either remove this '
-                               'project or use the force option' %
-                               os.path.basename(self._project_dir))
-
-    def _save_json_description(self, config):
-        """
-        Create a JSON description of the project.
-
-        This information can be used by other commands.
-        """
-        logger.info('Creating JSON description')
-        project_desc_path = os.path.join(self._project_dir, 'project.json')
-        with open(project_desc_path, 'w') as f:
-            s = json.dumps(config, sort_keys=True, indent=4)
-            f.write(s)
-
-    @property
-    def _qemu_arch(self):
-        """
-        The architecture is determined by the QEMU executable used to build the
-        image.
-        """
-        return self._img_json['qemu_build']
-
-    def _symlink_target_files(self, files):
-        """
-        Create a symlinks to the files that compose the program.
-        """
-        for f in files:
-            logger.info('Creating a symlink to %s', f)
-            target_file = os.path.basename(f)
-            os.symlink(f, os.path.join(self._project_dir, target_file))
-
-    def _symlink_guest_tools(self):
-        """
-        Create a symlink to the guest tools directory.
-        """
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][self._qemu_arch])
-
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path,
-                   os.path.join(self._project_dir, 'guest-tools'))
-
-    def _symlink_guestfs(self):
-        """
-        Create a symlink to the guestfs directory.
-
-        Return ``True`` if the guestfs directory exists, or ``False``
-        otherwise.
-        """
-        image_name = os.path.dirname(self._img_json['path'])
-        guestfs_path = self.image_path(image_name, 'guestfs')
-
-        if not os.path.exists(guestfs_path):
-            logger.warn('%s does not exist, the VMI plugin may not run optimally',
-                        guestfs_path)
-            return False
-
-        logger.info('Creating a symlink to %s', guestfs_path)
-        os.symlink(guestfs_path,
-                   os.path.join(self._project_dir, 'guestfs'))
-
-        return True

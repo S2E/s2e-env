@@ -29,10 +29,10 @@ import re
 from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.project_creation import Project
-from s2e_env.commands.project_creation.config import \
-    CGCProjectConfiguration, LinuxProjectConfiguration, WindowsProjectConfiguration, WindowsDLLProjectConfiguration, \
-    WindowsDriverProjectConfiguration
+from s2e_env.commands.project_creation.abstract_project import AbstractProject
+from s2e_env.commands.project_creation.cgc_project import CGCProject
+from s2e_env.commands.project_creation.linux_project import LinuxProject
+from s2e_env.commands.project_creation.windows_project import WindowsProject, WindowsDLLProject, WindowsDriverProject
 from s2e_env.infparser.driver import Driver
 from s2e_env.manage import call_command
 
@@ -53,15 +53,11 @@ MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
 DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
 
-PROJECT_CONFIGS = {
-    'cgc': CGCProjectConfiguration,
-    'linux': LinuxProjectConfiguration,
-    'windows': WindowsProjectConfiguration
+PROJECT_CLASSES = {
+    'cgc': CGCProject,
+    'linux': LinuxProject,
+    'windows': WindowsProject,
 }
-
-
-def _get_configs():
-    return PROJECT_CONFIGS.keys()
 
 
 def _parse_sym_args(sym_args_str):
@@ -87,36 +83,43 @@ def _parse_sym_args(sym_args_str):
     return sym_args
 
 
-def get_arch(target_path):
-    # Resolve possible symlinks
-    target_path = os.path.realpath(target_path)
+def _get_arch(target_path):
+    """
+    Check that the given target is supported by S2E.
 
+    The target's magic is checked to see if it is a supported file type (e.g.
+    ELF, PE, etc.). The architecture that the target was compiled for (e.g.
+    i386, x64, etc.) is also checked.
+
+    Returns:
+        A tuple containing the target's architecture and a project class is
+        returned.
+    """
     default_magic = Magic()
     magic_checks = [
-        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProjectConfiguration, 'i386'),
-        (default_magic, ELF32_REGEX, LinuxProjectConfiguration, 'i386'),
-        (default_magic, ELF64_REGEX, LinuxProjectConfiguration, 'x86_64'),
-        (default_magic, DLL32_REGEX, WindowsDLLProjectConfiguration, 'i386'),
-        (default_magic, DLL64_REGEX, WindowsDLLProjectConfiguration, 'x86_64'),
-        (default_magic, PE32_REGEX, WindowsProjectConfiguration, 'i386'),
-        (default_magic, PE64_REGEX, WindowsProjectConfiguration, 'x86_64'),
-        (default_magic, MSDOS_REGEX, WindowsProjectConfiguration, 'i386')
+        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386'),
+        (default_magic, ELF32_REGEX, LinuxProject, 'i386'),
+        (default_magic, ELF64_REGEX, LinuxProject, 'x86_64'),
+        (default_magic, DLL32_REGEX, WindowsDLLProject, 'i386'),
+        (default_magic, DLL64_REGEX, WindowsDLLProject, 'x86_64'),
+        (default_magic, PE32_REGEX, WindowsProject, 'i386'),
+        (default_magic, PE64_REGEX, WindowsProject, 'x86_64'),
+        (default_magic, MSDOS_REGEX, WindowsProject, 'i386')
     ]
 
     # Check the target program against the valid file types
-    for magic_check, regex, proj_config_class, arch in magic_checks:
+    for magic_check, regex, proj_class, arch in magic_checks:
         magic = magic_check.from_file(target_path)
         matches = regex.match(magic)
 
-        # If we find a match, create that project. The user instructions
-        # are returned
+        # If we find a match, create that project
         if matches:
-            return arch, proj_config_class
+            return arch, proj_class
 
     return None, None
 
 
-def _gen_win_driver_project(target_path, file_paths, *args, **options):
+def _handle_win_driver_project(target_path, file_paths, *args, **options):
     first_sys_file = None
     for f in file_paths:
         if f.endswith('.sys'):
@@ -125,28 +128,28 @@ def _gen_win_driver_project(target_path, file_paths, *args, **options):
     # TODO: prompt the user to select the right driver
     if not first_sys_file:
         raise CommandError('Could not find any *.sys file in the INF file. '
-                           'Make sure the INF file is valid and belongs to a Windows driver.')
+                           'Make sure the INF file is valid and belongs to a '
+                           'Windows driver')
 
-    # Pick the architecture of the first sys file
-    arch, _ = get_arch(first_sys_file)
-    if arch is None:
-        raise CommandError('Could not determine architecture for %s' % first_sys_file)
+    # Determine the architecture of the first sys file
+    first_sys_file = os.path.realpath(first_sys_file)
+    arch, _ = _get_arch(first_sys_file)
+    if not arch:
+        raise CommandError('Could not determine architecture for %s' %
+                           first_sys_file)
 
-    options['target'] = target_path
-    options['target_arch'] = arch
-
-    # All the files to download into the guest.
     options['target_files'] = list(set([target_path] + file_paths))
+    options['target_arch'] = arch
 
     # TODO: support multiple kernel drivers
     options['modules'] = [(os.path.basename(first_sys_file), True)]
-    options['processes'] = []
 
-    call_command(Project(WindowsDriverProjectConfiguration), *args, **options)
+    call_command(WindowsDriverProject(), *args, **options)
 
 
-def _handle_inf(target_path, *args, **options):
+def _extract_inf_files(target_path):
     logger.info('Detected Windows INF file, attempting to create a driver project...')
+
     driver = Driver(target_path)
     driver.analyze()
     driver_files = driver.get_files()
@@ -169,70 +172,66 @@ def _handle_inf(target_path, *args, **options):
         logger.info('    %s', full_path)
         file_paths.append(full_path)
 
-    _gen_win_driver_project(target_path, file_paths, *args, **options)
+    return file_paths
 
 
-def _handle_sys(target_path, *args, **options):
+def _extract_sys_files(target_path):
     logger.info('Detected Windows SYS file, attempting to create a driver project...')
-    _gen_win_driver_project(target_path, [target_path], *args, **options)
+    return [target_path]
 
 
-def _handle_generic_target(target_path, *args, **options):
-    arch, proj_config_class = get_arch(target_path)
+def _handle_generic_project(target_path, *args, **options):
+    arch, proj_class = _get_arch(target_path)
     if not arch:
         raise CommandError('%s is not a valid target for S2E analysis' % target_path)
 
-    options['target'] = target_path
     options['target_files'] = [target_path]
     options['target_arch'] = arch
 
-    # The module list is a list of tuples where the first element is
-    # the module name and the second element is True if the module is
-    # a kernel module
+    # The module list is a list of tuples where the first element is the module
+    # name and the second element is True if the module is a kernel module
     options['modules'] = [(os.path.basename(target_path), False)]
 
-    options['processes'] = []
-    if not isinstance(proj_config_class, WindowsDLLProjectConfiguration):
-        options['processes'].append(os.path.basename(target_path))
-
-    call_command(Project(proj_config_class), *args, **options)
+    call_command(proj_class(), *args, **options)
 
 
-def _handle_with_file(*args, **options):
-    # Need an absolute path for the target in order to simplify
-    # symlink creation.
-    target_path = os.path.realpath(options['target'])
-
-    # Check that the target actually exists
+def _handle_with_file(target_path, *args, **options):
+    # Check that the target is a valid file
     if not os.path.isfile(target_path):
-        raise CommandError('Target %s does not exist' % target_path)
+        raise CommandError('Target %s is not valid' % target_path)
 
     if target_path.endswith('.inf'):
         # Don't call realpath on an inf file. Doing so will force
         # lookup of binary files in the same directory as the actual inf file.
-        _handle_inf(target_path, *args, **options)
+        file_paths = _extract_inf_files(target_path)
+        _handle_win_driver_project(target_path, file_paths)
     elif target_path.endswith('.sys'):
         target_path = os.path.realpath(target_path)
-        _handle_sys(target_path, *args, **options)
+        file_paths = _extract_sys_files(target_path, *args, **options)
+        _handle_win_driver_project(target_path, file_paths, *args, **options)
     else:
         target_path = os.path.realpath(target_path)
-        _handle_generic_target(target_path, *args, **options)
+        _handle_generic_project(target_path, *args, **options)
 
 
 def _handle_empty_project(*args, **options):
     if not options['no_target']:
-        raise CommandError('No target binary specified. Use the --no-target option to create an empty project.')
+        raise CommandError('No target binary specified. Use the -m option to '
+                           'create an empty project')
 
     if not options['image']:
-        raise CommandError('An empty project requires a VM image. Use the -i option to specify the image.')
+        raise CommandError('An empty project requires a VM image. Use the -i '
+                           'option to specify the image')
 
     if not options['name']:
-        raise CommandError('Project name missing. Use the -n option to specify one.')
+        raise CommandError('An empty project requires a name. Use the -n '
+                           'option to specify one')
 
-    if options['type'] not in _get_configs():
-        raise CommandError('The project type is invalid. Please use %s for the --type option.' % _get_configs())
+    project_types = PROJECT_CLASSES.keys()
+    if options['type'] not in project_types:
+        raise CommandError('An empty project requires a type. Use the -t '
+                           'option and specify one from %s' % project_types)
 
-    options['target'] = None
     options['target_files'] = []
     options['target_arch'] = None
 
@@ -240,9 +239,9 @@ def _handle_empty_project(*args, **options):
     # the module name and the second element is True if the module is
     # a kernel module
     options['modules'] = []
-    options['processes'] = []
 
-    call_command(Project(PROJECT_CONFIGS[options['type']]), *args, **options)
+    project = PROJECT_CLASSES[options['type']]
+    call_command(project(), *args, **options)
 
 
 class Command(EnvCommand):
@@ -265,7 +264,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-n', '--name', required=False, default=None,
                             help='The name of the project. Defaults to the '
-                                 'name of the target program.')
+                                 'name of the target program')
 
         parser.add_argument('-i', '--image', required=False, default=None,
                             help='The name of an image in the ``images`` '
@@ -276,13 +275,13 @@ class Command(EnvCommand):
                             action='store_true',
                             help='Download a suitable image if it is not available')
 
-        parser.add_argument('--no-target', required=False, default=False,
+        parser.add_argument('-m', '--no-target', required=False, default=False,
                             action='store_true',
-                            help='Create a bare targetless project, when no binary is needed')
+                            help='Create an empty, target-less project. Used when no binary is needed')
 
-        parser.add_argument('--type', required=False, default=None,
+        parser.add_argument('-t', '--type', required=False, default=None,
                             help='Project type (%s), valid only when creating empty projects' %
-                            ','.join(_get_configs()))
+                            ','.join(PROJECT_CLASSES.keys()))
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
@@ -290,7 +289,7 @@ class Command(EnvCommand):
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
-        parser.add_argument('--enable-pov-generation', action='store_true', default=False,
+        parser.add_argument('--enable-pov-generation', action='store_true',
                             help='Enables PoV generation')
 
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
@@ -302,7 +301,17 @@ class Command(EnvCommand):
                                  'exists, replace it')
 
     def handle(self, *args, **options):
-        if options['target']:
-            _handle_with_file(*args, **options)
+        # The 'project_class' option is not exposed as a command-line argument:
+        # it is typically used when creating a custom project programatically.
+        # It provides a class that is instantiated with the current
+        # command-line arguments and options
+        proj_class = options.get('project_class')
+        if proj_class:
+            if not issubclass(proj_class, AbstractProject):
+                raise CommandError('Custom projects must be a subclass of '
+                                   'AbstractProject')
+            call_command(proj_class(), *args, **options)
+        elif options['target']:
+            _handle_with_file(options.pop('target'), *args, **options)
         else:
             _handle_empty_project(*args, **options)
