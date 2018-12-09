@@ -27,7 +27,7 @@ from unittest import TestCase
 from s2e_env.analysis.elf import ELFAnalysis
 
 
-CAT_X86_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'cat')
+CAT_X86_PATH = os.path.join(os.path.dirname(__file__), '..', 'dat', 'cat')
 
 
 class ELFTestCase(TestCase):
