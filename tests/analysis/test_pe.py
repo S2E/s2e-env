@@ -27,7 +27,7 @@ from unittest import TestCase
 from s2e_env.analysis.pe import PEAnalysis
 
 
-MYPUTS_DLL_X64_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'myputs.dll')
+MYPUTS_DLL_X64_PATH = os.path.join(os.path.dirname(__file__), '..', 'dat', 'myputs.dll')
 
 
 class PETestCase(TestCase):
