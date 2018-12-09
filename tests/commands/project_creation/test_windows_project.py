@@ -142,9 +142,9 @@ class WindowsProjectTestCase(TestCase):
 
     def test_scanner_driver_7sp1ent_x64_project_config(self):
         """Test x64 driver project creation."""
-        file_paths = _extract_inf_files(SCANNER_INF_PATH)
+        driver_files = _extract_inf_files(SCANNER_INF_PATH)
         args = {
-            'target_files': list(set([SCANNER_INF_PATH] + file_paths)),
+            'target_files': [SCANNER_INF_PATH] + driver_files,
             'target_arch': 'x86_64',
         }
 

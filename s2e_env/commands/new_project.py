@@ -119,9 +119,9 @@ def _get_arch(target_path):
     return None, None
 
 
-def _handle_win_driver_project(target_path, file_paths, *args, **options):
+def _handle_win_driver_project(target_path, driver_files, *args, **options):
     first_sys_file = None
-    for f in file_paths:
+    for f in driver_files:
         if f.endswith('.sys'):
             first_sys_file = f
 
@@ -138,7 +138,7 @@ def _handle_win_driver_project(target_path, file_paths, *args, **options):
         raise CommandError('Could not determine architecture for %s' %
                            first_sys_file)
 
-    options['target_files'] = list(set([target_path] + file_paths))
+    options['target_files'] = [target_path] + driver_files
     options['target_arch'] = arch
 
     # TODO: support multiple kernel drivers
@@ -148,8 +148,6 @@ def _handle_win_driver_project(target_path, file_paths, *args, **options):
 
 
 def _extract_inf_files(target_path):
-    logger.info('Detected Windows INF file, attempting to create a driver project...')
-
     driver = Driver(target_path)
     driver.analyze()
     driver_files = driver.get_files()
@@ -172,12 +170,7 @@ def _extract_inf_files(target_path):
         logger.info('    %s', full_path)
         file_paths.append(full_path)
 
-    return file_paths
-
-
-def _extract_sys_files(target_path):
-    logger.info('Detected Windows SYS file, attempting to create a driver project...')
-    return [target_path]
+    return list(set(file_paths))
 
 
 def _handle_generic_project(target_path, *args, **options):
@@ -203,14 +196,18 @@ def _handle_with_file(target_path, *args, **options):
     if target_path.endswith('.inf'):
         # Don't call realpath on an inf file. Doing so will force
         # lookup of binary files in the same directory as the actual inf file.
-        file_paths = _extract_inf_files(target_path)
-        _handle_win_driver_project(target_path, file_paths)
+        logger.info('Detected Windows INF file, attempting to create a driver project...')
+        driver_files = _extract_inf_files(target_path)
+
+        _handle_win_driver_project(target_path, driver_files, *args, **options)
     elif target_path.endswith('.sys'):
+        logger.info('Detected Windows SYS file, attempting to create a driver project...')
         target_path = os.path.realpath(target_path)
-        file_paths = _extract_sys_files(target_path, *args, **options)
-        _handle_win_driver_project(target_path, file_paths, *args, **options)
+
+        _handle_win_driver_project(target_path, [], *args, **options)
     else:
         target_path = os.path.realpath(target_path)
+
         _handle_generic_project(target_path, *args, **options)
 
 
