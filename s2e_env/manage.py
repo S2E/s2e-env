@@ -36,6 +36,7 @@ import importlib
 import sys
 
 from s2e_env.command import BaseCommand, CommandError, CommandParser
+from s2e_env.utils import log
 
 
 COMMANDS_DIR = os.path.join(os.path.dirname(__file__), 'commands')
@@ -184,6 +185,7 @@ def main():
 
     Use the command manager to execute a command.
     """
+    log.configure_logging()
     manager = CommandManager(sys.argv)
     manager.execute()
 
