@@ -38,8 +38,6 @@ import sys
 
 import yaml
 
-from s2e_env.utils import log
-
 
 class CommandError(Exception):
     """
@@ -109,10 +107,6 @@ class BaseCommand(object):
 
     # Configuration shortcuts that alter various logic.
     called_from_command_line = False
-
-    def __init__(self):
-        # Initialize the default logger
-        log.configure_logging()
 
     def create_parser(self, prog_name, subcommand):
         """
@@ -211,17 +205,6 @@ class EnvCommand(BaseCommand):
         self._env_dir = None
         self._config = None
 
-    def _init_logging(self):
-        config_lvl = self.config.get('logging', {}).get('level', 'info')
-        color = self.config.get('logging', {}).get('color', True)
-
-        level = logging.getLevelName(config_lvl.upper())
-        if not isinstance(level, int):
-            raise CommandError('Invalid logging level \'%s\' in s2e.yaml' %
-                               config_lvl)
-
-        log.configure_logging(level, color)
-
     def handle_common_args(self, **options):
         """
         Adds the environment directory as a class member.
@@ -245,9 +228,6 @@ class EnvCommand(BaseCommand):
                                'it does not contain an s2e.yaml configuration '
                                'file (%s does not exist). Source %s in your '
                                'environment' % (path, self.env_path('s2e_activate')))
-
-        # Reinitialize logging with settings from the environment's config
-        self._init_logging()
 
     def add_arguments(self, parser):
         super(EnvCommand, self).add_arguments(parser)
