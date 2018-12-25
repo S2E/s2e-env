@@ -38,7 +38,7 @@ class CGCProject(Project):
     def _is_valid_image(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'decree' in os_desc['binary_formats']
 
-    def _validate_config(self, config):
+    def _finalize_config(self, config):
         args = config.get('target_args', [])
         if args:
             raise CommandError('Command line arguments for Decree binaries '
