@@ -242,7 +242,9 @@ class EnvCommand(BaseCommand):
                 self._config = yaml.load(f)
         except IOError:
             raise CommandError('This does not look like an S2E environment - '
-                               'it does not contain an s2e.yaml configuration file (%s does not exist)' % path)
+                               'it does not contain an s2e.yaml configuration '
+                               'file (%s does not exist). Source %s in your '
+                               'environment' % (path, self.env_path('s2e_activate')))
 
         # Reinitialize logging with settings from the environment's config
         self._init_logging()

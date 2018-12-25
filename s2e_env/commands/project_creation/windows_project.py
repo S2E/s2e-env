@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 
+import os
 import logging
 
 from s2e_env.analysis.pe import PEAnalysis
@@ -33,13 +34,15 @@ logger = logging.getLogger('new_project')
 
 class WindowsProject(Project):
     def __init__(self, bootstrap_template='bootstrap.windows.sh'):
-        super(WindowsProject, self).__init__('windows', bootstrap_template,
+        super(WindowsProject, self).__init__(bootstrap_template,
                                              's2e-config.windows.lua')
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
-        return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
+    def _is_valid_image(self, target, os_desc):
+        return is_valid_arch(target.arch, os_desc) and 'pe' in os_desc['binary_formats']
 
     def _finalize_config(self, config):
+        config['project_type'] = 'windows'
+
         # Make all module names lower-case (in line with the WindowsMonitor plugin)
         config['modules'] = [(mod.lower(), kernel_mode) for mod, kernel_mode in config.get('modules', [])]
 
@@ -48,11 +51,11 @@ class WindowsDLLProject(WindowsProject):
     def __init__(self):
         super(WindowsDLLProject, self).__init__('bootstrap.windows_dll.sh')
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
-        if not target_path.endswith('.dll'):
+    def _is_valid_image(self, target, os_desc):
+        if not target.path.endswith('.dll'):
             raise CommandError('Invalid DLL name - requires .dll extension')
 
-        return super(WindowsDLLProject, self)._is_valid_image(target_arch, target_path, os_desc)
+        return super(WindowsDLLProject, self)._is_valid_image(target, os_desc)
 
     def _finalize_config(self, config):
         super(WindowsDLLProject, self)._finalize_config(config)
@@ -68,8 +71,8 @@ class WindowsDLLProject(WindowsProject):
             logger.warn('No DLL entry point provided - defaulting to ``DllEntryPoint``')
             config['target_args'] = ['DllEntryPoint']
 
-    def _analyze_target(self, target_path, config):
-        with PEAnalysis(target_path) as pe:
+    def _analyze_target(self, target, config):
+        with PEAnalysis(target.path) as pe:
             config['dll_exports'] = pe.get_exports()
 
 
@@ -77,12 +80,21 @@ class WindowsDriverProject(WindowsProject):
     def __init__(self):
         super(WindowsDriverProject, self).__init__('bootstrap.windows_driver.sh')
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
+    def _is_valid_image(self, target, os_desc):
         # Windows drivers must match the OS's bit-ness
-        return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
+        return os_desc['name'] == 'windows' and os_desc['arch'] == target.arch
 
     def _finalize_config(self, config):
         super(WindowsDriverProject, self)._finalize_config(config)
+
+        # By default, the list of modules will only include the target program.
+        # However, for a Windows driver this may be an INF file, which is not a
+        # valid module.
+        #
+        # Instead, find all the *.sys files and add them to the module list.
+        sys_files = [os.path.basename(tf) for tf in config['target_files']
+                     if tf.endswith('.sys')]
+        config['modules'] = [(sys_file, True) for sys_file in sys_files]
 
         # Not supported for drivers
         config['processes'] = []
