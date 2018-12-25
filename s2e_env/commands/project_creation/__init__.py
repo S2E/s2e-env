@@ -112,35 +112,22 @@ class Project(AbstractProject):
     analysis on the target.
     """
 
-    def __init__(self, project_type, bootstrap_template, lua_template):
+    def __init__(self, bootstrap_template, lua_template):
         super(Project, self).__init__()
 
-        self._project_type = project_type
         self._bootstrap_template = bootstrap_template
         self._lua_template = lua_template
 
-    def _make_config(self, *args, **options):
-        # Check that the target files are valid
-        target_files = options['target_files']
-        if target_files:
-            for tf in target_files:
-                if not os.path.isfile(tf):
-                    raise CommandError('Target file %s is not valid' % tf)
-        else:
+    def _configure(self, target, *args, **options):
+        target_path = target.path
+        target_arch = target.arch
+
+        if target.is_empty():
             logger.warn('Creating a project without a target file. You must '
                         'manually edit bootstrap.sh')
 
-        # The target program that will be executed is the first target file
-        if target_files:
-            target_path = target_files[0]
-        else:
-            target_path = None
-
-        target_arch = options['target_arch']
-
         # Decide on the image to be used
-        img_desc = self._select_image(target_path, target_arch,
-                                      options.get('image'),
+        img_desc = self._select_image(target, options.get('image'),
                                       options.get('download_image', False))
 
         # Check architecture consistency (if the target has been specified)
@@ -165,7 +152,6 @@ class Project(AbstractProject):
         config = {
             'creation_time': str(datetime.datetime.now()),
             'project_dir': project_dir,
-            'project_type': self._project_type,
             'image': img_desc,
             'target_path': target_path,
             'target_arch': target_arch,
@@ -173,10 +159,10 @@ class Project(AbstractProject):
 
             # This contains paths to all the files that must be downloaded into
             # the guest
-            'target_files': target_files,
+            'target_files': ([target_path] if target_path else []) + target.aux_files,
 
             # List of module names that go into ModuleExecutionDetector
-            'modules': options.get('modules', []),
+            'modules': [(os.path.basename(target_path), False)] if target_path else [],
 
             # List of binaries that go into ProcessExecutionDetector. These are
             # normally executable files
@@ -222,7 +208,7 @@ class Project(AbstractProject):
 
         # Do some basic analysis on the target (if it exists)
         if target_path:
-            self._analyze_target(target_path, config)
+            self._analyze_target(target, config)
 
         if config['enable_pov_generation']:
             config['use_recipes'] = True
@@ -269,7 +255,7 @@ class Project(AbstractProject):
             os.makedirs(config['recipes_dir'])
             call_command(RecipeCommand(), [], project=os.path.basename(project_dir))
 
-        # Display messages/instructions to the user
+        # Display relevant messages to the user
         display_marker_warning = config['target_path'] and \
                                  config['warn_input_file'] and \
                                  not (config['use_symb_input_file'] or config['sym_args'])
@@ -292,7 +278,7 @@ class Project(AbstractProject):
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
 
-    def _create_instructions(self, config):
+    def _get_instructions(self, config):
         instructions = render_template(config, 'instructions.txt')
 
         # Due to how templates work, there may be many useless new lines,
@@ -308,7 +294,7 @@ class Project(AbstractProject):
         """
         pass
 
-    def _analyze_target(self, target_path, config):
+    def _analyze_target(self, target, config):
         """
         Perform static analysis on the target binary.
 
@@ -334,8 +320,8 @@ class Project(AbstractProject):
         }
 
         template = 'launch-s2e.sh'
-        script_path = os.path.join(project_dir, template)
-        render_template(context, template, script_path, executable=True)
+        output_path = os.path.join(project_dir, template)
+        render_template(context, template, output_path, executable=True)
 
     def _create_lua_config(self, project_dir, config):
         """
@@ -348,7 +334,7 @@ class Project(AbstractProject):
             'creation_time': config['creation_time'],
             'target': os.path.basename(target_path) if target_path else None,
             'target_lua_template': self._lua_template,
-            'project_dir': config['project_dir'],
+            'project_dir': project_dir,
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
             'use_test_case_generator': config['use_test_case_generator'],
@@ -362,9 +348,9 @@ class Project(AbstractProject):
             'processes': config['processes'],
         }
 
-        for f in ('s2e-config.lua', 'models.lua', 'library.lua'):
-            output_path = os.path.join(project_dir, f)
-            render_template(context, f, output_path)
+        for template in ('s2e-config.lua', 'models.lua', 'library.lua'):
+            output_path = os.path.join(project_dir, template)
+            render_template(context, template, output_path)
 
     def _create_bootstrap(self, project_dir, config):
         """
@@ -401,5 +387,5 @@ class Project(AbstractProject):
         }
 
         template = 'bootstrap.sh'
-        script_path = os.path.join(project_dir, template)
-        render_template(context, template, script_path)
+        output_path = os.path.join(project_dir, template)
+        render_template(context, template, output_path)

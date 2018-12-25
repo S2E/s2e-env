@@ -28,7 +28,8 @@ import os
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils.images import ImageDownloader, get_image_templates, get_image_descriptor
+from s2e_env.utils.images import ImageDownloader, get_image_templates, \
+        get_image_descriptor
 
 
 logger = logging.getLogger('new_project')
@@ -41,12 +42,12 @@ class AbstractProject(EnvCommand):
     This class must be overridden and the following methods **must** be
     implemented:
 
-      - ``_make_config``
+      - ``_configure``
       - ``_create``
 
     The following methods may be optionally implemented:
 
-      - ``_create_instructions``
+      - ``_get_instructions``
       - ``_is_valid_image``
 
     ``AbstractProject`` provides helper methods for deciding on the virtual
@@ -54,46 +55,53 @@ class AbstractProject(EnvCommand):
     """
 
     def handle(self, *args, **options):
-        config = self._make_config(*args, **options)
-
+        target = options.pop('target')
+        config = self._configure(target, *args, **options)
         self._create(config, options['force'])
 
-        logger.success(self._create_instructions(config))
+        instructions = self._get_instructions(config)
+        if instructions:
+            logger.success(instructions)
 
-    def _make_config(self, *args, **kwargs):
+    def _configure(self, target, *args, **kwargs):
         """
-        Create the configuration dictionary that describes this project.
+        Generate the configuration dictionary that describes this project.
 
-        Should return a ``dict``.
+        Args:
+            target: A ``Target`` object that represents the program under
+                    analysis.
+
+        Returns:
+            A configuration ``dict``.
         """
         raise NotImplementedError('Subclasses of AbstractProject must provide '
-                                  'a _make_config method')
+                                  'a _configure method')
 
     def _create(self, config, force=False):
         """
-        Create the actual project on disk, based on the given project
-        configuration dictionary.
+        Create the actual project based on the given project configuration
+        dictionary.
         """
         raise NotImplementedError('Subclasses of AbstractProject must provide '
                                   'a _create method')
 
-    def _create_instructions(self, config):
+    def _get_instructions(self, config):
         """
-        Create instructions for the user on how to use their newly-created
+        Generate instructions for the user on how to use their newly-created
         project. These instructions should be returned as a string.
         """
         pass
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
+    def _is_valid_image(self, target, os_desc):
         """
-        Validate a binary against a particular image description.
+        Validate a target against a particular image description.
 
-        This validation may vary depending on the binary and image type.
+        This validation may vary depending on the target and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
         pass
 
-    def _select_image(self, target_path, target_arch, image=None, download_image=True):
+    def _select_image(self, target, image=None, download_image=True):
         """
         Select an image to use for this project.
 
@@ -110,27 +118,27 @@ class AbstractProject(EnvCommand):
         img_templates = get_image_templates(img_build_dir)
 
         if not image:
-            image = self._guess_image(target_path, img_templates, target_arch)
+            image = self._guess_image(target, img_templates)
 
         return self._get_or_download_image(img_templates, image, download_image)
 
-    def _guess_image(self, target_path, templates, target_arch):
+    def _guess_image(self, target, templates):
         """
         At this stage, images may not exist, so we get the list of images
         from images.json (in the guest-images repo) rather than from the images
         folder.
         """
         logger.info('No image was specified (-i option). Attempting to guess '
-                    'a suitable image for a %s binary...', target_arch)
+                    'a suitable image for a %s binary...', target.arch)
 
         for k, v in templates.iteritems():
-            if self._is_valid_image(target_arch, target_path, v['os']):
+            if self._is_valid_image(target, v['os']):
                 logger.warning('Found %s, which looks suitable for this '
                                'binary. Please use -i if you want to use '
                                'another image', k)
                 return k
 
-        raise CommandError('No suitable image available for this binary')
+        raise CommandError('No suitable image available for this target')
 
     def _get_or_download_image(self, templates, image, do_download=True):
         img_path = self.image_path(image)

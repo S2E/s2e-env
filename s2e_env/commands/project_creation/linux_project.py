@@ -27,14 +27,16 @@ from . import is_valid_arch, Project
 
 class LinuxProject(Project):
     def __init__(self):
-        super(LinuxProject, self).__init__('linux',
-                                           'bootstrap.linux.sh',
+        super(LinuxProject, self).__init__('bootstrap.linux.sh',
                                            's2e-config.linux.lua')
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
-        return is_valid_arch(target_arch, os_desc) and 'elf' in os_desc['binary_formats']
+    def _is_valid_image(self, target, os_desc):
+        return is_valid_arch(target.arch, os_desc) and 'elf' in os_desc['binary_formats']
 
-    def _analyze_target(self, target_path, config):
-        with ELFAnalysis(target_path) as elf:
+    def _analyze_target(self, target, config):
+        with ELFAnalysis(target.path) as elf:
             config['dynamically_linked'] = elf.is_dynamically_linked()
             config['modelled_functions'] = elf.get_modelled_functions()
+
+    def _finalize_config(self, config):
+        config['project_type'] = 'linux'

@@ -25,10 +25,10 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from mock import MagicMock
-
 from s2e_env.commands.project_creation.cgc_project import CGCProject
-from . import DATA_DIR
+from s2e_env.commands.project_creation.target import Target
+
+from . import DATA_DIR, monkey_patch_project
 
 
 CGC_IMAGE_DESC = {
@@ -58,21 +58,17 @@ CADET_00001_PATH = os.path.join(DATA_DIR, CADET_00001)
 
 
 class CGCProjectTestCase(TestCase):
-    def setUp(self):
-        self._cgc_project = CGCProject()
-        self._cgc_project._select_image = MagicMock(return_value=CGC_IMAGE_DESC)
-        self._cgc_project._env_dir = MagicMock(return_value=gettempdir())
-
     def test_empty_project_config(self):
         """Test empty CGC project creation."""
-        args = {
+        target = Target.empty(CGCProject)
+        project = monkey_patch_project(target.initialize_project(),
+                                       CGC_IMAGE_DESC)
+        options = {
             'image': 'cgc_debian-9.2.1-i386',
             'name': 'test',
-            'target_files': [],
-            'target_arch': None,
         }
 
-        config = self._cgc_project._make_config(**args)
+        config = project._configure(target, **options)
 
         # Assert that we have actually created a CGC project
         self.assertEqual(config['project_type'], 'cgc')
@@ -84,6 +80,7 @@ class CGCProjectTestCase(TestCase):
 
         # Should be empty when no target is specified
         self.assertFalse(config['processes'])
+        self.assertFalse(config['modules'])
 
         # CGC binaries have no input files
         self.assertFalse(config['target_args'])
@@ -106,12 +103,11 @@ class CGCProjectTestCase(TestCase):
         Test CGC project creation given a CGC binary and nothing else. No
         image, project name, etc. is provided.
         """
-        args = {
-            'target_files': [CADET_00001_PATH],
-            'target_arch': 'i386',
-        }
+        target = Target.from_file(CADET_00001_PATH)
+        project = monkey_patch_project(target.initialize_project(),
+                                       CGC_IMAGE_DESC)
 
-        config = self._cgc_project._make_config(**args)
+        config = project._configure(target)
 
         # Assert that we have actually created a CGC project
         self.assertEqual(config['project_type'], 'cgc')
@@ -121,6 +117,7 @@ class CGCProjectTestCase(TestCase):
         self.assertEqual(config['target_arch'], 'i386')
         self.assertListEqual(config['target_files'], [CADET_00001_PATH])
         self.assertListEqual(config['processes'], [CADET_00001])
+        self.assertListEqual(config['modules'], [(CADET_00001, False)])
 
         # Assert that the CGC image has been selected
         self.assertDictEqual(config['image'], CGC_IMAGE_DESC)

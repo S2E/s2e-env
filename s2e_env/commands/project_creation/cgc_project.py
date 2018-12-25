@@ -32,13 +32,15 @@ logger = logging.getLogger('new_project')
 
 class CGCProject(Project):
     def __init__(self):
-        super(CGCProject, self).__init__('cgc', 'bootstrap.cgc.sh',
+        super(CGCProject, self).__init__('bootstrap.cgc.sh',
                                          's2e-config.cgc.lua')
 
-    def _is_valid_image(self, target_arch, target_path, os_desc):
-        return is_valid_arch(target_arch, os_desc) and 'decree' in os_desc['binary_formats']
+    def _is_valid_image(self, target, os_desc):
+        return is_valid_arch(target.arch, os_desc) and 'decree' in os_desc['binary_formats']
 
     def _finalize_config(self, config):
+        config['project_type'] = 'cgc'
+
         args = config.get('target_args', [])
         if args:
             raise CommandError('Command line arguments for Decree binaries '

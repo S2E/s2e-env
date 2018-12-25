@@ -25,11 +25,10 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from mock import MagicMock
+from s2e_env.commands.project_creation.target import Target
+from s2e_env.commands.project_creation.windows_project import WindowsProject
 
-from s2e_env.commands.new_project import _extract_inf_files
-from s2e_env.commands.project_creation.windows_project import WindowsProject, WindowsDLLProject, WindowsDriverProject
-from . import DATA_DIR
+from . import DATA_DIR, monkey_patch_project
 
 
 WINDOWS_XPSP3_X86_IMAGE_DESC = {
@@ -94,29 +93,17 @@ MYPUTS_DLL_PATH = os.path.join(DATA_DIR, MYPUTS_DLL)
 
 
 class WindowsProjectTestCase(TestCase):
-    def setUp(self):
-        self._windows_project = WindowsProject()
-        self._windows_project._select_image = MagicMock(return_value=WINDOWS_XPSP3_X86_IMAGE_DESC)
-        self._windows_project._env_dir = MagicMock(return_value=gettempdir())
-
-        self._windows_driver_project = WindowsDriverProject()
-        self._windows_driver_project._select_image = MagicMock(return_value=WINDOWS_7SP1_X64_IMAGE_DESC)
-        self._windows_driver_project._env_dir = MagicMock(return_value=gettempdir())
-
-        self._windows_dll_project = WindowsDLLProject()
-        self._windows_dll_project._select_image = MagicMock(return_value=WINDOWS_7SP1_X64_IMAGE_DESC)
-        self._windows_dll_project._env_dir = MagicMock(return_value=gettempdir())
-
     def test_empty_xpsp3pro_project_config(self):
         """Test empty Windows XP SP3 project creation."""
-        args = {
+        target = Target.empty(WindowsProject)
+        project = monkey_patch_project(target.initialize_project(),
+                                       WINDOWS_XPSP3_X86_IMAGE_DESC)
+        options = {
             'image': 'windows-xpsp3pro-i386',
             'name': 'test',
-            'target_files': [],
-            'target_arch': None,
         }
 
-        config = self._windows_project._make_config(**args)
+        config = project._configure(target, **options)
 
         # Assert that we have actually created a Windows project
         self.assertEqual(config['project_type'], 'windows')
@@ -128,6 +115,7 @@ class WindowsProjectTestCase(TestCase):
 
         # Should be empty when no target is specified
         self.assertFalse(config['processes'])
+        self.assertFalse(config['modules'])
 
         # An empty project with no target will have no arguments
         self.assertFalse(config['target_args'])
@@ -142,13 +130,11 @@ class WindowsProjectTestCase(TestCase):
 
     def test_scanner_driver_7sp1ent_x64_project_config(self):
         """Test x64 driver project creation."""
-        driver_files = _extract_inf_files(SCANNER_INF_PATH)
-        args = {
-            'target_files': [SCANNER_INF_PATH] + driver_files,
-            'target_arch': 'x86_64',
-        }
+        target = Target.from_file(SCANNER_INF_PATH)
+        project = monkey_patch_project(target.initialize_project(),
+                                       WINDOWS_7SP1_X64_IMAGE_DESC)
 
-        config = self._windows_driver_project._make_config(**args)
+        config = project._configure(target)
 
         # Assert that we've actually created a Windows project
         self.assertEqual(config['project_type'], 'windows')
@@ -157,7 +143,9 @@ class WindowsProjectTestCase(TestCase):
         self.assertEqual(config['target_path'], SCANNER_INF_PATH)
         self.assertEqual(config['target_arch'], 'x86_64')
         self.assertItemsEqual(config['target_files'],
-                              [SCANNER_INF_PATH, SCANNER_SYS_PATH, SCANNER_USER_EXE_PATH])
+                              [SCANNER_INF_PATH, SCANNER_SYS_PATH,
+                               SCANNER_USER_EXE_PATH])
+        self.assertItemsEqual(config['modules'], [(SCANNER_SYS, True)])
 
         # Assert that the x86_64 Windows 7 image was selected
         self.assertDictEqual(config['image'], WINDOWS_7SP1_X64_IMAGE_DESC)
@@ -173,13 +161,14 @@ class WindowsProjectTestCase(TestCase):
 
     def test_myputs_dll_7sp1ent_x64_project_config(self):
         """Test x64 DLL project creation."""
-        args = {
-            'target_files': [MYPUTS_DLL_PATH],
+        target = Target.from_file(MYPUTS_DLL_PATH)
+        project = monkey_patch_project(target.initialize_project(),
+                                       WINDOWS_7SP1_X64_IMAGE_DESC)
+        options = {
             'target_args': ['MyPuts'],
-            'target_arch': 'x86_64',
         }
 
-        config = self._windows_dll_project._make_config(**args)
+        config = project._configure(target, **options)
 
         # Assert that we have actually created a Windows project
         self.assertEqual(config['project_type'], 'windows')
@@ -188,6 +177,7 @@ class WindowsProjectTestCase(TestCase):
         self.assertEqual(config['target_path'], MYPUTS_DLL_PATH)
         self.assertEqual(config['target_arch'], 'x86_64')
         self.assertItemsEqual(config['target_files'], [MYPUTS_DLL_PATH])
+        self.assertListEqual(config['modules'], [(MYPUTS_DLL, False)])
 
         # Assert that the x86_64 Windows 7 image was selected
         self.assertDictEqual(config['image'], WINDOWS_7SP1_X64_IMAGE_DESC)
