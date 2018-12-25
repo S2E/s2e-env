@@ -39,7 +39,7 @@ class WindowsProject(Project):
     def _is_valid_image(self, target_arch, target_path, os_desc):
         return is_valid_arch(target_arch, os_desc) and 'pe' in os_desc['binary_formats']
 
-    def _validate_config(self, config):
+    def _finalize_config(self, config):
         # Make all module names lower-case (in line with the WindowsMonitor plugin)
         config['modules'] = [(mod.lower(), kernel_mode) for mod, kernel_mode in config.get('modules', [])]
 
@@ -54,8 +54,8 @@ class WindowsDLLProject(WindowsProject):
 
         return super(WindowsDLLProject, self)._is_valid_image(target_arch, target_path, os_desc)
 
-    def _validate_config(self, config):
-        super(WindowsDLLProject, self)._validate_config(config)
+    def _finalize_config(self, config):
+        super(WindowsDLLProject, self)._finalize_config(config)
 
         # Not supported for DLLs
         config['processes'] = []
@@ -81,8 +81,8 @@ class WindowsDriverProject(WindowsProject):
         # Windows drivers must match the OS's bit-ness
         return os_desc['name'] == 'windows' and os_desc['arch'] == target_arch
 
-    def _validate_config(self, config):
-        super(WindowsDriverProject, self)._validate_config(config)
+    def _finalize_config(self, config):
+        super(WindowsDriverProject, self)._finalize_config(config)
 
         # Not supported for drivers
         config['processes'] = []

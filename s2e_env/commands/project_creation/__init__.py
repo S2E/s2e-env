@@ -229,7 +229,7 @@ class Project(AbstractProject):
 
         # The config dictionary may be modified here. After this point the
         # config dictionary should NOT be modified
-        self._validate_config(config)
+        self._finalize_config(config)
 
         return config
 
@@ -299,9 +299,9 @@ class Project(AbstractProject):
         # remove them here
         return re.sub(r'([\r\n][\r\n])+', r'\n\n', instructions)
 
-    def _validate_config(self, config):
+    def _finalize_config(self, config):
         """
-        Validate a project's configuration options.
+        Validate and finalize a project's configuration options.
 
         This method may modify values in the ``config`` dictionary. If an
         invalid configuration is found, a ``CommandError` should be thrown.
