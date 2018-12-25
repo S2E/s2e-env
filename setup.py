@@ -54,7 +54,7 @@ setup(
         'pytrie',
         'pwntools==3.12.0'
     ],
-    test_requires=[
+    tests_require=[
         'mock',
     ],
     packages=find_packages(),
