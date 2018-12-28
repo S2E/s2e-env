@@ -63,6 +63,10 @@ class AbstractProject(EnvCommand):
         if instructions:
             logger.success(instructions)
 
+    #
+    # Abstract methods to overwrite
+    #
+
     def _configure(self, target, *args, **kwargs):
         """
         Generate the configuration dictionary that describes this project.
@@ -100,6 +104,10 @@ class AbstractProject(EnvCommand):
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
         pass
+
+    #
+    # Image helper methods
+    #
 
     def _select_image(self, target, image=None, download_image=True):
         """
@@ -155,22 +163,19 @@ class AbstractProject(EnvCommand):
 
         return get_image_descriptor(img_path)
 
-    def _select_guestfs(self, img_desc):
+    #
+    # Misc. helper methods
+    #
+
+    # pylint: disable=no-self-use
+    def _symlink_project_files(self, project_dir, *files):
         """
-        Select the guestfs to use, based on the chosen virtual machine image.
-
-        Args:
-            img_desc: An image descriptor read from the image's JSON
-            description.
-
-        Returns:
-            The path to the guestfs directory, or `None` if a suitable guestfs
-            was not found.
+        Create symlinks to the files that compose the project.
         """
-        image_dir = os.path.dirname(img_desc['path'])
-        guestfs_path = self.image_path(image_dir, 'guestfs')
-
-        return guestfs_path if os.path.exists(guestfs_path) else None
+        for f in files:
+            logger.info('Creating a symlink to %s', f)
+            target_file = os.path.basename(f)
+            os.symlink(f, os.path.join(project_dir, target_file))
 
     def _symlink_guest_tools(self, project_dir, img_desc):
         """
@@ -188,3 +193,28 @@ class AbstractProject(EnvCommand):
         logger.info('Creating a symlink to %s', guest_tools_path)
         os.symlink(guest_tools_path,
                    os.path.join(project_dir, 'guest-tools'))
+
+    def _select_guestfs(self, img_desc):
+        """
+        Select the guestfs to use, based on the chosen virtual machine image.
+
+        Args:
+            img_desc: An image descriptor read from the image's JSON
+            description.
+
+        Returns:
+            The path to the guestfs directory, or `None` if a suitable guestfs
+            was not found.
+        """
+        image_dir = os.path.dirname(img_desc['path'])
+        guestfs_path = self.image_path(image_dir, 'guestfs')
+
+        return guestfs_path if os.path.exists(guestfs_path) else None
+
+    # pylint: disable=no-self-use
+    def _symlink_guestfs(self, project_dir, guestfs_path):
+        """
+        Create a symlink to the guestfs directory.
+        """
+        logger.info('Creating a symlink to %s', guestfs_path)
+        os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))

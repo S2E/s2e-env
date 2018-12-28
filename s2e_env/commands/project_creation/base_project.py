@@ -80,28 +80,6 @@ def _save_json_description(project_dir, config):
         f.write(s)
 
 
-def _symlink_target_files(project_dir, files):
-    """
-    Create symlinks to the files that compose the program.
-    """
-    for f in files:
-        logger.info('Creating a symlink to %s', f)
-        target_file = os.path.basename(f)
-        os.symlink(f, os.path.join(project_dir, target_file))
-
-
-def _symlink_guestfs(project_dir, guestfs_path):
-    """
-    Create a symlink to the guestfs directory.
-
-    Return ``True`` if the guestfs directory exists, or ``False`` otherwise.
-    """
-    logger.info('Creating a symlink to %s', guestfs_path)
-    os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))
-
-    return True
-
-
 class BaseProject(AbstractProject):
     """
     Base class used by the ``new_project`` command to create a specific
@@ -233,14 +211,14 @@ class BaseProject(AbstractProject):
 
         # Create symlinks to the target files (if they exist)
         if config['target_files']:
-            _symlink_target_files(project_dir, config['target_files'])
+            self._symlink_project_files(project_dir, *config['target_files'])
 
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools(project_dir, config['image'])
 
         # Create a symlink to guestfs (if it exists)
         if config['guestfs_path']:
-            _symlink_guestfs(project_dir, config['guestfs_path'])
+            self._symlink_guestfs(project_dir, config['guestfs_path'])
 
         # Render the templates
         self._create_launch_script(project_dir, config)
