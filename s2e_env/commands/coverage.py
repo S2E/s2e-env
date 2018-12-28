@@ -22,7 +22,6 @@ SOFTWARE.
 
 
 from s2e_env.command import ProjectCommand, CommandError
-from s2e_env.commands.code_coverage.basic_block import BasicBlockCoverage
 from s2e_env.commands.code_coverage.lcov import LineCoverage
 from s2e_env.manage import call_command
 
@@ -62,7 +61,7 @@ class Command(ProjectCommand):
                                  help='Where to store the LCOV report (by default into s2e-last)',
                                  required=False)
 
-        bb_parser = subparsers.add_parser('basic_block', cmd=BasicBlockCoverage(),
+        bb_parser = subparsers.add_parser('basic_block', cmd=IDABasicBlockCoverage(),
                                           help='Generate a basic block report')
         bb_parser.add_argument('-d', '--disassembler', choices=('ida', 'r2', 'binaryninja'),
                                default='ida', help='Disassembler backend to use')

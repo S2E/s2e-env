@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
+from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser
 import json
 import logging
@@ -101,6 +102,9 @@ class BaseCommand(object):
     description of the command, which will be printed in help messages, the
     ``help`` class attribute should be specified.
     """
+
+    # Abstract class
+    __metaclass__ = ABCMeta
 
     # Metadata about this command
     help = ''
@@ -183,6 +187,7 @@ class BaseCommand(object):
     def name(self):
         return self.__module__.split('.')[-1]
 
+    @abstractmethod
     def handle(self, *args, **options):
         """
         The actual logic of the command. Subclasses must implement this method.

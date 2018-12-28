@@ -23,6 +23,7 @@ SOFTWARE.
 
 from __future__ import division
 
+from abc import abstractmethod
 from collections import defaultdict
 import json
 import itertools
@@ -276,6 +277,7 @@ class BasicBlockCoverage(ProjectCommand):
         """
         pass
 
+    @abstractmethod
     def _get_disassembly_info(self, module_path):
         """
         Disassemble the give module using on the of the supported backends (IDA
