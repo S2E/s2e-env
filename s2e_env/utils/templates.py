@@ -24,7 +24,7 @@ SOFTWARE.
 import os
 import stat
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from .memoize import memoize
 
@@ -46,7 +46,7 @@ def _init_template_env(templates_dir=TEMPLATES_DIR):
     given directory.
     """
     env = Environment(loader=FileSystemLoader(templates_dir),
-                      autoescape=False)
+                      autoescape=False, undefined=StrictUndefined)
     env.filters['datetimefilter'] = _datetimefilter
 
     return env
