@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+from abc import ABCMeta, abstractmethod
 import binascii
 import logging
 import re
@@ -104,6 +106,9 @@ class TraceEntry(object):
     run-time size of the item **must** be provided.
     """
 
+    # Abstract method
+    __metaclass__ = ABCMeta
+
     FORMAT = None
 
     def __init__(self, fmt=''):
@@ -158,6 +163,7 @@ class TraceEntry(object):
         except struct.error:
             raise TraceEntryError('Cannot deserialize %s data' % cls.__name__)
 
+    @abstractmethod
     def serialize(self):
         """
         Serializes the object using the given ``_struct`` property. The user

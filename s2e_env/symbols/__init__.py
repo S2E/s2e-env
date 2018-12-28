@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+from abc import ABCMeta, abstractmethod
 import json
 import logging
 import os
@@ -42,6 +44,9 @@ class DebugInfo(object):
     This class abstracts away debug information for various binary file formats.
     It must be subclassed to handle specific formats (ELF, PE, etc.).
     """
+
+    # Abstract class
+    __metaclass__ = ABCMeta
 
     def __init__(self, path, search_paths=None):
         self._path = path
@@ -94,6 +99,7 @@ class DebugInfo(object):
 
         return file_line_info
 
+    @abstractmethod
     def parse(self):
         """
         To be implemented by clients

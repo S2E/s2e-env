@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 
+from abc import abstractmethod
 import logging
 import os
 import shutil
@@ -72,6 +73,7 @@ class AbstractProject(EnvCommand):
     # Abstract methods to overwrite
     #
 
+    @abstractmethod
     def _configure(self, target, *args, **kwargs):
         """
         Generate the configuration dictionary that describes this project.
@@ -86,6 +88,7 @@ class AbstractProject(EnvCommand):
         raise NotImplementedError('Subclasses of AbstractProject must provide '
                                   'a _configure method')
 
+    @abstractmethod
     def _create(self, config, force=False):
         """
         Create the actual project based on the given project configuration
