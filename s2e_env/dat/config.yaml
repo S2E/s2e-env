@@ -111,13 +111,13 @@ required_versions:
         - 16
         - 18
     # images.json must have this version
-    guest_images: 2
+    guest_images: 3
 
 # Repo. Used for managing the S2E git repositories
 repo:
     url: https://storage.googleapis.com/git-repo-downloads/repo
 
-# Directories that will automatically be built when running ``s2e init``
+# Directories that will automatically be created when running ``s2e init``
 dirs:
     - build
     - images

@@ -105,9 +105,10 @@ def _validate_version(descriptor, filename):
     version = descriptor.get('version')
     required_version = CONSTANTS['required_versions']['guest_images']
     if version != required_version:
-        raise CommandError('Need version %s for %s. Make sure that you have '
-                           'the correct revision of the guest-images '
-                           'repository' % (required_version, filename))
+        raise CommandError('%s versions do not match (s2e-env: %.2f, image: '
+                           '%.2f). Make sure that you have the correct '
+                           'revision of the guest-images repository' %
+                           (filename, required_version, version))
 
 
 def get_image_templates(img_build_dir):
@@ -144,6 +145,8 @@ def get_image_descriptor(image_dir):
             ret['path'] = os.path.join(image_dir, 'image.raw.s2e')
 
             return ret
-    except Exception:
-        raise CommandError('Unable to open image description %s. Check that '
-                           'the image exists, was built, or downloaded' % img_json_path)
+    except CommandError:
+        raise
+    except Exception, e:
+        raise CommandError('Unable to open image description %s: %s' %
+                           (img_json_path, e))

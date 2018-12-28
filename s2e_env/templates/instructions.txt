@@ -18,7 +18,7 @@ include:
 {% endif %}
 
 {#############################################################################}
-{% if dynamically_linked and image.group_name == 'linux' %}
+{% if dynamically_linked and image.image_group == 'linux' %}
 
 s2e.so
 ======
@@ -113,4 +113,4 @@ If something does not run as expected, you can troubleshoot like this:
     * Run S2E in GDB using ./launch-s2e.sh debug
 
 -------
-Project {{ project_name }} created.
+Project {{ project_dir }} created.
