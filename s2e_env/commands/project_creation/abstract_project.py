@@ -25,6 +25,7 @@ SOFTWARE.
 
 import logging
 import os
+import shutil
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
@@ -33,6 +34,10 @@ from s2e_env.utils.images import ImageDownloader, get_image_templates, \
 
 
 logger = logging.getLogger('new_project')
+
+# Paths
+FILE_DIR = os.path.dirname(__file__)
+LIBRARY_LUA_PATH = os.path.join(FILE_DIR, '..', '..', 'dat', 'library.lua')
 
 
 class AbstractProject(EnvCommand):
@@ -166,6 +171,16 @@ class AbstractProject(EnvCommand):
     #
     # Misc. helper methods
     #
+
+    # pylint: disable=no-self-use
+    def _copy_lua_library(self, project_dir):
+        """
+        Copy library.lua into the project directory.
+
+        library.lua contains a number of helper methods that can be used by the
+        S2E Lua configuration file.
+        """
+        shutil.copy(LIBRARY_LUA_PATH, project_dir)
 
     # pylint: disable=no-self-use
     def _symlink_project_files(self, project_dir, *files):
