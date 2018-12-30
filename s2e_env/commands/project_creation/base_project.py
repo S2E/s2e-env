@@ -307,6 +307,8 @@ class BaseProject(AbstractProject):
         """
         logger.info('Creating S2E configuration')
 
+        self._copy_lua_library(project_dir)
+
         target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
@@ -326,7 +328,7 @@ class BaseProject(AbstractProject):
             'processes': config['processes'],
         }
 
-        for template in ('s2e-config.lua', 'models.lua', 'library.lua'):
+        for template in ('s2e-config.lua', 'models.lua'):
             output_path = os.path.join(project_dir, template)
             render_template(context, template, output_path)
 
