@@ -29,7 +29,8 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from .memoize import memoize
 
 
-TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), '..', 'templates')
+DEFAULT_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), '..',
+                                     'templates')
 
 
 def _datetimefilter(value, format_='%H:%M %d-%m-%Y'):
@@ -40,11 +41,14 @@ def _datetimefilter(value, format_='%H:%M %d-%m-%Y'):
 
 
 @memoize
-def _init_template_env(templates_dir=TEMPLATES_DIR):
+def _init_template_env(templates_dir=None):
     """
     Initialize the jinja2 templating environment using the templates in the
     given directory.
     """
+    if not templates_dir:
+        templates_dir = DEFAULT_TEMPLATES_DIR
+
     env = Environment(loader=FileSystemLoader(templates_dir),
                       autoescape=False, undefined=StrictUndefined)
     env.filters['datetimefilter'] = _datetimefilter
@@ -52,29 +56,30 @@ def _init_template_env(templates_dir=TEMPLATES_DIR):
     return env
 
 
-def render_template(context, template, path=None, executable=False):
+def render_template(context, template, output_path=None, templates_dir=None,
+                    executable=False):
     """
     Renders the ``template`` template with the given ``context``. The result is
-    written to ``path``. If ``path`` is not specified, the result is
-    returned as a string
+    returned as a string and written to ``output_path`` (if specified).
+
+    A directory containing the Jinja templates can optionally be specified.
     """
-    env = _init_template_env()
-    data = env.get_template(template).render(context)
+    env = _init_template_env(templates_dir)
+
+    rendered_data = env.get_template(template).render(context)
 
     # Remove trailing spaces
     cleaned_lines = []
-    for line in data.splitlines():
+    for line in rendered_data.splitlines():
         cleaned_lines.append(line.rstrip())
-    data = '\n'.join(cleaned_lines)
+    rendered_data = '\n'.join(cleaned_lines)
 
-    if not path:
-        return data
+    if output_path:
+        with open(output_path, 'w') as f:
+            f.write(rendered_data)
 
-    with open(path, 'w') as f:
-        f.write(data)
+        if executable:
+            st = os.stat(output_path)
+            os.chmod(output_path, st.st_mode | stat.S_IEXEC)
 
-    if executable:
-        st = os.stat(path)
-        os.chmod(path, st.st_mode | stat.S_IEXEC)
-
-    return True
+    return rendered_data
