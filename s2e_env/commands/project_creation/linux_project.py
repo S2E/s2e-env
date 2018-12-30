@@ -22,10 +22,11 @@ SOFTWARE.
 
 
 from s2e_env.analysis.elf import ELFAnalysis
-from . import is_valid_arch, Project
+
+from .base_project import is_valid_arch, BaseProject
 
 
-class LinuxProject(Project):
+class LinuxProject(BaseProject):
     def __init__(self):
         super(LinuxProject, self).__init__('bootstrap.linux.sh',
                                            's2e-config.linux.lua')

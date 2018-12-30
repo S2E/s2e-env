@@ -25,8 +25,8 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from s2e_env.commands.project_creation.cgc_project import CGCProject
-from s2e_env.commands.project_creation.target import Target
+from s2e_env.commands.project_creation import CGCProject
+from s2e_env.commands.project_creation import Target
 
 from . import DATA_DIR, monkey_patch_project
 
