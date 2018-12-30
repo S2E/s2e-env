@@ -26,13 +26,14 @@ import logging
 
 from s2e_env.analysis.pe import PEAnalysis
 from s2e_env.command import CommandError
-from . import is_valid_arch, Project
+
+from .base_project import is_valid_arch, BaseProject
 
 
 logger = logging.getLogger('new_project')
 
 
-class WindowsProject(Project):
+class WindowsProject(BaseProject):
     def __init__(self, bootstrap_template='bootstrap.windows.sh'):
         super(WindowsProject, self).__init__(bootstrap_template,
                                              's2e-config.windows.lua')

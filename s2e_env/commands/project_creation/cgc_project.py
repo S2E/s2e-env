@@ -24,13 +24,14 @@ SOFTWARE.
 import logging
 
 from s2e_env.command import CommandError
-from . import is_valid_arch, Project
+
+from .base_project import is_valid_arch, BaseProject
 
 
 logger = logging.getLogger('new_project')
 
 
-class CGCProject(Project):
+class CGCProject(BaseProject):
     def __init__(self):
         super(CGCProject, self).__init__('bootstrap.cgc.sh',
                                          's2e-config.cgc.lua')

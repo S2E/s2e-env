@@ -25,8 +25,8 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from s2e_env.commands.project_creation.target import Target
-from s2e_env.commands.project_creation.windows_project import WindowsProject
+from s2e_env.commands.project_creation import Target
+from s2e_env.commands.project_creation import WindowsProject
 
 from . import DATA_DIR, monkey_patch_project
 

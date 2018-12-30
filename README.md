@@ -230,7 +230,7 @@ Currently, custom projects can only be used programmatically as follows:
 import os
 
 from s2e_env.commands.new_project import Command as NewProjectCommand
-from s2e_env.commands.project_creation.abstract_project import AbstractProject
+from s2e_env.commands.project_creation import AbstractProject
 from s2e_env.manage import call_command
 
 

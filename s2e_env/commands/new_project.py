@@ -25,11 +25,11 @@ import argparse
 import logging
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.project_creation.cgc_project import CGCProject
-from s2e_env.commands.project_creation.linux_project import LinuxProject
-from s2e_env.commands.project_creation.windows_project import WindowsProject, \
+from s2e_env.commands.project_creation import CGCProject
+from s2e_env.commands.project_creation import LinuxProject
+from s2e_env.commands.project_creation import WindowsProject, \
         WindowsDLLProject, WindowsDriverProject
-from s2e_env.commands.project_creation.target import Target
+from s2e_env.commands.project_creation import Target
 from s2e_env.manage import call_command
 
 
