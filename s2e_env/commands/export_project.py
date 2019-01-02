@@ -75,12 +75,12 @@ class Command(ProjectCommand):
         # Name the project archive if it doesn't already have a name
         output_path = options['output_path']
         if not output_path:
-            output_path = self.env_path('%s.tar.xz' % self._project_name)
+            output_path = self.env_path('%s.tar.xz' % self.project_name)
 
         with TemporaryDirectory() as temp_dir:
             # Store all of the exported files in a temporary directory so that
             # we can just execute tar on the entire directory
-            export_dir = os.path.join(temp_dir, self._project_name)
+            export_dir = os.path.join(temp_dir, self.project_name)
             os.mkdir(export_dir)
 
             # Copy project scripts and config files and rewrite the S2E
@@ -125,9 +125,9 @@ class Command(ProjectCommand):
                 new_proj_file.truncate()
 
             # Copy the target into the temporary directory
-            logger.info('Copying target from %s', self._project_desc['target_path'])
-            shutil.copyfile(self._project_desc['target_path'],
-                            os.path.join(export_dir, self._project_desc['target']))
+            logger.info('Copying target from %s', self.project_desc['target_path'])
+            shutil.copyfile(self.project_desc['target_path'],
+                            os.path.join(export_dir, self.project_desc['target']))
 
             # Copy previous results
             if options['export_results']:

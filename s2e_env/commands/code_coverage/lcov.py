@@ -162,7 +162,7 @@ class LineCoverage(ProjectCommand):
     # pylint: disable=too-many-locals
     def handle(self, *args, **options):
         do_gen_html = options.get('html', False)
-        syms = SymbolManager(self.symbol_search_path())
+        syms = SymbolManager(self.symbol_search_path)
 
         lcov_out_dir = options.get('lcov_out_dir')
         if not lcov_out_dir:

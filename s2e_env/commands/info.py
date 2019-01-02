@@ -62,7 +62,7 @@ class Command(EnvCommand):
                 projects[project]['creation_time'] = create_time
 
         output = {
-            'env_path': self._env_dir,
+            'env_path': self.env_path(),
             's2e_built': True if s2e_install_files else False,
             'images': images,
             'projects': projects,
