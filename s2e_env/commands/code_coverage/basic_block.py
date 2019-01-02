@@ -264,7 +264,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         for module_path, tb_coverage in tb_coverage_files.iteritems():
             try:
-                actual_module_path = guess_target_path(self.symbol_search_path(), module_path)
+                actual_module_path = guess_target_path(self.symbol_search_path, module_path)
             except Exception as e:
                 logger.error(e)
                 continue

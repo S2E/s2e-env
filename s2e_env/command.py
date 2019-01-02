@@ -217,7 +217,7 @@ class EnvCommand(BaseCommand):
         The environment directory is specified as either an environment
         variable or a command-line option.
         """
-        self._env_dir = os.getenv('S2EDIR') or options.pop('env', None)
+        self._env_dir = os.getenv('S2EDIR') or options.pop('env')
 
         if not self._env_dir:
             raise CommandError('The S2E environment directory could not be '
@@ -311,27 +311,28 @@ class ProjectCommand(EnvCommand):
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
-        self._project_name = options['project']
-        options.pop('project', ())
+        self._project_name = options.pop('project', ())
 
         # Load the project description
         try:
             proj_desc_path = os.path.join(self._project_dir, 'project.json')
             with open(proj_desc_path, 'r') as f:
                 self._project_desc = json.load(f)
-        except Exception as e:
-            raise CommandError('Unable to open project description for %s - '
-                               '%s' % (os.path.basename(self._project_dir), e))
+        except IOError:
+            raise CommandError('%s does not look like an S2E analysis '
+                               'project - it does not contain a project.json '
+                               'project description. Please check the project '
+                               'name' % self._project_name)
 
-        self._sym_paths = options.pop('sympath', [])
-        if not self._sym_paths:
-            self._sym_paths = []
+        # Load the additional symbol paths
+        self._sym_paths = options.pop('sympath')
 
     def add_arguments(self, parser):
         super(ProjectCommand, self).add_arguments(parser)
 
         parser.add_argument('project', help='The name of the project')
-        parser.add_argument('--sympath', action='append', help='Additional symbol search path', required=False)
+        parser.add_argument('--sympath', action='append', required=False,
+                            default=[], help='Additional symbol search path')
 
     def project_path(self, *p):
         """
@@ -339,17 +340,25 @@ class ProjectCommand(EnvCommand):
         """
         return os.path.join(self._project_dir, *p)
 
+    @property
     def symbol_search_path(self):
-        # guestfs should come last because it may contain outdated and conflicting copies of guest-tools
-        ret = [self.project_path(), self.project_path('guest-tools'), self.project_path('guestfs')]
-        ret = ret + self._sym_paths
-        return ret
+        # guestfs should come last because it may contain outdated and
+        # conflicting copies of guest-tools
+        default_paths = [self.project_path(), self.project_path('guest-tools'),
+                         self.project_path('guestfs')]
 
-    def recipes_path(self, *p):
-        return self.project_path('recipes', *p)
+        return default_paths + self._sym_paths
 
-    def get_os_arch(self):
-        return self._project_desc['image']['os']['arch']
+    @property
+    def project_name(self):
+        """
+        Get the project name.
+        """
+        return self._project_name
 
-    def get_binary_formats(self):
-        return self._project_desc['image']['os']['binary_formats']
+    @property
+    def project_desc(self):
+        """
+        Get the project descriptor dictionary.
+        """
+        return self._project_desc

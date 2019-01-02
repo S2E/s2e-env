@@ -28,6 +28,7 @@ from pwn import asm
 
 from s2e_env.command import ProjectCommand
 
+
 logger = logging.getLogger('recipe')
 
 REGISTERS = {
@@ -278,16 +279,18 @@ class Command(ProjectCommand):
         if gp_reg is not None:
             filename = '%s_%s' % (filename, REGISTERS[arch][gp_reg])
         filename = '%s.rcp' % filename
-        return self.recipes_path(filename)
+        return self.project_path('recipes', filename)
 
     def handle(self, *args, **options):
         logging.getLogger('pwnlib').setLevel('ERROR')
 
+        img_os_desc = self.project_desc['image']['os']
+
         archs = []
-        if self.get_os_arch() == 'x86_64':
+        if img_os_desc['arch'] == 'x86_64':
             archs.append('amd64')
             archs.append('i386')
-        elif self.get_os_arch() == 'i386':
+        elif img_os_desc['arch'] == 'i386':
             archs.append('i386')
 
         type1_handlers = [('reg', type1), ('shellcode', type1_shellcode)]
@@ -303,7 +306,7 @@ class Command(ProjectCommand):
                         handler(fp, arch, platform, gp_reg)
 
         # Specific for decree
-        if 'decree' in self.get_binary_formats():
+        if 'decree' in img_os_desc['binary_formats']:
             type2_handlers = [(0, type2_decree_shellcode_i386_0), (1, type2_decree_shellcode_i386_1)]
 
             for i, handler in type2_handlers:
