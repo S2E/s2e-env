@@ -23,7 +23,6 @@ SOFTWARE.
 
 
 import datetime
-import json
 import logging
 import os
 import re
@@ -64,20 +63,6 @@ def is_valid_arch(target_arch, os_desc):
     Check that the image's architecture is consistent with the target binary.
     """
     return not (target_arch == 'x86_64' and os_desc['arch'] != 'x86_64')
-
-
-def _save_json_description(project_dir, config):
-    """
-    Create a JSON description of the project.
-
-    This information can be used by other commands.
-    """
-    logger.info('Creating JSON description')
-
-    project_desc_path = os.path.join(project_dir, 'project.json')
-    with open(project_desc_path, 'w') as f:
-        s = json.dumps(config, sort_keys=True, indent=4)
-        f.write(s)
 
 
 class BaseProject(AbstractProject):
@@ -225,8 +210,9 @@ class BaseProject(AbstractProject):
         self._create_lua_config(project_dir, config)
         self._create_bootstrap(project_dir, config)
 
-        # Save the project configuration as JSON
-        _save_json_description(project_dir, config)
+        # Even though the AbstractProject will save the project description, we
+        # need it to be able to generate recipes below
+        self._save_json_description(project_dir, config)
 
         # Generate recipes for PoV generation
         if config['use_recipes']:
@@ -255,6 +241,8 @@ class BaseProject(AbstractProject):
                            'substituted with a seed file. This means that '
                            'seed files will be fetched but never used. Is '
                            'this intentional?')
+
+        return project_dir
 
     def _get_instructions(self, config):
         instructions = render_template(config, 'instructions.txt')

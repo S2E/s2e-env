@@ -24,6 +24,7 @@ SOFTWARE.
 
 
 from abc import abstractmethod
+import json
 import logging
 import os
 import shutil
@@ -61,10 +62,18 @@ class AbstractProject(EnvCommand):
     """
 
     def handle(self, *args, **options):
+        # Generate a project config for the given target
         target = options.pop('target')
         config = self._configure(target, *args, **options)
-        self._create(config, options['force'])
 
+        # Create the actual project (and all the required files).The location
+        # of the newly-created project should be returned
+        project_dir = self._create(config, options['force'])
+
+        # Save the project descriptor in the project directory
+        self._save_json_description(project_dir, config)
+
+        # If the project comes with instructions, display them
         instructions = self._get_instructions(config)
         if instructions:
             logger.success(instructions)
@@ -92,7 +101,10 @@ class AbstractProject(EnvCommand):
     def _create(self, config, force=False):
         """
         Create the actual project based on the given project configuration
-        dictionary.
+        dictionary in ``config``.
+
+        Returns:
+            The path to the directory where the project was created.
         """
         raise NotImplementedError('Subclasses of AbstractProject must provide '
                                   'a _create method')
@@ -174,6 +186,24 @@ class AbstractProject(EnvCommand):
     #
     # Misc. helper methods
     #
+
+    # pylint: disable=no-self-use
+    def _save_json_description(self, project_dir, config):
+        """
+        Create a JSON description of the project.
+
+        This information can be used by other commands.
+        """
+        logger.info('Creating JSON description')
+
+        # Make sure that the JSON description **always** contains the project
+        # directory
+        config['project_dir'] = project_dir
+
+        project_desc_path = os.path.join(project_dir, 'project.json')
+        with open(project_desc_path, 'w') as f:
+            s = json.dumps(config, sort_keys=True, indent=4)
+            f.write(s)
 
     # pylint: disable=no-self-use
     def _copy_lua_library(self, project_dir):
