@@ -21,30 +21,37 @@ SOFTWARE.
 """
 
 
+import logging
 import os
 
 from s2e_env import CONSTANTS
 from s2e_env.command import CommandError
 
 
+logger = logging.getLogger('import_export')
+
 S2E_ENV_PLACEHOLDER = '<S2E_ENV_PATH>'
 
 
-def copy_and_rewrite_files(input_dir, output_dir, to_replace, replace_with):
+def rewrite_files(dir_, files_to_rewrite, to_replace, replace_with):
     """
-    Copy files from ``input_dir`` to ``output_dir`` and replace all occurances
-    of ``to_replace`` with ``replace_with``.
+    Rewrites the files in ``dir__ such that any file listed in
+    ``files_to_rewrite`` has all occurances of ``to_replace`` replaced by
+    ``replace_with``.
     """
-    for file_ in CONSTANTS['exported_files']:
-        in_file_path = os.path.join(input_dir, file_)
-        out_file_path = os.path.join(output_dir, file_)
+    for name in os.listdir(dir_):
+        path = os.path.join(dir_, name)
 
-        if not os.path.isfile(in_file_path):
-            raise CommandError('%s does not exist' % file_)
+        if not os.path.isfile(path):
+            continue
 
-        # We need to do this to correctly handle in_file_path == out_file_path
-        contents = ''
-        with open(in_file_path, 'r') as f:
+        if not name in files_to_rewrite:
+            continue
+
+        logger.info('Rewriting %s', name)
+
+        with open(path, 'r+') as f:
             contents = f.read()
-        with open(out_file_path, 'w') as f:
+            f.seek(0)
             f.write(contents.replace(to_replace, replace_with))
+            f.truncate()

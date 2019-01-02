@@ -147,11 +147,17 @@ function_models:
     - crc16
     - crc32
 
-# Project files exported by the ``s2e export_project`` command
-exported_files:
-    - bootstrap.sh
-    - launch-s2e.sh
-    - library.lua
-    - models.lua
-    - project.json
-    - s2e-config.lua
+import_export:
+    # Project files rewritten by the ``import_project`` and ``export_project``
+    # commands
+    project_files:
+        - bootstrap.sh
+        - launch-s2e.sh
+        - library.lua
+        - models.lua
+        - project.json
+        - s2e-config.lua
+    # Files/directories that are **not** exported
+    blacklist:
+        - guestfs
+        - guest-tools

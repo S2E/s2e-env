@@ -21,7 +21,6 @@ SOFTWARE.
 """
 
 
-import glob
 import json
 import logging
 import os
@@ -37,8 +36,9 @@ try:
 except ImportError:
     from s2e_env.utils.tempdir import TemporaryDirectory
 
+from s2e_env import CONSTANTS
 from s2e_env.command import ProjectCommand, CommandError
-from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, copy_and_rewrite_files
+from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, rewrite_files
 
 
 logger = logging.getLogger('export')
@@ -81,74 +81,61 @@ class Command(ProjectCommand):
             # Store all of the exported files in a temporary directory so that
             # we can just execute tar on the entire directory
             export_dir = os.path.join(temp_dir, self.project_name)
-            os.mkdir(export_dir)
 
-            # Copy project scripts and config files and rewrite the S2E
-            # environment path in these files
+            # Do **not** export these files
+            blacklist = CONSTANTS['import_export']['blacklist']
+            if not options['export_results']:
+                blacklist.extend(['s2e-last', 's2e-out-*'])
+
+            # Copy the project directory
+            logger.info('Copying project %s', self.project_name)
+            shutil.copytree(self.project_path(), export_dir,
+                            ignore=shutil.ignore_patterns(*blacklist))
+
+            # Rewrite certain project files (e.g., launch-s2e.sh, etc.) to
+            # remove the absolute path to the current S2E environment. This
+            # path is replaced with a placeholder token which is then rewritten
+            # with the absolute path of the new S2E environment when the
+            # project is imported
             logger.info('Rewriting project files')
-            copy_and_rewrite_files(self.project_path(), export_dir,
-                                   self.env_path(), S2E_ENV_PLACEHOLDER)
+            rewrite_files(export_dir,
+                          CONSTANTS['import_export']['project_files'],
+                          self.env_path(), S2E_ENV_PLACEHOLDER)
 
-            with open(self.project_path('project.json'), 'r') as orig_proj_file, \
-                 open(os.path.join(export_dir, 'project.json'), 'r+') as new_proj_file:
-                orig_proj_desc = json.load(orig_proj_file)
-                new_proj_desc = json.load(new_proj_file)
+            # Update project.json
+            #
+            # project.json has already had its S2E environment path
+            # overwritten. However, there are still other paths that need
+            # rewriting to ensure that the project can be correctly imported.
+            logger.info('Updating project.json')
+            with open(os.path.join(export_dir, 'project.json'), 'r+') as f:
+                proj_desc = json.load(f)
 
-                # Rewrite the target_path entry in the given project.json. This
-                # is done because when we import the project the target will no
-                # longer be a symlink
-                new_proj_desc['target_path'] = \
-                    os.path.join(new_proj_desc['project_dir'], new_proj_desc['target'])
+                # The target files in a project are normally symbolic links.
+                # However, when exported they are no longer symbolic links and
+                # so we must update their paths
 
-                # Export the recipes directory. We need a reference to the
-                # original project description so that we know where to copy
-                # from (because our new project description has been
-                # overwritten with the S2E_ENV_PLACEHOLDER)
-                if new_proj_desc['use_recipes']:
-                    recipes_dir = os.path.basename(new_proj_desc['recipes_dir'])
-                    shutil.copytree(orig_proj_desc['recipes_dir'],
-                                    os.path.join(export_dir, recipes_dir))
+                proj_path = proj_desc['project_dir']
+                update_path = lambda p: os.path.join(proj_path, os.path.basename(p))
 
-                # Export the seeds directory. We need a reference to the
-                # original project description so that we know where to copy
-                # from (because the new project description has been
-                # overwritten with the S2E_ENV_PLACEHOLDER)
-                if new_proj_desc['use_seeds']:
-                    seeds_dir = os.path.basename(new_proj_desc['seeds_dir'])
-                    shutil.copytree(orig_proj_desc['seeds_dir'],
-                                    os.path.join(export_dir, seeds_dir))
+                target_path = proj_desc.get('target_path')
+                if target_path:
+                    proj_desc['target_path'] = update_path(target_path)
+
+                target_files = proj_desc.get('target_files')
+                if target_files:
+                    proj_desc['target_files'] = [update_path(tf) for tf in target_files]
 
                 # Update the project.json in the temporary directory
-                new_proj_desc_json = json.dumps(new_proj_desc, sort_keys=True, indent=4)
-                new_proj_file.seek(0)
-                new_proj_file.write(new_proj_desc_json)
-                new_proj_file.truncate()
-
-            # Copy the target into the temporary directory
-            logger.info('Copying target from %s', self.project_desc['target_path'])
-            shutil.copyfile(self.project_desc['target_path'],
-                            os.path.join(export_dir, self.project_desc['target']))
-
-            # Copy previous results
-            if options['export_results']:
-                self._copy_previous_results(export_dir)
+                proj_desc_json = json.dumps(proj_desc, sort_keys=True, indent=4)
+                f.seek(0)
+                f.write(proj_desc_json)
+                f.truncate()
 
             # Create the archive of the temporary directory's contents
             self._create_archive(output_path, temp_dir)
 
         logger.success('Project successfully exported to %s', output_path)
-
-    def _copy_previous_results(self, export_dir):
-        """
-        Copy previous S2E analysis results for this project.
-
-        Args:
-            export_dir: Path to the temporary directory that will be exported.
-        """
-        for s2e_out_path in glob.glob(self.project_path('s2e-out-*')):
-            s2e_out_dir = os.path.basename(s2e_out_path)
-            logger.info('Copying %s', s2e_out_dir)
-            shutil.copytree(s2e_out_path, os.path.join(export_dir, s2e_out_dir))
 
     def _create_archive(self, archive_path, export_dir):
         """
