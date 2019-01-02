@@ -223,7 +223,7 @@ class AbstractProject(EnvCommand):
         for f in files:
             logger.info('Creating a symlink to %s', f)
             target_file = os.path.basename(f)
-            os.symlink(f, os.path.join(project_dir, target_file))
+            os.symlink(os.path.abspath(f), os.path.join(project_dir, target_file))
 
     def _symlink_guest_tools(self, project_dir, img_desc):
         """
