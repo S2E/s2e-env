@@ -32,7 +32,7 @@ from sh import tar, ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, copy_and_rewrite_files
+from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, rewrite_files
 
 
 logger = logging.getLogger('import')
@@ -100,8 +100,8 @@ class Command(EnvCommand):
 
         # Rewrite all of the exported files to fix their S2E environment paths
         logger.info('Rewriting project files')
-        copy_and_rewrite_files(project_path, project_path,
-                               S2E_ENV_PLACEHOLDER, self.env_path())
+        rewrite_files(project_path, CONSTANTS['import_export']['project_files'],
+                      S2E_ENV_PLACEHOLDER, self.env_path())
 
         with open(os.path.join(project_path, 'project.json'), 'r') as f:
             proj_desc = json.load(f)
@@ -132,26 +132,34 @@ class Command(EnvCommand):
         """
         Create a symlink to the guest tools directory.
         """
+        if 'image' not in project_desc:
+            logger.warn('No image description found in project.json. Unable '
+                        'to determine the guest tools to symlink')
+            return
+
         qemu_arch = project_desc['image']['qemu_build']
         guest_tools_path = \
             self.install_path('bin', CONSTANTS['guest_tools'][qemu_arch])
 
         logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path,
-                   os.path.join(project_path, 'guest-tools'))
+        os.symlink(guest_tools_path, os.path.join(project_path, 'guest-tools'))
 
     def _symlink_guestfs(self, project_path, project_desc):
         """
         Create a symlink to the image's guestfs directory.
         """
+        if 'image' not in project_desc:
+            logger.warn('No image description found in project.json. Unable '
+                        'to determine the guestfs to symlink')
+            return
+
         image_name = os.path.dirname(project_desc['image']['path'])
         guestfs_path = self.image_path(image_name, 'guestfs')
-
         if not os.path.exists(guestfs_path):
             logger.warn('%s does not exist, despite the original project '
                         'using the guestfs. The VMI plugin may not run '
                         'optimally', guestfs_path)
+            return
 
         logger.info('Creating a symlink to %s', guestfs_path)
-        os.symlink(guestfs_path,
-                   os.path.join(project_path, 'guestfs'))
+        os.symlink(guestfs_path, os.path.join(project_path, 'guestfs'))
