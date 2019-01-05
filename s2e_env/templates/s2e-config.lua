@@ -150,7 +150,6 @@ pluginsConfig.ModuleExecutionDetector = {
     {% for m in modules %}
     mod_0 = {
         moduleName = "{{ m[0] }}",
-        kernelMode = {% if m[1] %} true {% else %} false {% endif %},
     },
     {% endfor %}
     logLevel="info"
