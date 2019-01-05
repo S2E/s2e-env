@@ -20,8 +20,6 @@ pluginsConfig.GuestCodeHooking = {
     {% endif %}
 {% endfor %}
 
--- Add an extra option to the existing config
-pluginsConfig.ModuleExecutionDetector['trackAllModules'] = true
 
 -------------------------------------------------------------------------------
 -- This plugin monitors kernel crashes and generates WinDbg crash dumps.
