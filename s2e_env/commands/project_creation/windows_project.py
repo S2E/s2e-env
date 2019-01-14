@@ -102,3 +102,6 @@ class WindowsDriverProject(WindowsProject):
 
         # All we support for now
         config['use_fault_injection'] = True
+
+        # Using the @@ input marker does not make sense for Windows drivers
+        config['warn_input_file'] = False
