@@ -27,6 +27,9 @@ disassemblers include:
 ```console
 git clone https://github.com/S2E/s2e-env.git
 cd s2e-env
+pip install .
+
+# Note: if you use pip earlier than version 19, you must add --process-dependency-links:
 pip install . --process-dependency-links
 ```
 
