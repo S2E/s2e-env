@@ -194,10 +194,9 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         no_tui = options['no_tui']
 
-        # TODO: automatic allocation
-        qmp_socket = ('127.0.0.1', 2014)
+        # Port 0 tells the systems to dynamically allocate a free port
+        qmp_socket = ('127.0.0.1', 0)
 
-        args, env = self._setup_env(options['project_args'], options['cores'], qmp_socket)
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
         self._cgc = 'cgc' in self._project_desc['image']['os']['name']
@@ -223,6 +222,7 @@ class Command(ProjectCommand):
                 stderr = sys.stderr
 
             logger.info('Launching S2E')
+            args, env = self._setup_env(options['project_args'], options['cores'], qmp_server)
             thr = S2EThread(args, env, self.project_path(), stdout, stderr)
             thr.start()
 
@@ -262,7 +262,10 @@ class Command(ProjectCommand):
                 qmp_server.shutdown()
                 qmp_server.server_close()
 
-    def _setup_env(self, project_args, cores, qmp_socket):
+    def _setup_env(self, project_args, cores, qmp_server):
+        sn = qmp_server.socket.getsockname()
+        server, port = sn[0], sn[1]
+
         qemu_build = self._project_desc['image']['qemu_build']
         qemu = self.install_path('bin',
                                  'qemu-system-%s' % qemu_build)
@@ -275,7 +278,7 @@ class Command(ProjectCommand):
             'S2E_UNBUFFERED_STREAM': '1',
             'S2E_SHARED_DIR': self.install_path('share', 'libs2e'),
             'LD_PRELOAD': libs2e,
-            'S2E_QMP_SERVER': '%s:%d' % qmp_socket
+            'S2E_QMP_SERVER': '%s:%d' % (server, port)
         }
         env.update(env_s2e)
 
