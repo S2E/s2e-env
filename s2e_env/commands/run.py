@@ -289,10 +289,15 @@ class Command(ProjectCommand):
             'file=%s,format=s2e,cache=writeback' % self._project_desc['image']['path'],
             '-serial', 'file:serial.txt',
             '-loadvm', self._project_desc['image']['snapshot'],
-            '-nographic',
             '-monitor', 'null',
             '-m', self._project_desc['image']['memory'],
-        ] + shlex.split(self._project_desc['image']['qemu_extra_flags']) + project_args
+        ]
+
+        graphics = env.get('GRAPHICS', '-nographic')
+        if graphics:
+            args.append(graphics)
+
+        args = args + shlex.split(self._project_desc['image']['qemu_extra_flags']) + project_args
 
         return args, env
 
