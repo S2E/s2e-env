@@ -52,6 +52,18 @@ def expand_byte(b, size):
     return int(s * size, 16)
 
 
+def gen_marker(size_in_bytes):
+    """
+    Returns a pattern of the given size.
+    We need a marker with distinct bytes to avoid overlaps
+    with instructions that begin with the same byte as the marker.
+    """
+    marker = ''
+    for i in xrange(0, size_in_bytes):
+        marker = '%s%02x' % (marker, i+1)
+    return int(marker, 16)
+
+
 def write_stripped_string(fp, string, line_prefix=''):
     for line in string.splitlines():
         stripped = line.strip()
@@ -107,7 +119,7 @@ def assemble(instructions, markers, arch):
 
             # AAAA or BBBB means 2 bytes, CCCCCCCC 4 bytes, etc.
             marker_size = len(found_marker) / 2
-            value = expand_byte(0xbc, marker_size)
+            value = gen_marker(marker_size)
             new_instr = instr.replace(found_marker, str(value))
             asmd = assemble_raw([new_instr], arch, False)
             resolve_marker(asmd, value, marker_size, found_varname)
