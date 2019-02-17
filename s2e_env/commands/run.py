@@ -105,6 +105,15 @@ def _sigterm_handler(signum=None, _=None):
     _terminate_s2e()
 
 
+def _wait_for_termination(timeout):
+    while not terminating():
+        if timeout:
+            time.sleep(timeout * 60)
+            return
+        else:
+            time.sleep(1)
+
+
 class S2EThread(Thread):
     # pylint: disable=too-many-arguments
     def __init__(self, args, env, cwd, stdout, stderr):
@@ -250,13 +259,7 @@ class Command(ProjectCommand):
             else:
                 # If a timeout is provided, sleep for that amount. Otherwise
                 # loop indefinitely
-                timeout = options['timeout']
-                while not terminating():
-                    if timeout:
-                        time.sleep(timeout * 60)
-                        break
-                    else:
-                        time.sleep(1)
+                _wait_for_termination(options['timeout'])
 
             logger.info('Terminating S2E')
             _terminate_s2e()
