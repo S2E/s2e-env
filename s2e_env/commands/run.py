@@ -35,7 +35,7 @@ import sys
 from threading import Thread
 import time
 
-from s2e_env.command import ProjectCommand
+from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
 from s2e_env.server.collector_threads import CollectorThreads
@@ -49,14 +49,17 @@ libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
 s2e_main_process = None
 
+def send_signal_to_children_on_exit(sig):
+    # Make sure that s2e would get killed if the parent process crashes
+    # 1 = PR_SET_PDEATHSIG
+    libc.prctl(1, sig, 0, 0, 0)
+
 
 def _s2e_preexec():
     # Collect core dumps for S2E
     # resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
-    # Make sure that s2e would get killed if the parent process crashes
-    # 1 = PR_SET_PDEATHSIG
-    libc.prctl(1, signal.SIGTERM, 0, 0, 0)
+    send_signal_to_children_on_exit(signal.SIGTERM)
 
 
 def _has_s2e_processes(pid):
@@ -261,6 +264,9 @@ class Command(ProjectCommand):
             if qmp_server:
                 qmp_server.shutdown()
                 qmp_server.server_close()
+
+        if s2e_main_process.returncode:
+            raise CommandError('S2E terminated with error %d' % s2e_main_process.returncode)
 
     def _setup_env(self, project_args, cores, qmp_server):
         sn = qmp_server.socket.getsockname()
