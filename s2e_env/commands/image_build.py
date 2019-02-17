@@ -297,10 +297,12 @@ class Command(EnvCommand):
             for a in archive_rules:
                 logger.info(' * %s', a)
 
+        iso_dir = os.path.abspath(options['iso_dir']) if options['iso_dir'] else None
+
         # Check for optional product keys and iso directories.
         # These may or may not be required, depending on the set of images.
         _check_product_keys(templates, image_names)
-        _check_iso(templates, options['iso_dir'], image_names)
+        _check_iso(templates, iso_dir, image_names)
 
         if self._use_kvm:
             _check_kvm()
@@ -313,11 +315,11 @@ class Command(EnvCommand):
         # This is necessary if the s2e env has been initialized with -b flag.
         self._clone_kernel()
 
-        self._invoke_make(img_build_dir, rule_names, num_cores, options['iso_dir'])
+        self._invoke_make(img_build_dir, rule_names, num_cores, iso_dir)
 
         logger.success('Built image \'%s\'', image_name)
 
-    def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=''):
+    def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=None):
         env = os.environ.copy()
         env['S2E_INSTALL_ROOT'] = self.install_path()
         env['S2E_LINUX_KERNELS_ROOT'] = \
