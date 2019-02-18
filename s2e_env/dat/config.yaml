@@ -103,6 +103,7 @@ repos:
     images:
         linux: s2e-linux-kernel
         build: guest-images
+    testsuite: testsuite
 
 required_versions:
     # Ubuntu OS major version

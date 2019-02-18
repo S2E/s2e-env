@@ -54,6 +54,14 @@ def _get_img_sources(env_path):
         repos.git_clone_to_source(env_path, git_repo)
 
 
+def _get_testsuite_sources(env_path):
+    """
+    Download the testsuite repository
+    """
+    git_repo = CONSTANTS['repos']['testsuite']
+    repos.git_clone_to_source(env_path, git_repo)
+
+
 def _link_existing_install(env_path, existing_install):
     """
     Reuse an existing S2E installation at ```existing_install``` in the new
@@ -312,6 +320,7 @@ class Command(BaseCommand):
                 # Get the source repositories
                 _get_s2e_sources(env_path)
                 _get_img_sources(env_path)
+                _get_testsuite_sources(env_path)
 
                 # Remind the user that they must build S2E
                 msg = '%s. Then run ``s2e build`` to build S2E' % msg
