@@ -121,6 +121,8 @@ def _binary_search(tb_start_addr, bbs):
             return mid
         elif tb_start_addr <= bbs[mid].end_addr:
             hi = mid
+        elif lo == mid:
+            break
         else:
             lo = mid
 
