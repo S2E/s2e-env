@@ -79,7 +79,7 @@ def _raise_group_error(group_name):
                        '\tsudo usermod -a -G {0} $(whoami)'.format(group_name))
 
 
-def _check_groups():
+def _check_groups(use_kvm=True):
     """
     Check that the current user belongs to the required groups to both run S2E
     and build S2E images.
@@ -87,7 +87,7 @@ def _check_groups():
     if not _user_belongs_to('docker'):
         _raise_group_error('docker')
 
-    if not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
+    if use_kvm and not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
         _raise_group_error('kvm')
 
 
@@ -307,7 +307,7 @@ class Command(EnvCommand):
         if self._use_kvm:
             _check_kvm()
 
-        _check_groups()
+        _check_groups(self._use_kvm)
         _check_vmlinux()
         _check_virtualbox()
 
