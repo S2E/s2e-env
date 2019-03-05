@@ -13,3 +13,15 @@ ida:
 binary_ninja:
     # Path to the Binary Ninja installation directory
     dir: ""
+
+windows_build_server:
+    # Host name / IP address of a Windows build machine.
+    # The machine must have Visual Studio installed with WDK support
+    # and accessible via SSH/rsync. Please refer to the following
+    # page for information on how to set it up:
+    #
+    # http://s2e.systems/docs/WindowsEnvSetup.html
+    host: ""
+
+    # The user account to use on the windows build machine
+    user: s2e

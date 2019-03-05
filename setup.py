@@ -62,7 +62,9 @@ setup(
         'sh',
         'termcolor',
         'pytrie',
-        'pwntools==3.12.0'
+        'pwntools==3.12.0',
+        'psutil',
+        'multiprocessing'
     ],
     tests_require=[
         'mock',

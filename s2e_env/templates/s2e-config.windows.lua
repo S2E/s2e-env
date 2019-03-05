@@ -36,9 +36,10 @@ add_plugin("WindowsCrashMonitor")
 pluginsConfig.WindowsCrashMonitor = {
     terminateOnCrash = true,
 
-    -- Make this true if you want crashes.
-    -- Note that crashes may be very large (100s of MBs)
-    generateCrashDump = false,
+    -- Make this true if you want crash dumps.
+    -- Note that crash dumps may be very large (100s of MBs)
+    generateCrashDumpOnKernelCrash = false,
+    generateCrashDumpOnUserCrash = false,
 
     -- Limit number of crashes we generate
     maxCrashDumps = 10,

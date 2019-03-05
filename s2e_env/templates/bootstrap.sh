@@ -30,7 +30,18 @@ function update_guest_tools {
     {% endif %}
 
     for TOOL in ${GUEST_TOOLS}; do
+        {% if image_arch=='x86_64' %}
+        # s2ecmd is used to create symbolic data, which in 64-bit guests may lead
+        # to forced concretizations if it flows into MMX registers. Use 32-bit version
+        # to minimize this problem.
+        if [[ $TOOL == s2ecmd* ]]; then
+            ${OUR_S2EGET} guest-tools32/${TOOL}
+        else
+            ${OUR_S2EGET} guest-tools/${TOOL}
+        fi
+        {% else %}
         ${OUR_S2EGET} guest-tools/${TOOL}
+        {% endif %}
         chmod +x ${TOOL}
     done
 }

@@ -35,7 +35,7 @@ import sys
 from threading import Thread
 import time
 
-from s2e_env.command import ProjectCommand
+from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.server import CGCInterfacePlugin
 from s2e_env.server import QMPTCPServer, QMPConnectionHandler
 from s2e_env.server.collector_threads import CollectorThreads
@@ -49,14 +49,17 @@ libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
 s2e_main_process = None
 
+def send_signal_to_children_on_exit(sig):
+    # Make sure that s2e would get killed if the parent process crashes
+    # 1 = PR_SET_PDEATHSIG
+    libc.prctl(1, sig, 0, 0, 0)
+
 
 def _s2e_preexec():
     # Collect core dumps for S2E
     # resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
-    # Make sure that s2e would get killed if the parent process crashes
-    # 1 = PR_SET_PDEATHSIG
-    libc.prctl(1, signal.SIGTERM, 0, 0, 0)
+    send_signal_to_children_on_exit(signal.SIGTERM)
 
 
 def _has_s2e_processes(pid):
@@ -100,6 +103,15 @@ def _terminate_s2e():
 def _sigterm_handler(signum=None, _=None):
     logger.warning('Got signal %s, terminating S2E', signum)
     _terminate_s2e()
+
+
+def _wait_for_termination(timeout):
+    while not terminating():
+        if timeout:
+            time.sleep(timeout * 60)
+            return
+        else:
+            time.sleep(1)
 
 
 class S2EThread(Thread):
@@ -194,10 +206,9 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         no_tui = options['no_tui']
 
-        # TODO: automatic allocation
-        qmp_socket = ('127.0.0.1', 2014)
+        # Port 0 tells the systems to dynamically allocate a free port
+        qmp_socket = ('127.0.0.1', 0)
 
-        args, env = self._setup_env(options['project_args'], options['cores'], qmp_socket)
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
         self._cgc = 'cgc' in self._project_desc['image']['os']['name']
@@ -223,6 +234,7 @@ class Command(ProjectCommand):
                 stderr = sys.stderr
 
             logger.info('Launching S2E')
+            args, env = self._setup_env(options['project_args'], options['cores'], qmp_server)
             thr = S2EThread(args, env, self.project_path(), stdout, stderr)
             thr.start()
 
@@ -247,13 +259,7 @@ class Command(ProjectCommand):
             else:
                 # If a timeout is provided, sleep for that amount. Otherwise
                 # loop indefinitely
-                timeout = options['timeout']
-                while not terminating():
-                    if timeout:
-                        time.sleep(timeout * 60)
-                        break
-                    else:
-                        time.sleep(1)
+                _wait_for_termination(options['timeout'])
 
             logger.info('Terminating S2E')
             _terminate_s2e()
@@ -262,7 +268,13 @@ class Command(ProjectCommand):
                 qmp_server.shutdown()
                 qmp_server.server_close()
 
-    def _setup_env(self, project_args, cores, qmp_socket):
+        if s2e_main_process.returncode:
+            raise CommandError('S2E terminated with error %d' % s2e_main_process.returncode)
+
+    def _setup_env(self, project_args, cores, qmp_server):
+        sn = qmp_server.socket.getsockname()
+        server, port = sn[0], sn[1]
+
         qemu_build = self._project_desc['image']['qemu_build']
         qemu = self.install_path('bin',
                                  'qemu-system-%s' % qemu_build)
@@ -275,7 +287,7 @@ class Command(ProjectCommand):
             'S2E_UNBUFFERED_STREAM': '1',
             'S2E_SHARED_DIR': self.install_path('share', 'libs2e'),
             'LD_PRELOAD': libs2e,
-            'S2E_QMP_SERVER': '%s:%d' % qmp_socket
+            'S2E_QMP_SERVER': '%s:%d' % (server, port)
         }
         env.update(env_s2e)
 
@@ -286,10 +298,15 @@ class Command(ProjectCommand):
             'file=%s,format=s2e,cache=writeback' % self._project_desc['image']['path'],
             '-serial', 'file:serial.txt',
             '-loadvm', self._project_desc['image']['snapshot'],
-            '-nographic',
             '-monitor', 'null',
             '-m', self._project_desc['image']['memory'],
-        ] + shlex.split(self._project_desc['image']['qemu_extra_flags']) + project_args
+        ]
+
+        graphics = env.get('GRAPHICS', '-nographic')
+        if graphics:
+            args.append(graphics)
+
+        args = args + shlex.split(self._project_desc['image']['qemu_extra_flags']) + project_args
 
         return args, env
 

@@ -150,7 +150,7 @@ class AbstractProject(EnvCommand):
 
         return self._get_or_download_image(img_templates, image, download_image)
 
-    def _guess_image(self, target, templates):
+    def _guess_image(self, target, img_templates):
         """
         At this stage, images may not exist, so we get the list of images
         from images.json (in the guest-images repo) rather than from the images
@@ -159,14 +159,28 @@ class AbstractProject(EnvCommand):
         logger.info('No image was specified (-i option). Attempting to guess '
                     'a suitable image for a %s binary...', target.arch)
 
-        for k, v in templates.iteritems():
-            if self._is_valid_image(target, v['os']):
-                logger.warning('Found %s, which looks suitable for this '
-                               'binary. Please use -i if you want to use '
-                               'another image', k)
-                return k
+        images = self.get_usable_images(target, img_templates)
+        if not images:
+            raise CommandError('No suitable image available for this target')
 
-        raise CommandError('No suitable image available for this target')
+        image = images[0]
+        logger.warning('Found %s, which looks suitable for this '
+                       'binary. Please use -i if you want to use '
+                       'another image', image)
+
+        return image
+
+    def get_usable_images(self, target, image_templates):
+        """
+        Returns all images suitable for this target.
+        """
+        images = []
+
+        for k, v in image_templates.iteritems():
+            if self._is_valid_image(target, v['os']):
+                images.append(k)
+
+        return images
 
     def _get_or_download_image(self, templates, image, do_download=True):
         img_path = self.image_path(image)
@@ -241,6 +255,17 @@ class AbstractProject(EnvCommand):
         logger.info('Creating a symlink to %s', guest_tools_path)
         os.symlink(guest_tools_path,
                    os.path.join(project_dir, 'guest-tools'))
+
+        # Also link 32-bit guest tools for 64-bit guests.
+        # This is a workaround for forced concretizations until proper symbolic MMX
+        # registers support is implemented.
+        if img_arch == 'x86_64':
+            guest_tools_path_32 = \
+                self.install_path('bin', CONSTANTS['guest_tools']['i386'])
+
+            os.symlink(guest_tools_path_32,
+                       os.path.join(project_dir, 'guest-tools32'))
+
 
     def _select_guestfs(self, img_desc):
         """
