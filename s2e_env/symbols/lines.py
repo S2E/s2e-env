@@ -30,6 +30,8 @@ logger = logging.getLogger('lines')
 
 @total_ordering
 class LineInfoEntry(object):
+    __slots__ = '_filename', '_line', '_addr'
+
     def __init__(self, filename, line, addr):
         self._filename = filename
         self._line = line
@@ -67,6 +69,9 @@ class LinesByAddr(object):
     This class maintains a mapping from addresses to line information.
     Lookup and insertion are done using binary search.
     """
+
+    __slots__ = '_lines',
+
     def __init__(self):
         self._lines = []
 
