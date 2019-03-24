@@ -53,6 +53,7 @@ dependencies:
         # S2E dependencies
         - libdwarf-dev
         - libelf-dev
+        - libelf-dev:i386
         - libiberty-dev
         - binutils-dev
         - libreadline-dev
