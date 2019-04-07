@@ -27,6 +27,8 @@ from functools import total_ordering
 
 @total_ordering
 class FunctionInfoEntry(object):
+    __slots__ = '_name', '_start_addr', '_end_addr'
+
     def __init__(self, funcname, start_addr, end_addr):
         self._name = funcname
         self._start_addr = start_addr
@@ -63,6 +65,9 @@ class FunctionInfo(object):
     """
     This class provides an efficient lookup from address to function name.
     """
+
+    __slots__ = '_funcs',
+
     def __init__(self):
         self._funcs = []
 
