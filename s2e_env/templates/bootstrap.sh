@@ -231,6 +231,3 @@ execute "./{{ target }}"
 ##### NO TARGET HAS BEEN SPECIFIED DURING PROJECT CREATION #####
 ##### Please fetch and execute the target files manually   #####
 {% endif %}
-
-# Kill states before exiting
-${S2ECMD} kill $? "Target execution terminated"
