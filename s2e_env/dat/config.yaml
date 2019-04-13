@@ -84,6 +84,7 @@ dependencies:
 
         # s2e-env dependencies
         - lcov
+        - jq
     ida:
         # IDA Pro TUI dependencies
         - lib32ncurses5
