@@ -22,9 +22,12 @@ SOFTWARE.
 
 
 from abc import ABCMeta, abstractmethod
+import errno
 import json
 import logging
 import os
+
+from subprocess import Popen, PIPE
 
 from elftools.dwarf import constants as dwarf_consts
 from elftools.dwarf.descriptions import describe_form_class
@@ -354,12 +357,62 @@ class JsonDebugInfo(DebugInfo):
                 self._parse_info(lines)
 
 
+def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only):
+    addrs2lines = os.path.join(s2e_prefix, 'bin', 'addrs2lines')
+    if not os.path.exists(addrs2lines):
+        logger.warn('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
+        raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), addrs2lines)
+
+    args = [addrs2lines, '-coverage', '-pretty']
+    if include_covered_files_only:
+        args.append('-include-covered-files-only')
+
+    args.append(target_path)
+
+    p = Popen(args, stdout=PIPE, stdin=PIPE)
+
+    stdout_data = p.communicate(input=json_in)[0]
+    if p.returncode:
+        raise Exception('addrs2lines failed with error code %d' % p.returncode)
+
+    return stdout_data
+
+
+def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_covered_files_only):
+    """
+    This functions uses addrs2lines to compute code coverage.
+    It is much faster than using pyelftools. It takes a few seconds to get coverage for the Linux kernel,
+    vs a few (tens) of minutes with pyelftools.
+    """
+    address_ranges = []
+    for addr, _ in addr_counts.items():
+        address_ranges.append((addr, 1))
+
+    stdout_data = _invoke_addrs2_lines(
+        s2e_prefix,
+        guess_target_path(search_paths, target),
+        json.dumps(address_ranges),
+        include_covered_files_only
+    )
+
+    lines = json.loads(stdout_data)
+
+    ret = {}
+    for source_file, data in lines.items():
+        line_counts = {}
+        for line in data.get('lines', []):
+            line_counts[line[0]] = line[1]
+        ret[source_file] = line_counts
+
+    return ret
+
+
 class SymbolManager(object):
     """
     This class manages debug information for binary files.
     It implements addr2line equivalent and provides methods to compute code coverage.
     """
-    def __init__(self, search_paths=None):
+    def __init__(self, s2e_prefix, search_paths=None):
         """
         Initialize an instance of the symbol manager.
         :param search_paths: list of paths where to search for binaries when they are
@@ -370,6 +423,7 @@ class SymbolManager(object):
 
         self._targets = {}
         self._search_paths = search_paths
+        self._s2e_prefix = s2e_prefix
 
     def _get_syms(self, target):
         syms = None
@@ -430,4 +484,10 @@ class SymbolManager(object):
                 }
                 ```
         """
-        return self.get_target(target).get_coverage(addr_counts, include_covered_files_only)
+
+        try:
+            return _get_coverage_fast(self._s2e_prefix, self._search_paths, target, addr_counts,
+                                      include_covered_files_only)
+        except Exception as e:
+            logger.warn('addrs2lines failed (%s), trying to get coverage using pyelftools (may be slow!)', e)
+            return self.get_target(target).get_coverage(addr_counts, include_covered_files_only)

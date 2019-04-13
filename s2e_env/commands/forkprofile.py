@@ -124,7 +124,7 @@ class Command(ProjectCommand):
         if not execution_tree:
             raise CommandError('The execution trace is empty')
 
-        syms = SymbolManager(self.symbol_search_path)
+        syms = SymbolManager(self.install_path(), self.symbol_search_path)
 
         fp = ForkProfiler(execution_tree, syms)
         fp.get()
