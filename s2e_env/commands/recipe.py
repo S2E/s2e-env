@@ -296,7 +296,7 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         logging.getLogger('pwnlib').setLevel('ERROR')
 
-        img_os_desc = self.project_desc['image']['os']
+        img_os_desc = self.image['os']
 
         archs = []
         if img_os_desc['arch'] == 'x86_64':

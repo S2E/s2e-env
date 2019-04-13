@@ -36,7 +36,7 @@ S2E_ENV_PLACEHOLDER = '<S2E_ENV_PATH>'
 def rewrite_files(dir_, files_to_rewrite, to_replace, replace_with):
     """
     Rewrites the files in ``dir__ such that any file listed in
-    ``files_to_rewrite`` has all occurances of ``to_replace`` replaced by
+    ``files_to_rewrite`` has all occurrences of ``to_replace`` replaced by
     ``replace_with``.
     """
     for name in os.listdir(dir_):
