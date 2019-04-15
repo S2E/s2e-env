@@ -31,88 +31,151 @@ logger = logging.getLogger('analyzer')
 
 
 @total_ordering
-class Module(object):
-    def __init__(self, name, path, load_base, native_base, size, pid): # pylint: disable=too-many-arguments
-        self._name = name
-        self._path = path
-        self._load_base = load_base
-        self._native_base = native_base
-        self._size = size
-        self._pid = pid
+class SectionDescriptor(object):
+    __slots__ = (
+        'name', 'runtime_load_base', 'native_load_base', 'size',
+        'readable', 'writable', 'executable'
+    )
 
-    @property
-    def name(self):
-        return self._name
+    def __init__(self, pb_section):
+        if pb_section:
+            self.name = pb_section.name
+            self.runtime_load_base = pb_section.runtime_load_base
+            self.native_load_base = pb_section.native_load_base
+            self.size = pb_section.size
+            self.readable = pb_section.readable
+            self.writable = pb_section.writable
+            self.executable = pb_section.executable
 
-    @property
-    def path(self):
-        return self._path
-
-    @property
-    def load_base(self):
-        return self._load_base
-
-    @property
-    def native_base(self):
-        return self._native_base
-
-    @property
-    def size(self):
-        return self._size
-
-    @property
-    def pid(self):
-        return self._pid
-
-    def to_native(self, pc):
-        return pc - self._load_base + self._native_base
+    def contains(self, pc):
+        return (self.runtime_load_base <= pc) and (pc < self.runtime_load_base + self.size)
 
     def __hash__(self):
-        return hash((self._pid, self._load_base))
+        return hash((self.runtime_load_base, self.size))
 
     def __eq__(self, other):
         return not self < other and not other < self
 
     def __lt__(self, other):
-        # pylint: disable=protected-access
-        # Access fields directly, using properties is too slow
-        if self._pid != other._pid:
-            return self._pid < other._pid
-
-        return self._load_base + self._size <= other._load_base
+        return self.runtime_load_base + self.size <= other.runtime_load_base
 
     def __str__(self):
-        return 'Module name:%s (%s) load_base:%#x native_base:%#x size:%#x pid:%d' % (
-            self.name, self.path, self.load_base, self.native_base, self.size, self.pid)
+        return 'name:%s rt_base=%#x size=%#x' % (self.name, self.runtime_load_base, self.size)
+
+
+@total_ordering
+class Module(object):
+    __slots__ = (
+        'name', 'path', 'pid', 'sections'
+    )
+
+    def __init__(self, pb_module=None):
+        self.sections = []
+        if pb_module:
+            self.name = pb_module.name
+            self.path = pb_module.path
+            self.pid = pb_module.pid
+            for section in pb_module.sections:
+                self.sections.append(SectionDescriptor(section))
+        else:
+            self.name = '<unknown>'
+            self.path = '<unknown>'
+            self.pid = 0
+
+    def get_section(self, pc):
+        for section in self.sections:
+            if section.contains(pc):
+                return section
+        return None
+
+    def to_native(self, pc):
+        section = self.get_section(pc)
+        if not section:
+            return None
+
+        return pc - section.runtime_load_base + section.native_load_base
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def __eq__(self, other):
+        return self.path == other.path and self.name == other.name
+
+    def __lt__(self, other):
+        return self.path < other.path
+
+    def __str__(self):
+        return 'Module name:%s (%s) pid:%d' % (self.name, self.path, self.pid)
+
+
+def _index(sections, x):
+    i = bisect.bisect_left(sections, x)
+    if i != len(sections) and sections[i] == x:
+        return i
+
+    return None
 
 
 class ModuleMap(object):
     def __init__(self):
-        self._modules = []
-        self._kernel_start = None
-
-    def _index(self, x):
-        i = bisect.bisect_left(self._modules, x)
-        if i != len(self._modules) and self._modules[i] == x:
-            return i
-        raise ValueError
+        self._pid_to_sections = {}
+        self._section_to_module = {}
+        self._kernel_start = 0xffffffffffffffff
 
     def add(self, mod):
-        bisect.insort(self._modules, mod)
+        if mod.pid not in self._pid_to_sections:
+            self._pid_to_sections[mod.pid] = []
+
+        pid_sections = self._pid_to_sections[mod.pid]
+
+        for section in mod.sections:
+            if not section.size:
+                raise Exception('Section %s of module %s has zero size' % (section, mod))
+
+            idx = _index(pid_sections, section)
+            if idx != None:
+                logger.warn('Section already loaded: %s - module %s',
+                            section, self._section_to_module[(mod.pid, section)])
+                continue
+
+            bisect.insort(pid_sections, section)
+            self._section_to_module[(mod.pid, section)] = mod
 
     def remove(self, mod):
-        del self._modules[self._index(mod)]
+        pid_sections = self._pid_to_sections[mod.pid]
+        for section in mod.sections:
+            idx = _index(pid_sections, section)
+            if idx != None:
+                del pid_sections[idx]
+                del self._section_to_module[(mod.pid, section)]
+
+    def remove_pid(self, pid):
+        del self._pid_to_sections[pid]
 
     def get(self, pid, pc):
-        if pc > self._kernel_start:
-            pid = 0
+        pid = self._translate_pid(pid, pc)
+        if pid not in self._pid_to_sections:
+            raise Exception('Could not find pid=%d' % pid)
 
-        mod = Module(None, None, pc, None, 1, pid)
-        return self._modules[self._index(mod)]
+        sections = self._pid_to_sections[pid]
+        sd = SectionDescriptor(None)
+        sd.runtime_load_base = pc
+        sd.size = 1
+
+        idx = _index(sections, sd)
+        if idx is None:
+            raise Exception('Could not find section containing address %#x' % pc)
+
+        section = sections[idx]
+        return self._section_to_module[(pid, section)]
 
     def dump(self):
-        for mod in self._modules:
-            logger.info(mod)
+        logger.info('Dumping module map')
+        for pid, sections in self._pid_to_sections.items():
+            for section in sections:
+                s = module = None
+                logger.info('pid=%d section=(%s) module=(%s) section=(%s)', pid, section, module, s)
+        logger.info('Dumping module map done')
 
     def clone(self):
         """
@@ -121,9 +184,15 @@ class ModuleMap(object):
         """
         # pylint: disable=protected-access
         ret = ModuleMap()
-        ret._modules = copy.copy(self._modules)
+        ret._pid_to_sections = copy.deepcopy(self._pid_to_sections)
+        ret._section_to_module = copy.deepcopy(self._section_to_module)
         ret._kernel_start = self._kernel_start
         return ret
+
+    def _translate_pid(self, pid, pc):
+        if pc >= self._kernel_start:
+            return 0
+        return pid
 
     @property
     def kernel_start(self):

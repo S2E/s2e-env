@@ -25,11 +25,13 @@ from __future__ import print_function
 import logging
 import os
 
+from sortedcontainers import SortedDict
+
 from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.execution_trace import parse as parse_execution_tree
+from s2e_env.execution_trace import TraceEntries_pb2
 from s2e_env.execution_trace.analyzer import Analyzer
 from s2e_env.execution_trace.modules import Module
-from s2e_env.execution_trace.trace_entries import TraceEntryType
 from s2e_env.symbols import SymbolManager
 
 logger = logging.getLogger('forkprofile')
@@ -38,24 +40,29 @@ logger = logging.getLogger('forkprofile')
 class ForkProfiler(object):
     def __init__(self, trace, syms):
         self._trace = trace
-        self._fp = {}
+        self._fp = SortedDict()
         self._syms = syms
 
     @staticmethod
     def _get_module(state, pid, pc):
         try:
             return state.modules.get(pid, pc)
-        except Exception:
-            return Module('<unknown>', '<unknown>', 0, 0, 0xffffffffffffffff, pid)
+        except Exception as e:
+            logger.error(e)
+            mod = Module()
+            mod.pid = pid
+            return mod
 
     def _trace_cb(self, state, header, item):
-        if header.type != TraceEntryType.TRACE_FORK:
+        if header.type != TraceEntries_pb2.TRACE_FORK:
             return
 
         mod = self._get_module(state, header.pid, header.pc)
         logger.debug(mod)
 
         rel_pc = mod.to_native(header.pc)
+        if rel_pc is None:
+            rel_pc = header.pc
 
         counts = {}
         if mod not in self._fp:
@@ -74,7 +81,7 @@ class ForkProfiler(object):
 
     def get_profile(self):
         fp = []
-        for mod, counts in self._fp.iteritems():
+        for mod, counts in self._fp.items():
             for rel_pc, count in counts.iteritems():
                 try:
                     sym, fcn = self._syms.get(mod.path, rel_pc)

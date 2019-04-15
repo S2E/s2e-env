@@ -23,7 +23,8 @@ SOFTWARE.
 
 import logging
 
-from s2e_env.execution_trace.trace_entries import TraceEntryType
+from s2e_env.execution_trace import TraceEntries_pb2
+
 from .modules import Module, ModuleMap
 
 logger = logging.getLogger('analyzer')
@@ -74,17 +75,17 @@ class Analyzer(object):
             trace, state = stack.pop()
 
             for header, item in trace:
-                if header.type == TraceEntryType.TRACE_FORK:
+                if header.type == TraceEntries_pb2.TRACE_FORK:
                     for child_trace in item.children.itervalues():
                         ns = state.clone()
                         stack.append((child_trace, ns))
-                elif header.type == TraceEntryType.TRACE_OSINFO:
+                elif header.type == TraceEntries_pb2.TRACE_OSINFO:
                     state.modules.kernel_start = item.kernel_start
-                elif header.type == TraceEntryType.TRACE_MOD_LOAD:
-                    mod = Module(item.name, item.path, item.load_base, item.native_base, item.size, item.pid)
+                elif header.type == TraceEntries_pb2.TRACE_MOD_LOAD:
+                    mod = Module(item)
                     state.modules.add(mod)
-                elif header.type == TraceEntryType.TRACE_MOD_UNLOAD:
-                    mod = Module(None, None, item.load_base, 0, 1, item.pid)
+                elif header.type == TraceEntries_pb2.TRACE_MOD_UNLOAD:
+                    mod = Module(item)
                     try:
                         state.modules.remove(mod)
                     except Exception:
