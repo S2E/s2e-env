@@ -64,7 +64,8 @@ setup(
         'pytrie',
         'pwntools==3.12.0',
         'psutil',
-        'multiprocessing'
+        'multiprocessing',
+        'protobuf-to-dict'
     ],
     tests_require=[
         'mock',
