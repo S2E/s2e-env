@@ -214,9 +214,17 @@ class AbstractProject(EnvCommand):
         # directory
         config['project_dir'] = project_dir
 
+        config_copy = config.copy()
+
+        # Do not hard-code image settings in the JSON, as they may change
+        # when images are rebuilt. Instead, always use latest images.json
+        # in guest-images repo. This avoids forcing users to create new projects
+        # everytime guest image parameters change.
+        config_copy['image'] = os.path.dirname(config['image']['path'])
+
         project_desc_path = os.path.join(project_dir, 'project.json')
         with open(project_desc_path, 'w') as f:
-            s = json.dumps(config, sort_keys=True, indent=4)
+            s = json.dumps(config_copy, sort_keys=True, indent=4)
             f.write(s)
 
     # pylint: disable=no-self-use

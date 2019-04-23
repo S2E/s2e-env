@@ -85,10 +85,13 @@ def _build_test(s2e_config, s2e_source_root, test_root):
     make()
 
 
-def _read_config(test_root):
+def _read_config(test_root, s2e_images_root):
     cfg_file = os.path.join(test_root, 'config.yml')
-    with open(cfg_file, 'r') as fp:
-        return yaml.load(fp)['test']
+    ctx = {
+        's2e_images': s2e_images_root
+    }
+    rendered = render_template(ctx, cfg_file, templates_dir='/')
+    return yaml.load(rendered)['test']
 
 
 def _call_post_project_gen_script(test_dir, test_config, project_dir):
@@ -155,7 +158,8 @@ class TestsuiteGenerator(EnvCommand):
     def _handle_test(self, test_root, test, test_config, img_templates):
         ts_dir = self.source_path('testsuite')
 
-        _build_test(self._config, self.source_path('s2e'), test_root)
+        if os.path.exists(os.path.join(test_root, 'Makefile')):
+            _build_test(self._config, self.source_path('s2e'), test_root)
 
         blacklisted_images = set(test_config.get('blacklisted-images', []))
         target_images = set(test_config.get('target-images', []))
@@ -218,7 +222,7 @@ class TestsuiteGenerator(EnvCommand):
                 logger.error('%s is not a valid test directory', test_root)
                 continue
 
-            test_config = _read_config(test_root)
+            test_config = _read_config(test_root, self.image_path())
             if not self._must_generate_test(test, test_config):
                 continue
 

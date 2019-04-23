@@ -211,7 +211,7 @@ class Command(ProjectCommand):
 
         analysis = {'output_path': self.project_path()}
         self._start_time = datetime.datetime.now()
-        self._cgc = 'cgc' in self._project_desc['image']['os']['name']
+        self._cgc = 'cgc' in self.image['os']['name']
         qmp_server = None
 
         try:
@@ -275,7 +275,7 @@ class Command(ProjectCommand):
         sn = qmp_server.socket.getsockname()
         server, port = sn[0], sn[1]
 
-        qemu_build = self._project_desc['image']['qemu_build']
+        qemu_build = self.image['qemu_build']
         qemu = self.install_path('bin',
                                  'qemu-system-%s' % qemu_build)
         libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % qemu_build)
@@ -295,18 +295,18 @@ class Command(ProjectCommand):
             qemu,
             '-enable-kvm',
             '-drive',
-            'file=%s,format=s2e,cache=writeback' % self._project_desc['image']['path'],
+            'file=%s,format=s2e,cache=writeback' % self.image['path'],
             '-serial', 'file:serial.txt',
-            '-loadvm', self._project_desc['image']['snapshot'],
+            '-loadvm', self.image['snapshot'],
             '-monitor', 'null',
-            '-m', self._project_desc['image']['memory'],
+            '-m', self.image['memory'],
         ]
 
         graphics = env.get('GRAPHICS', '-nographic')
         if graphics:
             args.append(graphics)
 
-        args = args + shlex.split(self._project_desc['image']['qemu_extra_flags']) + project_args
+        args = args + shlex.split(self.image['qemu_extra_flags']) + project_args
 
         return args, env
 

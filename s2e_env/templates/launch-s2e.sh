@@ -19,7 +19,18 @@ if [ "x$1" = "xdebug" ]; then
   shift
 fi
 
-DRIVE="-drive file=$ENV_DIR/{{ rel_image_path }},format=s2e,cache=writeback"
+IMAGE_PATH="$ENV_DIR/{{ rel_image_path }}"
+IMAGE_JSON="$(dirname $IMAGE_PATH)/image.json"
+
+if [ ! -f "$IMAGE_PATH" -o ! -f "$IMAGE_JSON" ]; then
+    echo "$IMAGE_PATH and/or $IMAGE_JSON do not exist. Please check that your images are build properly."
+    exit 1
+fi
+
+QEMU_EXTRA_FLAGS=$(jq -r '.qemu_extra_flags' "$IMAGE_JSON")
+QEMU_MEMORY=$(jq -r '.memory' "$IMAGE_JSON")
+QEMU_SNAPSHOT=$(jq -r '.snapshot' "$IMAGE_JSON")
+QEMU_DRIVE="-drive file=$IMAGE_PATH,format=s2e,cache=writeback"
 
 export S2E_CONFIG=s2e-config.lua
 export S2E_SHARED_DIR=$INSTALL_DIR/share/libs2e
@@ -34,42 +45,42 @@ fi
 
 if [ "x$DEBUG" != "x" ]; then
 
-if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
-    echo "No debug build found in $BUILD_DIR/qemu-$BUILD. Please run \`\`s2e build -g\`\`"
-    exit 1
-fi
+    if [ ! -d "$BUILD_DIR/qemu-$BUILD" ]; then
+        echo "No debug build found in $BUILD_DIR/qemu-$BUILD. Please run \`\`s2e build -g\`\`"
+        exit 1
+    fi
 
-QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
-LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
+    QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
+    LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
 
-cat > gdb.ini <<EOF
-handle SIGUSR1 noprint
-handle SIGUSR2 noprint
-set disassembly-flavor intel
-set print pretty on
-set environment S2E_CONFIG=$S2E_CONFIG
-set environment S2E_SHARED_DIR=$S2E_SHARED_DIR
-set environment LD_PRELOAD=$LIBS2E
-set environment S2E_UNBUFFERED_STREAM=1
-#set environment QEMU_LOG_LEVEL=int,exec
-#set environment S2E_QMP_SERVER=127.0.0.1:3322
-EOF
+    rm -f gdb.ini
 
-GDB="gdb  --init-command=gdb.ini --args"
+    echo handle SIGUSR1 noprint >> gdb.ini
+    echo handle SIGUSR2 noprint >> gdb.ini
+    echo set disassembly-flavor intel >> gdb.ini
+    echo set print pretty on >> gdb.ini
+    echo set environment S2E_CONFIG=$S2E_CONFIG >> gdb.ini
+    echo set environment S2E_SHARED_DIR=$S2E_SHARED_DIR >> gdb.ini
+    echo set environment LD_PRELOAD=$LIBS2E >> gdb.ini
+    echo set environment S2E_UNBUFFERED_STREAM=1 >> gdb.ini
+    # echo set environment QEMU_LOG_LEVEL=int,exec >> gdb.ini
+    # echo set environment S2E_QMP_SERVER=127.0.0.1:3322 >> gdb.ini
 
-$GDB $QEMU $DRIVE \
-    -k en-us $GRAPHICS -monitor null -m {{ qemu_memory }} -enable-kvm \
-    -serial file:serial.txt {{ qemu_extra_flags }} \
-    -loadvm {{ qemu_snapshot }} $*
+    GDB="gdb  --init-command=gdb.ini --args"
+
+    $GDB $QEMU $QEMU_DRIVE \
+        -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
+        -serial file:serial.txt $QEMU_EXTRA_FLAGS \
+        -loadvm $QEMU_SNAPSHOT $*
 
 else
 
-QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
-LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e.so"
+    QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
+    LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e.so"
 
-LD_PRELOAD=$LIBS2E $QEMU $DRIVE \
-    -k en-us $GRAPHICS -monitor null -m {{ qemu_memory }} -enable-kvm \
-    -serial file:serial.txt {{ qemu_extra_flags }} \
-    -loadvm {{ qemu_snapshot }} $*
+    LD_PRELOAD=$LIBS2E $QEMU $QEMU_DRIVE \
+        -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
+        -serial file:serial.txt $QEMU_EXTRA_FLAGS \
+        -loadvm $QEMU_SNAPSHOT $*
 
 fi

@@ -106,12 +106,25 @@ class Command(EnvCommand):
         with open(os.path.join(project_path, 'project.json'), 'r') as f:
             proj_desc = json.load(f)
 
+            if 'image' not in proj_desc:
+                logger.error('No image description found in project.json. Unable '
+                             'to determine the guest tools to symlink')
+                return
+
+            image_path = os.path.join(proj_desc['image'], 'image.json')
+            if not os.path.exists(image_path):
+                logger.error('%s does not exist, please check that the guest image is built properly', image_path)
+                return
+
+            with open(image_path, 'r') as fp:
+                image = json.load(fp)
+
             # Create a symlink to the guest tools directory
-            self._symlink_guest_tools(project_path, proj_desc)
+            self._symlink_guest_tools(project_path, image)
 
             # Create a symlink to guestfs (if it exists)
             if proj_desc.get('has_guestfs'):
-                self._symlink_guestfs(project_path, proj_desc)
+                self._symlink_guestfs(project_path, proj_desc['image'])
 
         logger.success('Project successfully imported from %s', archive)
 
@@ -128,32 +141,21 @@ class Command(EnvCommand):
         except ErrorReturnCode as e:
             raise CommandError('Failed to decompress project archive - %s' % e)
 
-    def _symlink_guest_tools(self, project_path, project_desc):
+    def _symlink_guest_tools(self, project_path, image):
         """
         Create a symlink to the guest tools directory.
         """
-        if 'image' not in project_desc:
-            logger.warn('No image description found in project.json. Unable '
-                        'to determine the guest tools to symlink')
-            return
-
-        qemu_arch = project_desc['image']['qemu_build']
+        qemu_arch = image['qemu_build']
         guest_tools_path = \
             self.install_path('bin', CONSTANTS['guest_tools'][qemu_arch])
 
         logger.info('Creating a symlink to %s', guest_tools_path)
         os.symlink(guest_tools_path, os.path.join(project_path, 'guest-tools'))
 
-    def _symlink_guestfs(self, project_path, project_desc):
+    def _symlink_guestfs(self, project_path, image_name):
         """
         Create a symlink to the image's guestfs directory.
         """
-        if 'image' not in project_desc:
-            logger.warn('No image description found in project.json. Unable '
-                        'to determine the guestfs to symlink')
-            return
-
-        image_name = os.path.dirname(project_desc['image']['path'])
         guestfs_path = self.image_path(image_name, 'guestfs')
         if not os.path.exists(guestfs_path):
             logger.warn('%s does not exist, despite the original project '

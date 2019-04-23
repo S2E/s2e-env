@@ -39,7 +39,6 @@ import sys
 
 import yaml
 
-
 class CommandError(Exception):
     """
     Exception class indicating a problem while executing a command.
@@ -302,6 +301,7 @@ class ProjectCommand(EnvCommand):
         self._project_desc = None
         self._project_name = None
         self._sym_paths = []
+        self._image = None
 
     def handle_common_args(self, **options):
         """
@@ -362,3 +362,14 @@ class ProjectCommand(EnvCommand):
         Get the project descriptor dictionary.
         """
         return self._project_desc
+
+    @property
+    def image(self):
+        # Put import here to avoid circular dependency
+        # https://github.com/PyCQA/pylint/issues/850
+        # pylint: disable=cyclic-import
+        from s2e_env.utils import images
+
+        if not self._image:
+            self._image = images.get_image_descriptor(self.project_desc['image'])
+        return self._image
