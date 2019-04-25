@@ -24,40 +24,46 @@ SOFTWARE.
 import glob
 import logging
 import os
+import struct
 
-from . import trace_entries
-from .trace_entries import TraceEntryType, TraceEntryError, TraceItemHeader
-
+from s2e_env.execution_trace import TraceEntries_pb2
 
 logger = logging.getLogger('execution_trace')
 
+_HEADER_PREFIX = struct.Struct('<II')
+_INTEGER = struct.Struct('<I')
 
 # Maps trace entry types to a class
 _TRACE_ENTRY_MAP = {
-    TraceEntryType.TRACE_MOD_LOAD: trace_entries.TraceModuleLoad,
-    TraceEntryType.TRACE_MOD_UNLOAD: trace_entries.TraceModuleUnload,
-    TraceEntryType.TRACE_PROC_UNLOAD: trace_entries.TraceProcessUnload,
-    TraceEntryType.TRACE_CALL: trace_entries.TraceCall,
-    TraceEntryType.TRACE_RET: trace_entries.TraceReturn,
-    TraceEntryType.TRACE_TB_START: trace_entries.TraceTranslationBlock,
-    TraceEntryType.TRACE_TB_END: trace_entries.TraceTranslationBlock,
-    TraceEntryType.TRACE_MODULE_DESC: None,
-    TraceEntryType.TRACE_FORK: trace_entries.TraceFork,
-    TraceEntryType.TRACE_CACHESIM: trace_entries.TraceCache,
-    TraceEntryType.TRACE_TESTCASE: trace_entries.TraceTestCase,
-    TraceEntryType.TRACE_BRANCHCOV: trace_entries.TraceBranchCoverage,
-    TraceEntryType.TRACE_MEMORY: trace_entries.TraceMemory,
-    TraceEntryType.TRACE_PAGEFAULT: trace_entries.TracePageFault,
-    TraceEntryType.TRACE_TLBMISS: trace_entries.TraceTLBMiss,
-    TraceEntryType.TRACE_ICOUNT: trace_entries.TraceInstructionCount,
-    TraceEntryType.TRACE_MEM_CHECKER: trace_entries.TraceMemChecker,
-    TraceEntryType.TRACE_EXCEPTION: trace_entries.TraceException,
-    TraceEntryType.TRACE_STATE_SWITCH: trace_entries.TraceStateSwitch,
-    TraceEntryType.TRACE_TB_START_X64: trace_entries.TraceTranslationBlock64,
-    TraceEntryType.TRACE_TB_END_X64: trace_entries.TraceTranslationBlock64,
-    TraceEntryType.TRACE_BLOCK: trace_entries.TraceBlock,
-    TraceEntryType.TRACE_OSINFO: trace_entries.TraceOSInfo,
+    TraceEntries_pb2.TRACE_FORK: TraceEntries_pb2.PbTraceItemFork,
+    TraceEntries_pb2.TRACE_MOD_LOAD: TraceEntries_pb2.PbTraceModuleLoadUnload,
+    TraceEntries_pb2.TRACE_MOD_UNLOAD: TraceEntries_pb2.PbTraceModuleLoadUnload,
+    TraceEntries_pb2.TRACE_PROC_UNLOAD: TraceEntries_pb2.PbTraceProcessUnload,
+    TraceEntries_pb2.TRACE_TB_START: TraceEntries_pb2.PbTraceTranslationBlockFull,
+    TraceEntries_pb2.TRACE_TB_END: TraceEntries_pb2.PbTraceTranslationBlockFull,
+    TraceEntries_pb2.TRACE_OSINFO: TraceEntries_pb2.PbTraceOsInfo,
+    TraceEntries_pb2.TRACE_EXCEPTION: TraceEntries_pb2.PbTraceException,
+    TraceEntries_pb2.TRACE_TESTCASE: TraceEntries_pb2.PbTraceTestCase,
+    TraceEntries_pb2.TRACE_MEMORY: TraceEntries_pb2.PbTraceMemoryAccess,
+    TraceEntries_pb2.TRACE_PAGEFAULT: TraceEntries_pb2.PbTraceSimpleMemoryAccess,
+    TraceEntries_pb2.TRACE_TLBMISS: TraceEntries_pb2.PbTraceSimpleMemoryAccess,
+    TraceEntries_pb2.TRACE_ICOUNT: TraceEntries_pb2.PbTraceInstructionCount,
+    TraceEntries_pb2.TRACE_STATE_SWITCH: TraceEntries_pb2.PbTraceStateSwitch,
+    TraceEntries_pb2.TRACE_BLOCK: TraceEntries_pb2.PbTraceTranslationBlock,
+    TraceEntries_pb2.TRACE_CACHE_SIM_PARAMS: TraceEntries_pb2.PbTraceCacheSimParams,
+    TraceEntries_pb2.TRACE_CACHE_SIM_ENTRY: TraceEntries_pb2.PbTraceCacheSimEntry,
 }
+
+
+class TraceEntryFork(object):
+    """
+    We need a custom fork entry because we need to modify the children field
+    to be a dictionary rather than a list of state ids.
+    """
+    __slots__ = ('children',)
+
+    def __init__(self, children):
+        self.children = children
 
 
 class ExecutionTraceParser(object):
@@ -219,28 +225,30 @@ class ExecutionTraceParser(object):
 
     @staticmethod
     def _read_trace_entry(trace_file):
-        raw_header = trace_file.read(TraceItemHeader.static_size())
+        magic, raw_header_size = _HEADER_PREFIX.unpack(trace_file.read(8))
+        if magic != 0xdeaddead:
+            raise Exception('Invalid magic in trace file (%#x)' % magic)
 
-        # An empty header signifies EOF
-        if not raw_header:
-            raise EOFError()
+        raw_header = trace_file.read(raw_header_size)
+        raw_item_size = _INTEGER.unpack(trace_file.read(4))[0]
+        raw_item = trace_file.read(raw_item_size)
 
-        header = TraceItemHeader.deserialize(raw_header)
+        header = TraceEntries_pb2.PbTraceItemHeader()
+        header.ParseFromString(raw_header)
 
-        # Determine the item's type from the header
-        item_type = header.type
-        item_class = _TRACE_ENTRY_MAP.get(item_type)
-        if not item_class:
+        # Pylint can't see some protobuf members
+        # pylint: disable=no-member
+        hdr_type = header.type
+
+        if hdr_type not in _TRACE_ENTRY_MAP:
             # If an unknown item type is found, just skip it
-            logger.warn('Found unknown trace item `%s`. Skipping %d '
-                        'bytes...', item_type.value, header.size)
-            trace_file.read(header.size)
+            logger.warn('Found unknown trace item `%s`', hdr_type)
             return None
 
-        # Read the raw data and deserialize it
-        raw_item = trace_file.read(header.size)
+        item = _TRACE_ENTRY_MAP[hdr_type]()
+        item.ParseFromString(raw_item)
 
-        return header, item_class.deserialize(raw_item, header.size)
+        return header, item
 
     def _parse_trace_file(self, trace_file, path_ids=None):
         """
@@ -297,7 +305,7 @@ class ExecutionTraceParser(object):
 
             # If the item is a state fork, we must update the ``_path_info``
             # dictionary with the parent and fork point information
-            if header.type == TraceEntryType.TRACE_FORK:
+            if header.type == TraceEntries_pb2.TRACE_FORK:
                 new_children = {}
 
                 for child_state_id in item.children:
@@ -322,7 +330,7 @@ class ExecutionTraceParser(object):
 
                 # Since a ``TraceEntry`` is immutable, we have to create a new
                 # one if we want to use the ``new_children`` dictionary
-                item = trace_entries.TraceFork(new_children)
+                item = TraceEntryFork(new_children)
 
             # Append the ``(TraceItemHeader, TraceEntry)`` tuple to the
             # execution trace for this state

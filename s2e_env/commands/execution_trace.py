@@ -24,11 +24,11 @@ SOFTWARE.
 import json
 import logging
 
-from enum import Enum
+from protobuf_to_dict import protobuf_to_dict
 
 from s2e_env.command import ProjectCommand, CommandError
-from s2e_env.execution_trace import parse as parse_execution_tree, trace_entries
-from s2e_env.execution_trace.trace_entries import TraceEntryType
+from s2e_env.execution_trace import parse as parse_execution_tree
+from s2e_env.execution_trace import TraceEntries_pb2, TraceEntryFork
 
 
 logger = logging.getLogger('execution_trace')
@@ -56,20 +56,18 @@ def _make_json_entry(header, item):
 
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
-    if header.type == TraceEntryType.TRACE_FORK:
+    if header.type == TraceEntries_pb2.TRACE_FORK:
         children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.iteritems()}
-        item = trace_entries.TraceFork(children)
+        item = TraceEntryFork(children)
 
-    header_dict = header.as_dict()
-
-    del header_dict['size']
+    header_dict = protobuf_to_dict(header, use_enum_labels=True)
 
     entry = header_dict.copy()
-    entry.update(item.as_json_dict())
 
-    for key, value in entry.iteritems():
-        if isinstance(value, Enum):
-            entry[key] = value.value
+    if isinstance(item, TraceEntryFork):
+        entry.update({'children': item.children})
+    else:
+        entry.update(protobuf_to_dict(item, use_enum_labels=True))
 
     return entry
 
