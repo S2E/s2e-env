@@ -274,7 +274,7 @@ class TestsuiteRunner(EnvCommand):
 
     AVERAGE_S2E_MEM_USAGE = 3 * 1024 * 1024 * 1024
 
-    def call_script(self, script):
+    def call_script(self, state, script):
         logger.info('Starting %s', script)
         env = os.environ.copy()
         env['S2EDIR'] = self.env_path()
@@ -282,15 +282,26 @@ class TestsuiteRunner(EnvCommand):
         stdout = os.path.join(os.path.dirname(script), 'stdout.txt')
         stderr = os.path.join(os.path.dirname(script), 'stderr.txt')
 
+        start_time = datetime.datetime.now()
+
         with open(stdout, 'w') as so:
             with open(stderr, 'w') as se:
+                status = None
                 try:
                     subprocess.check_call([script], env=env, stdout=so, stderr=se)
-                    logger.info('SUCCESS: %s', script)
+                    status = "SUCCESS"
                 except Exception:
-                    logger.error('FAILURE: %s', script)
-                    logger.error('   Check %s for details', stdout)
-                    logger.error('   Check %s for details', stderr)
+                    status = "FAILURE"
+                finally:
+                    end_time = datetime.datetime.now()
+                    diff_time = end_time - start_time
+                    ms = divmod(diff_time.total_seconds(), 60)
+                    state['completed'] += 1
+                    logger.info('[%d/%d %02d:%02d] %s: %s',
+                                state['completed'], state['num_tests'], ms[0], ms[1], status, script)
+                    if status == 'FAILURE':
+                        logger.error('   Check %s for details', stdout)
+                        logger.error('   Check %s for details', stderr)
 
     def handle(self, *args, **options):
         logger.info('Running testsuite')
@@ -325,7 +336,12 @@ class TestsuiteRunner(EnvCommand):
         pool = multiprocessing.dummy.Pool(actual_instances)
 
         try:
-            r = [pool.apply_async(self.call_script, (script,)) for script in scripts_to_run]
+            state = {
+                'completed': 0,
+                'num_tests': len(scripts_to_run)
+            }
+
+            r = [pool.apply_async(self.call_script, (state, script,)) for script in scripts_to_run]
             pool.close()
 
             # This works around a bug in Python 2.7, which prevents pool.join() from
