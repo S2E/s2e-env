@@ -252,6 +252,21 @@ class TestsuiteLister(EnvCommand):
             logger.info('%-25s: %s', test, config['description'])
 
 
+def _get_max_instances(**options):
+    if not options.get('instances', 0):
+        # Determine optimal number of cores based on available memory
+        cpus = psutil.cpu_count()
+        mem = psutil.virtual_memory().available
+        logger.info('The system has %d CPUs and %d GB of available RAM', cpus, mem / (1 << 30))
+
+        logger.info('Average memory usage per S2E instance: %d GB',
+                    TestsuiteRunner.AVERAGE_S2E_MEM_USAGE / (1 << 30))
+        max_instances = int(mem / TestsuiteRunner.AVERAGE_S2E_MEM_USAGE)
+        return min(cpus, max_instances)
+
+    return options.get('instances')
+
+
 class TestsuiteRunner(EnvCommand):
     """
     This class runs the S2E testsuite.
@@ -280,14 +295,8 @@ class TestsuiteRunner(EnvCommand):
     def handle(self, *args, **options):
         logger.info('Running testsuite')
 
-        # Determine optimal number of cores based on available memory
-        cpus = psutil.cpu_count()
-        mem = psutil.virtual_memory().available
-        logger.info('The system has %d CPUs and %d GB of available RAM', cpus, mem / (1 << 30))
+        actual_instances = _get_max_instances(**options)
 
-        logger.info('Average memory usage per S2E instance: %d GB', TestsuiteRunner.AVERAGE_S2E_MEM_USAGE / (1 << 30))
-        max_instances = int(mem / TestsuiteRunner.AVERAGE_S2E_MEM_USAGE)
-        actual_instances = min(cpus, max_instances)
         logger.info('Running %d tests in parallel', actual_instances)
 
         # Compute the tests to run
@@ -352,6 +361,9 @@ class Command(EnvCommand):
 
         run_ts_parser = subparsers.add_parser('run', cmd=TestsuiteRunner(),
                                               help='Run the testsuite')
+
+        run_ts_parser.add_argument('--instance-count', dest='instances', type=int,
+                                   default=0, help='How many instances to run in parallel')
 
         run_ts_parser.add_argument('tests', nargs='*', help='Tests to run (all if empty)')
 
