@@ -144,7 +144,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
-                                 'concolic files. The user must create these '
+                                 'symbolic files. The user must create these '
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
