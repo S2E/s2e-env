@@ -226,7 +226,7 @@ class EnvCommand(BaseCommand):
         try:
             path = self.env_path('s2e.yaml')
             with open(path, 'r') as f:
-                self._config = yaml.load(f)
+                self._config = yaml.safe_load(f)
         except IOError:
             raise CommandError('This does not look like an S2E environment - '
                                'it does not contain an s2e.yaml configuration '

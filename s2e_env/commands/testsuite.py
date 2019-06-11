@@ -91,7 +91,7 @@ def _read_config(test_root, s2e_images_root):
         's2e_images': s2e_images_root
     }
     rendered = render_template(ctx, cfg_file, templates_dir='/')
-    return yaml.load(rendered)['test']
+    return yaml.safe_load(rendered)['test']
 
 
 def _call_post_project_gen_script(test_dir, test_config, project_dir):
@@ -247,7 +247,7 @@ class TestsuiteLister(EnvCommand):
 
             cfg_file = os.path.join(test_root, 'config.yml')
             with open(cfg_file, 'r') as fp:
-                config = yaml.load(fp)['test']
+                config = yaml.safe_load(fp)['test']
 
             logger.info('%-25s: %s', test, config['description'])
 

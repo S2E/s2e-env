@@ -36,7 +36,7 @@ GLOBAL_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'dat',
 @memoize
 def _load_global_config(path=GLOBAL_CONFIG_PATH):
     with open(path, 'r') as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 
 CONSTANTS = _load_global_config()
