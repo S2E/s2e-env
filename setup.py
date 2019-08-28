@@ -23,6 +23,7 @@ SOFTWARE.
 
 import os
 
+import sys
 import pip
 from setuptools import setup, find_packages
 
@@ -36,6 +37,33 @@ else:
     pyelftools = 'pyelftools@%s' % pyelftools_url
 
 
+dependencies = [
+    # S2E engine requirements
+    'docutils',
+    'pygments',
+
+    # s2e-env requirements
+    'enum34',
+    'jinja2',
+    'pefile',
+    'psutil',
+    pyelftools,
+    'python-magic',
+    'pyyaml',
+    'requests',
+    'sh',
+    'termcolor',
+    'pytrie',
+    'pwntools==3.12.0',
+    'psutil',
+    'protobuf-to-dict'
+]
+
+# multiprocessing is preinstalled in python3
+# and the setup.py script is not working in the pip repo
+if sys.version_info.major == 2:
+    dependencies.append('multiprocessing')
+
 setup(
     name='s2e-env',
     description='A command-line tool for administering S2E environments',
@@ -45,28 +73,7 @@ setup(
     version=open(os.path.join('s2e_env', 'dat', 'VERSION'), 'r').read().strip(),
     url='http://s2e.systems',
     download_url='https://github.com/S2E/s2e-env.git',
-    install_requires=[
-        # S2E engine requirements
-        'docutils',
-        'pygments',
-
-        # s2e-env requirements
-        'enum34',
-        'jinja2',
-        'pefile',
-        'psutil',
-        pyelftools,
-        'python-magic',
-        'pyyaml',
-        'requests',
-        'sh',
-        'termcolor',
-        'pytrie',
-        'pwntools==3.12.0',
-        'psutil',
-        'multiprocessing',
-        'protobuf-to-dict'
-    ],
+    install_requires=dependencies,
     tests_require=[
         'mock',
     ],
