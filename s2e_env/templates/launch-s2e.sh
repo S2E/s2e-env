@@ -63,10 +63,16 @@ if [ "x$DEBUG" != "x" ]; then
     echo set environment S2E_SHARED_DIR=$S2E_SHARED_DIR >> gdb.ini
     echo set environment LD_PRELOAD=$LIBS2E >> gdb.ini
     echo set environment S2E_UNBUFFERED_STREAM=1 >> gdb.ini
-    # echo set environment QEMU_LOG_LEVEL=int,exec >> gdb.ini
+    # echo set environment LIBCPU_LOG_LEVEL=in_asm,int,exec >> gdb.ini
+    # echo set environment LIBCPU_LOG_FILE=/tmp/log.txt >> gdb.ini
     # echo set environment S2E_QMP_SERVER=127.0.0.1:3322 >> gdb.ini
+    echo set python print-stack full >> gdb.ini
 
     GDB="gdb  --init-command=gdb.ini --args"
+
+    # Useful options:
+    # - Display debug output from the BIOS:
+    #    -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios
 
     $GDB $QEMU $QEMU_DRIVE \
         -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
