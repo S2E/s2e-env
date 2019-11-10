@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='TraceEntries.proto',
   package='s2e_trace',
   syntax='proto2',
-  serialized_pb=_b('\n\x12TraceEntries.proto\x12\ts2e_trace\"\x98\x01\n\x11PbTraceItemHeader\x12\x10\n\x08state_id\x18\x01 \x02(\r\x12\x11\n\ttimestamp\x18\x02 \x02(\x04\x12\x15\n\raddress_space\x18\x03 \x02(\x04\x12\x0b\n\x03pid\x18\x04 \x02(\x04\x12\n\n\x02pc\x18\x05 \x02(\x04\x12.\n\x04type\x18\x06 \x02(\x0e\x32 .s2e_trace.PbTraceItemHeaderType\"#\n\x0fPbTraceItemFork\x12\x10\n\x08\x63hildren\x18\x01 \x03(\r\"\xac\x02\n\x17PbTraceModuleLoadUnload\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x02(\t\x12\x0b\n\x03pid\x18\x03 \x02(\x04\x12\x15\n\raddress_space\x18\x04 \x02(\x04\x12<\n\x08sections\x18\x05 \x03(\x0b\x32*.s2e_trace.PbTraceModuleLoadUnload.Section\x1a\x92\x01\n\x07Section\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x19\n\x11runtime_load_base\x18\x02 \x02(\x04\x12\x18\n\x10native_load_base\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x10\n\x08readable\x18\x05 \x02(\x08\x12\x10\n\x08writable\x18\x06 \x02(\x08\x12\x12\n\nexecutable\x18\x07 \x02(\x08\"+\n\x14PbTraceProcessUnload\x12\x13\n\x0breturn_code\x18\x01 \x02(\x04\"\xdf\x01\n\x1bPbTraceTranslationBlockFull\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\ttarget_pc\x18\x03 \x02(\x04\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\x12\x18\n\x10running_concrete\x18\x05 \x02(\x08\x12(\n running_exception_emulation_code\x18\x06 \x02(\x08\x12\x11\n\tsymb_mask\x18\x07 \x02(\r\x12\x11\n\tregisters\x18\x08 \x03(\x04\"o\n\x17PbTraceTranslationBlock\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07last_pc\x18\x02 \x02(\x04\x12\x0c\n\x04size\x18\x03 \x02(\r\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\"%\n\rPbTraceOsInfo\x12\x14\n\x0ckernel_start\x18\x01 \x02(\x04\".\n\x10PbTraceException\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0e\n\x06vector\x18\x02 \x02(\r\"m\n\x0fPbTraceTestCase\x12\x32\n\x05items\x18\x01 \x03(\x0b\x32#.s2e_trace.PbTraceTestCase.KeyValue\x1a&\n\x08KeyValue\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\x0c\"\x9c\x03\n\x13PbTraceMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\r\n\x05value\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x33\n\x05\x66lags\x18\x05 \x02(\x0e\x32$.s2e_trace.PbTraceMemoryAccess.Flags\x12\x14\n\x0chost_address\x18\x06 \x02(\x04\x12\x17\n\x0f\x63oncrete_buffer\x18\x07 \x02(\x04\"\xe6\x01\n\x05\x46lags\x12\x19\n\x15\x45XECTRACE_MEM_INVALID\x10\x00\x12\x17\n\x13\x45XECTRACE_MEM_WRITE\x10\x01\x12\x14\n\x10\x45XECTRACE_MEM_IO\x10\x02\x12\x19\n\x15\x45XECTRACE_MEM_SYMBVAL\x10\x04\x12\x1a\n\x16\x45XECTRACE_MEM_SYMBADDR\x10\x08\x12\x1d\n\x19\x45XECTRACE_MEM_HASHOSTADDR\x10\x10\x12\x1e\n\x1a\x45XECTRACE_MEM_SYMBHOSTADDR\x10 \x12\x1d\n\x19\x45XECTRACE_MEM_OBJECTSTATE\x10@\"J\n\x19PbTraceSimpleMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\x10\n\x08is_write\x18\x03 \x02(\x08\"(\n\x17PbTraceInstructionCount\x12\r\n\x05\x63ount\x18\x01 \x02(\x04\"\'\n\x12PbTraceStateSwitch\x12\x11\n\tnew_state\x18\x01 \x02(\r\"\x87\x01\n\x15PbTraceCacheSimParams\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\tline_size\x18\x03 \x02(\r\x12\x15\n\rassociativity\x18\x04 \x02(\r\x12\x16\n\x0eupper_cache_id\x18\x05 \x02(\r\x12\x0c\n\x04name\x18\x06 \x02(\t\"\x8a\x01\n\x14PbTraceCacheSimEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\n\n\x02pc\x18\x02 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x12\n\nmiss_count\x18\x05 \x02(\r\x12\x10\n\x08is_write\x18\x06 \x02(\x08\x12\x0f\n\x07is_code\x18\x07 \x02(\x08*\xf5\x02\n\x15PbTraceItemHeaderType\x12\x0e\n\nTRACE_FORK\x10\x00\x12\x12\n\x0eTRACE_MOD_LOAD\x10\x01\x12\x14\n\x10TRACE_MOD_UNLOAD\x10\x02\x12\x15\n\x11TRACE_PROC_UNLOAD\x10\x03\x12\x12\n\x0eTRACE_TB_START\x10\x04\x12\x10\n\x0cTRACE_TB_END\x10\x05\x12\x10\n\x0cTRACE_OSINFO\x10\x08\x12\x13\n\x0fTRACE_EXCEPTION\x10\t\x12\x12\n\x0eTRACE_TESTCASE\x10\n\x12\x10\n\x0cTRACE_MEMORY\x10\x0b\x12\x13\n\x0fTRACE_PAGEFAULT\x10\x0c\x12\x11\n\rTRACE_TLBMISS\x10\r\x12\x10\n\x0cTRACE_ICOUNT\x10\x0e\x12\x16\n\x12TRACE_STATE_SWITCH\x10\x0f\x12\x0f\n\x0bTRACE_BLOCK\x10\x10\x12\x1a\n\x16TRACE_CACHE_SIM_PARAMS\x10\x11\x12\x19\n\x15TRACE_CACHE_SIM_ENTRY\x10\x12*\x97\x01\n\rPbTraceTbType\x12\x0e\n\nTB_DEFAULT\x10\x00\x12\n\n\x06TB_JMP\x10\x01\x12\x0e\n\nTB_JMP_IND\x10\x02\x12\x0f\n\x0bTB_COND_JMP\x10\x03\x12\x13\n\x0fTB_COND_JMP_IND\x10\x04\x12\x0b\n\x07TB_CALL\x10\x05\x12\x0f\n\x0bTB_CALL_IND\x10\x06\x12\n\n\x06TB_REP\x10\x07\x12\n\n\x06TB_RET\x10\x08')
+  serialized_pb=_b('\n\x12TraceEntries.proto\x12\ts2e_trace\"\x98\x01\n\x11PbTraceItemHeader\x12\x10\n\x08state_id\x18\x01 \x02(\r\x12\x11\n\ttimestamp\x18\x02 \x02(\x04\x12\x15\n\raddress_space\x18\x03 \x02(\x04\x12\x0b\n\x03pid\x18\x04 \x02(\x04\x12\n\n\x02pc\x18\x05 \x02(\x04\x12.\n\x04type\x18\x06 \x02(\x0e\x32 .s2e_trace.PbTraceItemHeaderType\"#\n\x0fPbTraceItemFork\x12\x10\n\x08\x63hildren\x18\x01 \x03(\r\"\xac\x02\n\x17PbTraceModuleLoadUnload\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x02(\t\x12\x0b\n\x03pid\x18\x03 \x02(\x04\x12\x15\n\raddress_space\x18\x04 \x02(\x04\x12<\n\x08sections\x18\x05 \x03(\x0b\x32*.s2e_trace.PbTraceModuleLoadUnload.Section\x1a\x92\x01\n\x07Section\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x19\n\x11runtime_load_base\x18\x02 \x02(\x04\x12\x18\n\x10native_load_base\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x10\n\x08readable\x18\x05 \x02(\x08\x12\x10\n\x08writable\x18\x06 \x02(\x08\x12\x12\n\nexecutable\x18\x07 \x02(\x08\"+\n\x14PbTraceProcessUnload\x12\x13\n\x0breturn_code\x18\x01 \x02(\x04\"\xdf\x01\n\x1bPbTraceTranslationBlockFull\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\ttarget_pc\x18\x03 \x02(\x04\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\x12\x18\n\x10running_concrete\x18\x05 \x02(\x08\x12(\n running_exception_emulation_code\x18\x06 \x02(\x08\x12\x11\n\tsymb_mask\x18\x07 \x02(\r\x12\x11\n\tregisters\x18\x08 \x03(\x04\"o\n\x17PbTraceTranslationBlock\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07last_pc\x18\x02 \x02(\x04\x12\x0c\n\x04size\x18\x03 \x02(\r\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\"%\n\rPbTraceOsInfo\x12\x14\n\x0ckernel_start\x18\x01 \x02(\x04\".\n\x10PbTraceException\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0e\n\x06vector\x18\x02 \x02(\r\"m\n\x0fPbTraceTestCase\x12\x32\n\x05items\x18\x01 \x03(\x0b\x32#.s2e_trace.PbTraceTestCase.KeyValue\x1a&\n\x08KeyValue\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\x0c\"\xf6\x02\n\x13PbTraceMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\r\n\x05value\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\r\n\x05\x66lags\x18\x05 \x02(\r\x12\x14\n\x0chost_address\x18\x06 \x02(\x04\x12\x17\n\x0f\x63oncrete_buffer\x18\x07 \x02(\x04\"\xe6\x01\n\x05\x46lags\x12\x19\n\x15\x45XECTRACE_MEM_INVALID\x10\x00\x12\x17\n\x13\x45XECTRACE_MEM_WRITE\x10\x01\x12\x14\n\x10\x45XECTRACE_MEM_IO\x10\x02\x12\x19\n\x15\x45XECTRACE_MEM_SYMBVAL\x10\x04\x12\x1a\n\x16\x45XECTRACE_MEM_SYMBADDR\x10\x08\x12\x1d\n\x19\x45XECTRACE_MEM_HASHOSTADDR\x10\x10\x12\x1e\n\x1a\x45XECTRACE_MEM_SYMBHOSTADDR\x10 \x12\x1d\n\x19\x45XECTRACE_MEM_OBJECTSTATE\x10@\"J\n\x19PbTraceSimpleMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\x10\n\x08is_write\x18\x03 \x02(\x08\"(\n\x17PbTraceInstructionCount\x12\r\n\x05\x63ount\x18\x01 \x02(\x04\"\'\n\x12PbTraceStateSwitch\x12\x11\n\tnew_state\x18\x01 \x02(\r\"\x87\x01\n\x15PbTraceCacheSimParams\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\tline_size\x18\x03 \x02(\r\x12\x15\n\rassociativity\x18\x04 \x02(\r\x12\x16\n\x0eupper_cache_id\x18\x05 \x02(\r\x12\x0c\n\x04name\x18\x06 \x02(\t\"\x8a\x01\n\x14PbTraceCacheSimEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\n\n\x02pc\x18\x02 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x12\n\nmiss_count\x18\x05 \x02(\r\x12\x10\n\x08is_write\x18\x06 \x02(\x08\x12\x0f\n\x07is_code\x18\x07 \x02(\x08*\xf5\x02\n\x15PbTraceItemHeaderType\x12\x0e\n\nTRACE_FORK\x10\x00\x12\x12\n\x0eTRACE_MOD_LOAD\x10\x01\x12\x14\n\x10TRACE_MOD_UNLOAD\x10\x02\x12\x15\n\x11TRACE_PROC_UNLOAD\x10\x03\x12\x12\n\x0eTRACE_TB_START\x10\x04\x12\x10\n\x0cTRACE_TB_END\x10\x05\x12\x10\n\x0cTRACE_OSINFO\x10\x08\x12\x13\n\x0fTRACE_EXCEPTION\x10\t\x12\x12\n\x0eTRACE_TESTCASE\x10\n\x12\x10\n\x0cTRACE_MEMORY\x10\x0b\x12\x13\n\x0fTRACE_PAGEFAULT\x10\x0c\x12\x11\n\rTRACE_TLBMISS\x10\r\x12\x10\n\x0cTRACE_ICOUNT\x10\x0e\x12\x16\n\x12TRACE_STATE_SWITCH\x10\x0f\x12\x0f\n\x0bTRACE_BLOCK\x10\x10\x12\x1a\n\x16TRACE_CACHE_SIM_PARAMS\x10\x11\x12\x19\n\x15TRACE_CACHE_SIM_ENTRY\x10\x12*\x97\x01\n\rPbTraceTbType\x12\x0e\n\nTB_DEFAULT\x10\x00\x12\n\n\x06TB_JMP\x10\x01\x12\x0e\n\nTB_JMP_IND\x10\x02\x12\x0f\n\x0bTB_COND_JMP\x10\x03\x12\x13\n\x0fTB_COND_JMP_IND\x10\x04\x12\x0b\n\x07TB_CALL\x10\x05\x12\x0f\n\x0bTB_CALL_IND\x10\x06\x12\n\n\x06TB_REP\x10\x07\x12\n\n\x06TB_RET\x10\x08')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -101,8 +101,8 @@ _PBTRACEITEMHEADERTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1964,
-  serialized_end=2337,
+  serialized_start=1926,
+  serialized_end=2299,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACEITEMHEADERTYPE)
 
@@ -152,8 +152,8 @@ _PBTRACETBTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2340,
-  serialized_end=2491,
+  serialized_start=2302,
+  serialized_end=2453,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACETBTYPE)
 
@@ -227,8 +227,8 @@ _PBTRACEMEMORYACCESS_FLAGS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1293,
-  serialized_end=1523,
+  serialized_start=1255,
+  serialized_end=1485,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACEMEMORYACCESS_FLAGS)
 
@@ -798,7 +798,7 @@ _PBTRACEMEMORYACCESS = _descriptor.Descriptor(
       options=None),
     _descriptor.FieldDescriptor(
       name='flags', full_name='s2e_trace.PbTraceMemoryAccess.flags', index=4,
-      number=5, type=14, cpp_type=8, label=2,
+      number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -831,7 +831,7 @@ _PBTRACEMEMORYACCESS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1111,
-  serialized_end=1523,
+  serialized_end=1485,
 )
 
 
@@ -875,8 +875,8 @@ _PBTRACESIMPLEMEMORYACCESS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1525,
-  serialized_end=1599,
+  serialized_start=1487,
+  serialized_end=1561,
 )
 
 
@@ -906,8 +906,8 @@ _PBTRACEINSTRUCTIONCOUNT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1601,
-  serialized_end=1641,
+  serialized_start=1563,
+  serialized_end=1603,
 )
 
 
@@ -937,8 +937,8 @@ _PBTRACESTATESWITCH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1643,
-  serialized_end=1682,
+  serialized_start=1605,
+  serialized_end=1644,
 )
 
 
@@ -1003,8 +1003,8 @@ _PBTRACECACHESIMPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1685,
-  serialized_end=1820,
+  serialized_start=1647,
+  serialized_end=1782,
 )
 
 
@@ -1076,8 +1076,8 @@ _PBTRACECACHESIMENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1823,
-  serialized_end=1961,
+  serialized_start=1785,
+  serialized_end=1923,
 )
 
 _PBTRACEITEMHEADER.fields_by_name['type'].enum_type = _PBTRACEITEMHEADERTYPE
@@ -1087,7 +1087,6 @@ _PBTRACETRANSLATIONBLOCKFULL.fields_by_name['tb_type'].enum_type = _PBTRACETBTYP
 _PBTRACETRANSLATIONBLOCK.fields_by_name['tb_type'].enum_type = _PBTRACETBTYPE
 _PBTRACETESTCASE_KEYVALUE.containing_type = _PBTRACETESTCASE
 _PBTRACETESTCASE.fields_by_name['items'].message_type = _PBTRACETESTCASE_KEYVALUE
-_PBTRACEMEMORYACCESS.fields_by_name['flags'].enum_type = _PBTRACEMEMORYACCESS_FLAGS
 _PBTRACEMEMORYACCESS_FLAGS.containing_type = _PBTRACEMEMORYACCESS
 DESCRIPTOR.message_types_by_name['PbTraceItemHeader'] = _PBTRACEITEMHEADER
 DESCRIPTOR.message_types_by_name['PbTraceItemFork'] = _PBTRACEITEMFORK
