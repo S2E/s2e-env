@@ -94,7 +94,7 @@ def _read_config(test_root, s2e_images_root):
     return yaml.safe_load(rendered)['test']
 
 
-def _call_post_project_gen_script(test_dir, test_config, project_dir):
+def _call_post_project_gen_script(test_dir, test_config, options):
     script = test_config.get('build-options', {}).get('post-project-generation-script', None)
     if not script:
         return
@@ -104,7 +104,10 @@ def _call_post_project_gen_script(test_dir, test_config, project_dir):
         raise CommandError('%s does not exist' % script)
 
     env = os.environ.copy()
-    env['PROJECT_DIR'] = project_dir
+    env['PROJECT_DIR'] = options['project_path']
+    env['TARGET'] = options['target'].path
+    env['TESTSUITE_ROOT'] = options['testsuite_root']
+
     cmd = sh.Command(script).bake(_out=sys.stdout, _err=sys.stderr, _fg=True, _env=env)
     cmd()
 
@@ -179,12 +182,15 @@ class TestsuiteGenerator(EnvCommand):
                     logger.debug('%s is not in target-images, skipping', image_name)
                     continue
 
+                name = 'testsuite_%s_%s_%s' % (test, os.path.basename(target_name), image_name)
                 options = {
                     'image': image_name,
-                    'name': 'testsuite_%s_%s_%s' % (test, os.path.basename(target_name), image_name),
+                    'name': name,
                     'target': target,
                     'target_args': test_config.get('target_arguments', []),
-                    'force': True
+                    'force': True,
+                    'project_path': self.projects_path(name),
+                    'testsuite_root': ts_dir
                 }
                 options.update(test_config.get('options', []))
 
@@ -193,7 +199,7 @@ class TestsuiteGenerator(EnvCommand):
                 scripts = test_config.get('scripts', {})
                 run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
                 self._generate_run_tests(ts_dir, test, run_tests_template, options)
-                _call_post_project_gen_script(test_root, test_config, self.projects_path(options['name']))
+                _call_post_project_gen_script(test_root, test_config, options)
 
 
     def _get_tests(self):
