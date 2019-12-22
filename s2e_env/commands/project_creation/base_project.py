@@ -342,6 +342,7 @@ class BaseProject(AbstractProject):
             'target_args': parsed_args,
             'sym_args': config['sym_args'],
             'target_bootstrap_template': self._bootstrap_template,
+            'target_arch': config['target_arch'],
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
