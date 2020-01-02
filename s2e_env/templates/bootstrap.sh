@@ -12,36 +12,51 @@
 
 set -x
 
+{% if project_type == 'windows' %}
+cd /c/s2e
+{% endif %}
+
+mkdir -p guest-tools32
+TARGET_TOOLS32_ROOT=guest-tools32
+
+{% if image_arch=='x86_64' %}
+mkdir -p guest-tools64
+TARGET_TOOLS64_ROOT=guest-tools64
+{% endif %}
+
+{% if image_arch=='x86_64' %}
+# 64-bit tools take priority on 64-bit architectures
+TARGET_TOOLS_ROOT=${TARGET_TOOLS64_ROOT}
+{% else %}
+TARGET_TOOLS_ROOT=${TARGET_TOOLS32_ROOT}
+{% endif %}
+
+
 # To save the hassle of rebuilding guest images every time you update S2E's guest tools,
 # the first thing that we do is get the latest versions of the guest tools.
-function update_guest_tools {
-    local GUEST_TOOLS
+function update_common_tools {
     local OUR_S2EGET
 
-    GUEST_TOOLS="$COMMON_TOOLS $(target_tools)"
     OUR_S2EGET=${S2EGET}
 
+    # First, download the common tools
     {% if project_type == 'windows' %}
     # Windows does not allow s2eget.exe to overwrite itself, so we need a workaround.
-    if echo ${GUEST_TOOLS} | grep -q s2eget; then
+    if echo ${COMMON_TOOLS} | grep -q s2eget; then
       OUR_S2EGET=${S2EGET}_old.exe
       mv ${S2EGET} ${OUR_S2EGET}
     fi
     {% endif %}
 
-    for TOOL in ${GUEST_TOOLS}; do
-        {% if image_arch=='x86_64' %}
-        # s2ecmd is used to create symbolic data, which in 64-bit guests may lead
-        # to forced concretizations if it flows into MMX registers. Use 32-bit version
-        # to minimize this problem.
-        if [[ $TOOL == s2ecmd* ]]; then
-            ${OUR_S2EGET} guest-tools32/${TOOL}
-        else
-            ${OUR_S2EGET} guest-tools/${TOOL}
-        fi
-        {% else %}
-        ${OUR_S2EGET} guest-tools/${TOOL}
-        {% endif %}
+    for TOOL in ${COMMON_TOOLS}; do
+        ${OUR_S2EGET} ${TARGET_TOOLS_ROOT}/${TOOL}
+        chmod +x ${TOOL}
+    done
+}
+
+function update_target_tools {
+    for TOOL in $(target_tools); do
+        ${S2EGET} ${TOOL} ${TOOL}
         chmod +x ${TOOL}
     done
 }
@@ -193,7 +208,8 @@ function execute {
 ###############################################################################
 
 
-update_guest_tools
+update_common_tools
+update_target_tools
 
 {% if project_type != 'windows' %}
 

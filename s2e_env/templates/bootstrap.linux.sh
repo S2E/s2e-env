@@ -12,11 +12,17 @@ function execute_target {
     TARGET="$1"
     SYMB_FILE="$2"
 
+    {% if target_arch=='x86_64' %}
+    S2E_SO="${TARGET_TOOLS64_ROOT}/s2e.so"
+    {% else %}
+    S2E_SO="${TARGET_TOOLS32_ROOT}/s2e.so"
+    {% endif %}
+
     {% if dynamically_linked == true %}
     # {{ target }} is dynamically linked, so s2e.so has been preloaded to
     # provide symbolic arguments to the target if required. You can do so by
     # using the ``S2E_SYM_ARGS`` environment variable as required
-    S2E_SYM_ARGS="{{ sym_args | join(' ') }}" LD_PRELOAD=./s2e.so ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    S2E_SYM_ARGS="{{ sym_args | join(' ') }}" LD_PRELOAD="${S2E_SO}" ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% else %}
     ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
     {% endif %}
@@ -30,7 +36,11 @@ function target_init {
 
 # Returns Linux-specific tools
 function target_tools {
-    echo "s2e.so"
+    {% if image_arch=='x86_64' %}
+    echo "${TARGET_TOOLS32_ROOT}/s2e.so" "${TARGET_TOOLS64_ROOT}/s2e.so"
+    {% else %}
+    echo "${TARGET_TOOLS32_ROOT}/s2e.so"
+    {% endif %}
 }
 
 S2ECMD=./s2ecmd

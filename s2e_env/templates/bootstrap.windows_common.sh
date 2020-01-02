@@ -43,7 +43,7 @@ function target_init {
 }
 
 function target_tools {
-    echo "s2e.sys s2e.inf drvctl.exe"
+    echo ""
 }
 
 # This function converts an msys path into a Windows path
@@ -56,6 +56,4 @@ function win_path {
 S2ECMD=./s2ecmd.exe
 S2EGET=./s2eget.exe
 S2EPUT=./s2eput.exe
-COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe"
-
-cd /c/s2e
+COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe s2e.sys s2e.inf drvctl.exe"

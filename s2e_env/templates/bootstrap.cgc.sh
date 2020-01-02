@@ -18,7 +18,7 @@ function execute_target {
         # Note: CGC files don't need to be in a ram disk, as they will be made
         # symbolic at the syscall level. See DecreeMonitor for details.
         ${S2EGET} "${SEED_FILE}"
-        ./cgccmd concolic on
+        ${CGCCMD} concolic on
 
         chmod +x ${SEED_FILE}
         cb-test --directory $(pwd) --xml ${SEED_FILE} --cb ${TARGET} --should_core --timeout 3600 2>&1
@@ -37,10 +37,12 @@ function target_init {
 }
 
 function target_tools {
-    echo "cgccmd"
+    echo "${TARGET_TOOLS_ROOT}/cgccmd"
 }
 
 S2ECMD=./s2ecmd
 S2EGET=./s2eget
 S2EPUT=./s2eput
 COMMON_TOOLS="s2ecmd s2eget s2eput"
+
+CGCCMD=${TARGET_TOOLS_ROOT}/cgccmd

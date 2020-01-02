@@ -262,17 +262,16 @@ class AbstractProject(EnvCommand):
 
         logger.info('Creating a symlink to %s', guest_tools_path)
         os.symlink(guest_tools_path,
-                   os.path.join(project_dir, 'guest-tools'))
+                   os.path.join(project_dir, CONSTANTS['guest_tools'][img_arch]))
 
         # Also link 32-bit guest tools for 64-bit guests.
-        # This is a workaround for forced concretizations until proper symbolic MMX
-        # registers support is implemented.
+        # This is required on Linux to have 32-bit s2e.so when loading 32-bit binaries
         if img_arch == 'x86_64':
             guest_tools_path_32 = \
                 self.install_path('bin', CONSTANTS['guest_tools']['i386'])
 
             os.symlink(guest_tools_path_32,
-                       os.path.join(project_dir, 'guest-tools32'))
+                       os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
 
 
     def _select_guestfs(self, img_desc):
