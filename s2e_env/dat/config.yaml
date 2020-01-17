@@ -164,3 +164,5 @@ import_export:
     blacklist:
         - guestfs
         - guest-tools
+        - guest-tools32
+        - guest-tools64
