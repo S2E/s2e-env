@@ -126,7 +126,7 @@ def _get_ubuntu_version():
     return major_version
 
 
-def _get_s2e_sources(env_path):
+def _get_s2e_sources(env_path, manifest_branch):
     """
     Download the S2E manifest repository and initialize all of the S2E
     repositories with repo. All required repos are in the manifest,
@@ -147,8 +147,8 @@ def _get_s2e_sources(env_path):
     try:
         # Now use repo to initialize all the repositories
         logger.info('Fetching %s from %s', git_s2e_repo, git_url)
-        repo.init(u='%s/%s' % (git_url, git_s2e_repo), _out=sys.stdout,
-                  _err=sys.stderr, _fg=True)
+        repo.init(u='%s/%s' % (git_url, git_s2e_repo), b=manifest_branch,
+                  _out=sys.stdout, _err=sys.stderr, _fg=True)
         repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
     except ErrorReturnCode as e:
         # Clean up - remove the half-created S2E environment
@@ -251,6 +251,8 @@ class Command(BaseCommand):
                             help='Use this flag to force environment creation '
                                  'even if an environment already exists at '
                                  'this location')
+        parser.add_argument('-mb', '--manifest-branch', type=str, required=False, default='master',
+                            help='Specify an alternate branch for the repo manifest')
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -300,7 +302,7 @@ class Command(BaseCommand):
                     _install_dependencies()
 
                 # Get the source repositories
-                _get_s2e_sources(env_path)
+                _get_s2e_sources(env_path, options['manifest_branch'])
 
                 # Remind the user that they must build S2E
                 msg = '%s. Then run ``s2e build`` to build S2E' % msg
