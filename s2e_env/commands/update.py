@@ -57,7 +57,7 @@ class Command(EnvCommand):
         repo_dir = self.source_path('.repo')
         if not os.path.exists(repo_dir):
             raise CommandError(
-                '%s does not exist. Your environment is not be supported by this version of s2e-env.\n'
+                '%s does not exist. Your environment is not supported by this version of s2e-env.\n'
                 'Please create a new environment.' % (repo_dir)
             )
 
