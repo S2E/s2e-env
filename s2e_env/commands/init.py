@@ -44,24 +44,6 @@ from s2e_env.utils.templates import render_template
 logger = logging.getLogger('init')
 
 
-def _get_img_sources(env_path):
-    """
-    Download the S2E image repositories.
-    """
-    git_repos = CONSTANTS['repos']['images'].values()
-
-    for git_repo in git_repos:
-        repos.git_clone_to_source(env_path, git_repo)
-
-
-def _get_testsuite_sources(env_path):
-    """
-    Download the testsuite repository
-    """
-    git_repo = CONSTANTS['repos']['testsuite']
-    repos.git_clone_to_source(env_path, git_repo)
-
-
 def _link_existing_install(env_path, existing_install):
     """
     Reuse an existing S2E installation at ```existing_install``` in the new
@@ -147,17 +129,17 @@ def _get_ubuntu_version():
 def _get_s2e_sources(env_path):
     """
     Download the S2E manifest repository and initialize all of the S2E
-    repositories with repo.
+    repositories with repo. All required repos are in the manifest,
+    no need to manually clone other repos.
     """
     # Download repo
     repo = _get_repo(env_path)
 
-    s2e_source_path = os.path.join(env_path, 'source', 's2e')
+    source_path = os.path.join(env_path, 'source')
 
     # Create the S2E source directory and cd to it to run repo
-    os.mkdir(s2e_source_path)
     orig_dir = os.getcwd()
-    os.chdir(s2e_source_path)
+    os.chdir(source_path)
 
     git_url = CONSTANTS['repos']['url']
     git_s2e_repo = CONSTANTS['repos']['s2e']
@@ -319,8 +301,6 @@ class Command(BaseCommand):
 
                 # Get the source repositories
                 _get_s2e_sources(env_path)
-                _get_img_sources(env_path)
-                _get_testsuite_sources(env_path)
 
                 # Remind the user that they must build S2E
                 msg = '%s. Then run ``s2e build`` to build S2E' % msg

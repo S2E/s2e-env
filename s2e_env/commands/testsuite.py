@@ -159,7 +159,7 @@ class TestsuiteGenerator(EnvCommand):
 
     # pylint: disable=too-many-locals
     def _handle_test(self, test_root, test, test_config, img_templates):
-        ts_dir = self.source_path('testsuite')
+        ts_dir = self.source_path('s2e', 'testsuite')
 
         if os.path.exists(os.path.join(test_root, 'Makefile')):
             _build_test(self._config, self.source_path('s2e'), test_root)
@@ -203,7 +203,7 @@ class TestsuiteGenerator(EnvCommand):
 
 
     def _get_tests(self):
-        ts_dir = self.source_path('testsuite')
+        ts_dir = self.source_path('s2e', 'testsuite')
         if not os.path.isdir(ts_dir):
             raise CommandError('%s does not exist. Please check that you updated the S2E source' % ts_dir)
 
@@ -219,7 +219,7 @@ class TestsuiteGenerator(EnvCommand):
         self._cmd_options = options
 
         img_templates = self._get_image_templates()
-        ts_dir = self.source_path('testsuite')
+        ts_dir = self.source_path('s2e', 'testsuite')
         tests = self._get_tests()
 
         for test in tests:
@@ -237,7 +237,7 @@ class TestsuiteGenerator(EnvCommand):
 
 class TestsuiteLister(EnvCommand):
     def handle(self, *args, **options):
-        ts_dir = self.source_path('testsuite')
+        ts_dir = self.source_path('s2e', 'testsuite')
         if not os.path.isdir(ts_dir):
             logger.error('%s does not exist. Please check that you updated the S2E source', ts_dir)
             return

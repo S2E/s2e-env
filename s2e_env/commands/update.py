@@ -26,11 +26,9 @@ import os
 import sys
 
 import sh
-from sh import git, ErrorReturnCode
+from sh import ErrorReturnCode
 
-from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils import repos
 
 
 logger = logging.getLogger('update')
@@ -45,9 +43,6 @@ class Command(EnvCommand):
 
     def handle(self, *args, **options):
         self._update_s2e_sources()
-        self._update_img_sources()
-        self._update_testsuite()
-
         logger.success('Environment updated. Now run ``s2e build`` to rebuild')
 
     def _update_s2e_sources(self):
@@ -58,7 +53,15 @@ class Command(EnvCommand):
 
         # cd into the S2E source directory
         orig_dir = os.getcwd()
-        os.chdir(self.source_path('s2e'))
+
+        repo_dir = self.source_path('.repo')
+        if not os.path.exists(repo_dir):
+            raise CommandError(
+                '%s does not exist. Your environment is not be supported by this version of s2e-env.\n'
+                'Please create a new environment.' % (repo_dir)
+            )
+
+        os.chdir(self.source_path())
 
         try:
             logger.info('Updating S2E')
@@ -71,38 +74,3 @@ class Command(EnvCommand):
 
         # Success!
         logger.info('Updated S2E')
-
-    def _update_repo(self, git_repo):
-        git_repo_dir = self.env_path('source', git_repo)
-
-        if not os.path.isdir(git_repo_dir):
-            logger.warning('%s does not exist. Cloning.', git_repo)
-            repos.git_clone_to_source(self._env_dir, git_repo)
-            return
-
-        try:
-            logger.info('Updating %s', git_repo)
-            git.bake(C=git_repo_dir).pull(_out=sys.stdout, _err=sys.stderr,
-                                          _fg=True)
-        except ErrorReturnCode as e:
-            raise CommandError(e)
-
-        # Success!
-        logger.info('Updated %s', git_repo)
-
-    def _update_img_sources(self):
-        """
-        Update the S2E image repositories.
-        """
-        git_repos = CONSTANTS['repos']['images'].values()
-
-        for git_repo in git_repos:
-            self._update_repo(git_repo)
-
-    def _update_testsuite(self):
-        """
-        Update the testsuite repository.
-        """
-
-        git_repo = CONSTANTS['repos']['testsuite']
-        self._update_repo(git_repo)
