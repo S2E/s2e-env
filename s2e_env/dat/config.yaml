@@ -105,9 +105,10 @@ repos:
     # Names of git repositories
     s2e: manifest
     images:
+        # Normally, guest-images and s2e-linux-kernel is handled by repo, but we
+        # still need to check it out manually when using binary-only installations.
         linux: s2e-linux-kernel
         build: guest-images
-    testsuite: testsuite
 
 required_versions:
     # Ubuntu OS major version
@@ -164,3 +165,5 @@ import_export:
     blacklist:
         - guestfs
         - guest-tools
+        - guest-tools32
+        - guest-tools64
