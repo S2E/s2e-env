@@ -8,7 +8,7 @@
 
 ENV_DIR="{{ env_dir }}"
 INSTALL_DIR="$ENV_DIR/install"
-BUILD_DIR="$ENV_DIR/build/s2e"
+BUILD_DIR="$ENV_DIR/build"
 BUILD=debug
 
 # Comment this out to enable QEMU GUI
