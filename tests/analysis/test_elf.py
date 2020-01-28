@@ -36,6 +36,6 @@ class ELFTestCase(TestCase):
         with ELFAnalysis(CAT_X86_PATH) as elf:
             self.assertTrue(elf.is_dynamically_linked())
 
-            self.assertItemsEqual(elf.get_modelled_functions(),
+            self.assertCountEqual(elf.get_modelled_functions(),
                                   [u'strncmp', u'printf', u'memcpy', u'strcpy',
                                    u'fprintf', u'memcmp', u'strlen', u'strcmp'])

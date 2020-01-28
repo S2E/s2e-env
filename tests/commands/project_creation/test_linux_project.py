@@ -161,6 +161,6 @@ class LinuxProjectTestCase(TestCase):
 
         # Verify static analysis results
         self.assertTrue(config['dynamically_linked'])
-        self.assertItemsEqual(config['modelled_functions'],
+        self.assertCountEqual(config['modelled_functions'],
                               [u'strncmp', u'printf', u'memcpy', u'strcpy',
                                u'fprintf', u'memcmp', u'strlen', u'strcmp'])
