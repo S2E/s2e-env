@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import curses
 import time
@@ -198,7 +198,7 @@ class Table(Form):
         max_data_width = 0
         max_height = len(self._layout)
 
-        for k, v in self._data.iteritems():
+        for k, v in self._data.items():
             l = self._legend[k]
             max_legend_width = max(max_legend_width, len(l))
             max_data_width = max(max_data_width, len(str(v)))

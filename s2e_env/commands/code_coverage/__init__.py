@@ -102,7 +102,7 @@ def aggregate_tb_files_per_state(tb_files):
 
             state_id = get_tb_state(f)
 
-            for module_path, coverage in data.iteritems():
+            for module_path, coverage in data.items():
                 states = {}
                 if module_path not in ret:
                     ret[module_path] = states
@@ -123,10 +123,10 @@ def aggregate_tb_files_per_state(tb_files):
 def aggregate_tb_files(tb_files):
     ret = {}
     tbs = aggregate_tb_files_per_state(tb_files)
-    for module_path, states in tbs.iteritems():
+    for module_path, states in tbs.items():
         tbs = set()
         ret[module_path] = tbs
-        for coverage in states.itervalues():
+        for coverage in states.values():
             for tb in coverage:
                 tbs.add(_tb_to_uint64(tb))
     return ret

@@ -76,7 +76,7 @@ class InfFileParser(object):
 
     @staticmethod
     def parse_string(input_string):
-        if not isinstance(input_string, unicode):
+        if not isinstance(input_string, str):
             input_string = InfFileParser._decode(input_string)
 
         input_string = input_string.split('\n')

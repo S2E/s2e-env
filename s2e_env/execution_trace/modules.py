@@ -171,7 +171,7 @@ class ModuleMap(object):
 
     def dump(self):
         logger.info('Dumping module map')
-        for pid, sections in self._pid_to_sections.items():
+        for pid, sections in list(self._pid_to_sections.items()):
             for section in sections:
                 s = module = None
                 logger.info('pid=%d section=(%s) module=(%s) section=(%s)', pid, section, module, s)

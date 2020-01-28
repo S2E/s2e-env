@@ -59,7 +59,7 @@ def gen_marker(size_in_bytes):
     with instructions that begin with the same byte as the marker.
     """
     marker = ''
-    for i in xrange(0, size_in_bytes):
+    for i in range(0, size_in_bytes):
         marker = '%s%02x' % (marker, i+1)
     return int(marker, 16)
 
@@ -107,7 +107,7 @@ def assemble(instructions, markers, arch):
     for instr in instructions.splitlines():
         found_marker = None
         found_varname = None
-        for marker, var_name in markers.iteritems():
+        for marker, var_name in markers.items():
             if instr.find(marker) != -1:
                 found_marker = marker
                 found_varname = var_name
@@ -149,10 +149,10 @@ def type1(fp, arch, platform, gp_reg_index):
 
     write_stripped_string(fp, header)
 
-    for i in xrange(0, BITS[arch] / 8):
+    for i in range(0, BITS[arch] / 8):
         fp.write('{1}[{0}] == $pc[{0}]\n'.format(i, PCREG[arch]))
 
-    for i in xrange(0, BITS[arch] / 8):
+    for i in range(0, BITS[arch] / 8):
         fp.write('{0}[{1}] == $gp[{1}]\n'.format(gp_reg_str, i))
 
 
@@ -197,7 +197,7 @@ def type1_shellcode(fp, arch, platform, gp_reg_index):
 
     write_stripped_string(fp, header)
 
-    for i in xrange(0, len(assembled)):
+    for i in range(0, len(assembled)):
         fp.write('[{2}+{0}] == {1}\n'.format(i, assembled[i], PCREG[arch]))
 
 
@@ -238,7 +238,7 @@ def type2_decree_shellcode_i386_0(fp):
 
     write_stripped_string(fp, header)
 
-    for i in xrange(0, len(assembled)):
+    for i in range(0, len(assembled)):
         fp.write('[EIP+{0}] == {1}\n'.format(i, assembled[i]))
 
 
@@ -274,7 +274,7 @@ def type2_decree_shellcode_i386_1(fp):
     :exec_mem=EIP
     """
     write_stripped_string(fp, header)
-    for i in xrange(0, len(assembled)):
+    for i in range(0, len(assembled)):
         fp.write('[EIP+{0}] == {1}\n'.format(i, assembled[i]))
 
 
@@ -308,7 +308,7 @@ class Command(ProjectCommand):
         type1_handlers = [('reg', type1), ('shellcode', type1_shellcode)]
 
         for arch in archs:
-            for gp_reg in xrange(0, len(REGISTERS[arch])):
+            for gp_reg in range(0, len(REGISTERS[arch])):
                 platform = 'generic'
 
                 for flavor, handler in type1_handlers:

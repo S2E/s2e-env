@@ -40,12 +40,12 @@ class CaseInsensitiveStr(CaseInsensitiveStringMixin, str):
     pass
 
 
-class CaseInsensitiveUnicode(CaseInsensitiveStringMixin, unicode):
+class CaseInsensitiveUnicode(CaseInsensitiveStringMixin, str):
     pass
 
 
 def case_insensitive(string):
-    if isinstance(string, unicode):
+    if isinstance(string, str):
         return CaseInsensitiveUnicode(string)
     elif isinstance(string, str):
         return CaseInsensitiveStr(string)
@@ -65,7 +65,7 @@ class CaseInsensitiveDict(MutableMapping):
         self._trie = Trie(*args, **kwargs)
 
         d = dict(*args, **kwargs)
-        for key, value in d.iteritems():
+        for key, value in d.items():
             self._dict[case_insensitive(key)] = value
 
     def __contains__(self, key):

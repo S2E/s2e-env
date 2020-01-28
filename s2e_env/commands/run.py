@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import argparse
 import ctypes.util
@@ -88,7 +88,7 @@ def _terminate_s2e():
 
     # Give S2E time to quit
     logger.warning('Waiting for S2E processes to quit...')
-    for _ in xrange(15):
+    for _ in range(15):
         if not _has_s2e_processes(s2e_main_process.pid):
             logger.warning('All S2E processes terminated, exiting.')
             return
@@ -312,7 +312,7 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ', '.join(CollectorThreads.coverage.tb_coverage.keys())
+        binaries = ', '.join(list(CollectorThreads.coverage.tb_coverage.keys()))
         if not binaries:
             binaries = 'Waiting for analysis to start...'
 

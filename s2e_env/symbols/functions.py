@@ -96,6 +96,6 @@ class FunctionInfo(object):
     @staticmethod
     def from_dict(fcns):
         ret = FunctionInfo()
-        for name, se in fcns.iteritems():
+        for name, se in fcns.items():
             ret.add(name, se[0], se[1])
         return ret

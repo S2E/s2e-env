@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import glob
 import grp
@@ -162,9 +162,9 @@ def _translate_image_name(templates, image_name):
     """
     ret = []
     if image_name == 'all':
-        ret = templates.keys()
+        ret = list(templates.keys())
     elif image_name in Command.image_groups:
-        for k, v in templates.iteritems():
+        for k, v in templates.items():
             if v['image_group'] == image_name:
                 ret.append(k)
     elif image_name in templates:
@@ -388,7 +388,7 @@ class Command(EnvCommand):
         print(' * linux - Build all Linux images')
         print(' * windows - Build all Windows images')
         print('')
-        for template, desc in sorted(templates.iteritems()):
+        for template, desc in sorted(templates.items()):
             print(' * %s - %s' % (template, desc['name']))
 
         print('\nRun ``s2e image_build <name>`` to build an image. '

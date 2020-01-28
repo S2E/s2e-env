@@ -51,14 +51,14 @@ class Coverage(QueueProcessor):
         bb_summary = {}
         bb_aggregate = 0
         bb_static_aggregate = 0
-        for module, coverage in self._bb_coverage.iteritems():
+        for module, coverage in self._bb_coverage.items():
             l = len(coverage)
             bb_summary[module] = l
             bb_aggregate += l
             bb_static_aggregate += self._static_info[module]['static_bbs']
 
         tb_aggregate = 0
-        for module, coverage in self._tb_coverage.iteritems():
+        for module, coverage in self._tb_coverage.items():
             l = len(coverage)
             tb_aggregate += l
 
@@ -82,7 +82,7 @@ class Coverage(QueueProcessor):
         else:
             actual_cov = self._bb_coverage
 
-        for module, coverage in data.iteritems():
+        for module, coverage in data.items():
             if module not in actual_cov:
                 result[module] = coverage
                 actual_cov[module] = set()
@@ -117,7 +117,7 @@ class Coverage(QueueProcessor):
         diff = self.compute_bb_diff(data, coverage_type == TB_COVERAGE)
 
         logger.info('Processing coverage data diff: %s', diff)
-        for module, coverage in diff.iteritems():
+        for module, coverage in diff.items():
             logger.info('module: %s coverage: %s ', module, coverage)
 
             for bb in coverage:

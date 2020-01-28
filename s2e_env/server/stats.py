@@ -23,7 +23,7 @@ SOFTWARE.
 
 import logging
 from threading import Thread
-from Queue import Queue
+from queue import Queue
 from .threads import terminating
 
 
@@ -40,7 +40,7 @@ class CGCStats(Thread):
     def process_stats(self, _, data):
         # Update per-module stats
         stats = data.get('stats', {})
-        for module, mdata in stats.iteritems():
+        for module, mdata in stats.items():
             upd = self._stats.get(module, {})
             upd['called_random'] = upd.get('called_random', False) or mdata.get('called_random', False)
             upd['random_branches_pc'] = list(

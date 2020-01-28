@@ -69,7 +69,7 @@ class CommandParser(ArgumentParser):
             raise CommandError(message)
 
 
-class BaseCommand(object):
+class BaseCommand(object, metaclass=ABCMeta):
     """
     The base class that all commands ultimately derive from.
 
@@ -101,9 +101,6 @@ class BaseCommand(object):
     description of the command, which will be printed in help messages, the
     ``help`` class attribute should be specified.
     """
-
-    # Abstract class
-    __metaclass__ = ABCMeta
 
     # Metadata about this command
     help = ''

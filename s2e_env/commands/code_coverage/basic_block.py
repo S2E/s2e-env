@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import division
+
 
 from abc import abstractmethod
 from collections import defaultdict
@@ -145,12 +145,12 @@ def _get_basic_block_coverage(tb_coverage, bbs):
     covered_bbs = defaultdict(set)
     num_bbs = len(bbs)
 
-    for state, coverage in tb_coverage.iteritems():
+    for state, coverage in tb_coverage.items():
         logger.info('Calculating basic block coverage for state %d', state)
 
         for tb_start_addr, tb_end_addr, _ in coverage:
             start_idx = _binary_search(tb_start_addr, bbs)
-            for i in xrange(start_idx, num_bbs):
+            for i in range(start_idx, num_bbs):
                 bb = bbs[i]
 
                 # Check if the translation block falls within the basic block
@@ -230,7 +230,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         # Calculate some statistics (across all states)
         total_bbs = len(bbs)
-        num_covered_bbs = len(set(itertools.chain(*bb_coverage.itervalues())))
+        num_covered_bbs = len(set(itertools.chain(*iter(bb_coverage.values()))))
 
         # Write the basic block coverage information to disk.
         #
@@ -262,7 +262,7 @@ class BasicBlockCoverage(ProjectCommand):
         tb_files = get_tb_files(self.project_path('s2e-last'))
         tb_coverage_files = aggregate_tb_files_per_state(tb_files)
 
-        for module_path, tb_coverage in tb_coverage_files.iteritems():
+        for module_path, tb_coverage in tb_coverage_files.items():
             try:
                 actual_module_path = guess_target_path(self.symbol_search_path, module_path)
             except Exception as e:
@@ -372,7 +372,7 @@ class BasicBlockCoverage(ProjectCommand):
                 'total_basic_blocks': total_bbs,
                 'covered_basic_blocks': num_covered_bbs,
             },
-            'coverage': [to_dict(bb) for bbs in basic_blocks.itervalues() for bb in bbs],
+            'coverage': [to_dict(bb) for bbs in basic_blocks.values() for bb in bbs],
         }
 
         with open(bb_coverage_file, 'w') as f:
@@ -438,7 +438,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         module = os.path.basename(module_path)
 
-        for state, bbs in basic_blocks.iteritems():
+        for state, bbs in basic_blocks.items():
             drcov_filename = '%s_coverage_%s.drcov' % (module, state)
             drcov_file = os.path.join(drcov_dir, drcov_filename)
 

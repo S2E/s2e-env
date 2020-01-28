@@ -176,7 +176,7 @@ class AbstractProject(EnvCommand):
         """
         images = []
 
-        for k, v in image_templates.iteritems():
+        for k, v in image_templates.items():
             if self._is_valid_image(target, v['os']):
                 images.append(k)
 

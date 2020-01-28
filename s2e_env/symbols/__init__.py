@@ -42,14 +42,11 @@ from .pe import PEFile
 logger = logging.getLogger('symbols')
 
 
-class DebugInfo(object):
+class DebugInfo(object, metaclass=ABCMeta):
     """
     This class abstracts away debug information for various binary file formats.
     It must be subclassed to handle specific formats (ELF, PE, etc.).
     """
-
-    # Abstract class
-    __metaclass__ = ABCMeta
 
     def __init__(self, path, search_paths=None):
         self._path = path
@@ -84,7 +81,7 @@ class DebugInfo(object):
 
     def get_coverage(self, addr_counts, include_covered_files_only=False):
         if include_covered_files_only:
-            for addr in addr_counts.iterkeys():
+            for addr in addr_counts.keys():
                 try:
                     self.get(addr)
                 except Exception:
@@ -333,7 +330,7 @@ class JsonDebugInfo(DebugInfo):
     data in the above format.
     """
     def _parse_info(self, lines):
-        for filepath, line_info in lines.iteritems():
+        for filepath, line_info in lines.items():
             filepath = guess_source_file_path(self._search_paths, filepath)
             for line in line_info:
                 line_number = line[0]
@@ -385,7 +382,7 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
     vs a few (tens) of minutes with pyelftools.
     """
     address_ranges = []
-    for addr, _ in addr_counts.items():
+    for addr, _ in list(addr_counts.items()):
         address_ranges.append((addr, 1))
 
     stdout_data = _invoke_addrs2_lines(
@@ -398,7 +395,7 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
     lines = json.loads(stdout_data)
 
     ret = {}
-    for source_file, data in lines.items():
+    for source_file, data in list(lines.items()):
         line_counts = {}
         for line in data.get('lines', []):
             line_counts[line[0]] = line[1]
@@ -429,7 +426,7 @@ class SymbolManager(object):
         syms = None
 
         logger.debug('Fetching target %s', target)
-        if self._targets.has_key(target):
+        if target in self._targets:
             return self._targets[target]
 
         try:

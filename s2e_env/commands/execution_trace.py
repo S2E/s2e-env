@@ -57,7 +57,7 @@ def _make_json_entry(header, item):
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
     if header.type == TraceEntries_pb2.TRACE_FORK:
-        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.iteritems()}
+        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
         item = TraceEntryFork(children)
 
     header_dict = protobuf_to_dict(header, use_enum_labels=True)

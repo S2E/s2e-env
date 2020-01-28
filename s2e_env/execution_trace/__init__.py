@@ -201,7 +201,7 @@ class ExecutionTraceParser(object):
             # the root of the execution tree
             states_to_return.discard(0)
         else:
-            states_to_return = self._path_info.keys()
+            states_to_return = list(self._path_info.keys())
 
         # Reconstruct the execution tree for the given state IDs
         for state_id in sorted(states_to_return, reverse=True):

@@ -141,7 +141,7 @@ def guess_source_file_path(search_paths, path):
     if os.path.isabs(path):
         # Try to strip prefixes until we find something
         components = _splitall(path)
-        for i in xrange(0, len(components)):
+        for i in range(0, len(components)):
             c = os.path.join(*components[i:])
             guessed_path = _guess_rel_path(search_paths, c)
             if guessed_path:
