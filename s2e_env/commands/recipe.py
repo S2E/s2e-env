@@ -75,7 +75,7 @@ def assemble_raw(inst_list, arch, convert_to_hex):
     # pylint doesn't see the arch argument
     # pylint: disable=unexpected-keyword-arg
     assembled = asm('\n'.join(inst_list), arch=arch)
-    ret = [val for i, val in enumerate(assembled)]
+    ret = [bytes([val]) for i, val in enumerate(assembled)]
     if convert_to_hex:
         for i, val in enumerate(ret):
             ret[i] = '0x%s' % binascii.hexlify(val)
@@ -87,7 +87,7 @@ SIZE_TO_STRUCT = [None, '<B', '<H', None, '<L', None, None, None, '<Q']
 
 def resolve_marker(asmd, marker, marker_size, var_name):
     pk = struct.pack(SIZE_TO_STRUCT[marker_size], marker)
-    pk_idx = ''.join(asmd).find(pk)
+    pk_idx = b''.join(asmd).find(pk)
     if pk_idx == -1:
         raise Exception('Could not find marker %s in %s' % (marker, asmd))
 
@@ -118,7 +118,7 @@ def assemble(instructions, markers, arch):
             acc_instr = []
 
             # AAAA or BBBB means 2 bytes, CCCCCCCC 4 bytes, etc.
-            marker_size = len(found_marker) / 2
+            marker_size = len(found_marker) // 2
             value = gen_marker(marker_size)
             new_instr = instr.replace(found_marker, str(value))
             asmd = assemble_raw([new_instr], arch, False)
@@ -132,7 +132,7 @@ def assemble(instructions, markers, arch):
 
 
 def type1(fp, arch, platform, gp_reg_index):
-    size = BITS[arch] / 8
+    size = BITS[arch] // 8
     reg_pc_mask = expand_byte(0xff, size)
 
     gp_reg_str = REGISTERS[arch][gp_reg_index].upper()
@@ -149,10 +149,10 @@ def type1(fp, arch, platform, gp_reg_index):
 
     write_stripped_string(fp, header)
 
-    for i in range(0, BITS[arch] / 8):
+    for i in range(0, BITS[arch] // 8):
         fp.write('{1}[{0}] == $pc[{0}]\n'.format(i, PCREG[arch]))
 
-    for i in range(0, BITS[arch] / 8):
+    for i in range(0, BITS[arch] // 8):
         fp.write('{0}[{1}] == $gp[{1}]\n'.format(gp_reg_str, i))
 
 
@@ -161,7 +161,7 @@ def type1_shellcode(fp, arch, platform, gp_reg_index):
     if gp_reg_index == pc_reg_index:
         pc_reg_index += 1
 
-    size = BITS[arch] / 8
+    size = BITS[arch] // 8
     gp_marker = 'XX' * size
     pc_marker = 'YY' * size
     reg_pc_mask = expand_byte(0xff, size)

@@ -34,7 +34,7 @@ def get_build_id(path):
     """
     Return the build-id encoded in the .note.gnu.build-id section
     """
-    with open(path, 'r') as f:
+    with open(path, 'rb') as f:
         elf = ELFFile(f)
         section = elf.get_section_by_name('.note.gnu.build-id')
         data = section.data()

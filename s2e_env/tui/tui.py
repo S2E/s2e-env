@@ -128,9 +128,9 @@ class Form(object):
 
         # Center the form in the parent window if needed
         if self._hcenter:
-            x = (self._parent._w - self._w) / 2
+            x = (self._parent._w - self._w) // 2
         if self._vcenter:
-            y = (self._parent._h - self._h) / 2
+            y = (self._parent._h - self._h) // 2
 
         x += ax
         y += ay

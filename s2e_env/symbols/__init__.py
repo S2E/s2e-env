@@ -149,7 +149,7 @@ class DebugInfo(object, metaclass=ABCMeta):
             errors.append(err)
 
         logger.error('Could not find debug information for %s', target_path)
-        with open(target_path, 'r') as fp:
+        with open(target_path, 'rb') as fp:
             sig = fp.read(2)
             if sig == 'MZ':
                 logger.error('   It looks like this is a Windows binary. If it has an associated PDB file,')
@@ -246,7 +246,7 @@ class DwarfDebugInfo(DebugInfo):
     # pylint: disable=protected-access
     # (accessing useful internal pyelftools methods)
     def _locate_debug_info(self, path):
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             binary = self._class(f)
 
             if not binary.has_dwarf_info():
@@ -368,7 +368,7 @@ def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files
 
     p = Popen(args, stdout=PIPE, stdin=PIPE)
 
-    stdout_data = p.communicate(input=json_in)[0]
+    stdout_data = p.communicate(input=json_in.encode())[0]
     if p.returncode:
         raise Exception('addrs2lines failed with error code %d' % p.returncode)
 

@@ -97,8 +97,8 @@ class QMPTCPServer(socketserver.TCPServer):
 
 class LineRequestHandler(socketserver.BaseRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.buf = ''
-        self.sep = '\n'
+        self.buf = b''
+        self.sep = b'\n'
         socketserver.BaseRequestHandler.__init__(self, *args, **kwargs)
 
     def handle(self):

@@ -147,6 +147,6 @@ def get_image_descriptor(image_dir):
             return ret
     except CommandError:
         raise
-    except Exception, e:
+    except Exception as e:
         raise CommandError('Unable to open image description %s: %s' %
                            (img_json_path, e))

@@ -31,7 +31,7 @@ pyelftools_url = 'git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+
 version = pip.__version__.split('.')
 if int(version[0]) < 19:
     # For use together with --process-dependency-links
-    pyelftools = 'pyelftools==0.24+s2e'
+    pyelftools = 'pyelftools==0.26+s2e'
 else:
     pyelftools = 'pyelftools@%s' % pyelftools_url
 
@@ -62,10 +62,9 @@ setup(
         'sh',
         'termcolor',
         'pytrie',
-        'pwntools==3.12.0',
+        'pwntools==4.0.1',
         'psutil',
-        'multiprocessing',
-        'protobuf-to-dict'
+        'protobuf3-to-dict'
     ],
     tests_require=[
         'mock',

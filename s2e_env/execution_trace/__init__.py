@@ -183,7 +183,7 @@ class ExecutionTraceParser(object):
         """
         # Parse individual trace files
         for trace_file_path in self._trace_files:
-            with open(trace_file_path, 'r') as trace_file:
+            with open(trace_file_path, 'rb') as trace_file:
                 logger.debug('Parsing %s', trace_file_path)
                 self._parse_trace_file(trace_file, path_ids)
 
