@@ -72,6 +72,16 @@ def _make_json_entry(header, item):
     return entry
 
 
+class TraceEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            chars = []
+            for b in obj:
+                chars.append(b)
+            return chars
+        return super(TraceEncoder, self).default(obj)
+
+
 class Command(ProjectCommand):
     """
     Parses an execution trace into JSON.
@@ -107,8 +117,9 @@ class Command(ProjectCommand):
         json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
         with open(json_trace_file, 'w') as f:
             if options['pretty_print']:
-                json.dump(execution_tree_json, f, indent=4, sort_keys=True)
+                json.dump(execution_tree_json, f, indent=4, sort_keys=True, cls=TraceEncoder)
             else:
-                json.dump(execution_tree_json, f)
+                print(execution_tree_json)
+                json.dump(execution_tree_json, f, cls=TraceEncoder)
 
         logger.success('Execution trace saved to %s', json_trace_file)
