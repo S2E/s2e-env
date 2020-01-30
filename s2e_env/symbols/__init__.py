@@ -1,5 +1,5 @@
 """
-Copyright (c) 2018 Cyberhaven
+Copyright (c) 2018-2020 Cyberhaven
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ class DebugInfo(object, metaclass=ABCMeta):
         This function may be overridden in case a particular debug info provider
         wants to provide line information lazily.
 
-        :param addr: the addess in the binary
+        :param addr: the address in the binary
         :return: a pair of LineInfoEntry, FunctionInfoEntry
         """
         sym = self._lines.get(addr)
@@ -114,7 +114,7 @@ class DebugInfo(object, metaclass=ABCMeta):
         pass
 
     @staticmethod
-    def from_file(search_paths, target_path):
+    def from_file(s2e_prefix, search_paths, target_path):
         """
         Creates an instance of DebugInfo for the given binary specified in target path.
 
@@ -126,7 +126,15 @@ class DebugInfo(object, metaclass=ABCMeta):
         errors = []
         target_path = os.path.realpath(target_path)
 
-        logger.info('Looking for debug information for %s', target_path)
+        logger.info('Looking for debug information in %s', target_path)
+
+        try:
+            syms = Addrs2LinesDebugInfo(target_path, search_paths, s2e_prefix)
+            syms.parse()
+            return syms
+        except Exception as e:
+            logger.debug(e, exc_info=1)
+            errors.append(e)
 
         for cls in (ELFFile, PEFile):
             try:
@@ -136,7 +144,7 @@ class DebugInfo(object, metaclass=ABCMeta):
             except Exception as e:
                 logger.debug(e, exc_info=1)
                 errors.append(e)
-                errors.append('Could not read DWARF information from %s' % target_path)
+                errors.append(f'Could not read DWARF information from {target_path} using {cls}')
 
         try:
             syms = JsonDebugInfo(target_path, search_paths)
@@ -274,7 +282,7 @@ class DwarfDebugInfo(DebugInfo):
         if there is debug info in the target file, and if not, tries to use the debug link.
         """
         try:
-            logger.debug('Attempting to look for DWARF info in %s', self.path)
+            logger.debug(f'Attempting to look for DWARF info in {self.path} using {self._class}')
             self._locate_debug_info(self.path)
             return
         except Exception as e:
@@ -310,6 +318,37 @@ class DwarfDebugInfo(DebugInfo):
         cu = self._dwarf_info._parse_CU_at_offset(cu_offset)
         self._parse_cu(cu, self._dwarf_info)
         return DebugInfo.get(self, addr)
+
+
+class Addrs2LinesDebugInfo(DebugInfo):
+    def __init__(self, path, search_paths=None, s2e_prefix=''):
+        super(Addrs2LinesDebugInfo, self).__init__(path, search_paths)
+        self._s2e_prefix = s2e_prefix
+
+    def parse(self):
+        candidates = [self.path, os.path.realpath(self.path)]
+
+        parsed = False
+        for path in candidates:
+            try:
+                stdout_data = _invoke_addrs2_lines(self._s2e_prefix, path, '', False, False)
+            except:
+                continue
+
+            lines = json.loads(stdout_data)
+
+            for source_file, data in list(lines.items()):
+                file_path = guess_source_file_path(self._search_paths, source_file)
+                for line in data.get('lines', []):
+                    for address in line[1]:
+                        self.add(file_path, line[0], address)
+                        parsed = True
+
+            if parsed:
+                break
+
+        if not parsed:
+            raise Exception("Could not get debug info from {self.path} using addrs2lines")
 
 
 class JsonDebugInfo(DebugInfo):
@@ -352,17 +391,23 @@ class JsonDebugInfo(DebugInfo):
             with open(path, 'r') as f:
                 lines = json.loads(f.read())
                 self._parse_info(lines)
+                return
+
+        raise Exception(f"Could not find any of {candidates}")
 
 
-def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only):
+def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only, get_coverage):
     addrs2lines = os.path.join(s2e_prefix, 'bin', 'addrs2lines')
     if not os.path.exists(addrs2lines):
         logger.warn('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
         raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), addrs2lines)
 
-    args = [addrs2lines, '-coverage', '-pretty']
-    if include_covered_files_only:
-        args.append('-include-covered-files-only')
+    args = [addrs2lines]
+
+    if get_coverage:
+        args += ['-coverage', '-pretty']
+        if include_covered_files_only:
+            args.append('-include-covered-files-only')
 
     args.append(target_path)
 
@@ -389,7 +434,7 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
         s2e_prefix,
         guess_target_path(search_paths, target),
         json.dumps(address_ranges),
-        include_covered_files_only
+        include_covered_files_only, True
     )
 
     lines = json.loads(stdout_data)
@@ -431,7 +476,7 @@ class SymbolManager(object):
 
         try:
             actual_target = guess_target_path(self._search_paths, target)
-            syms = DebugInfo.from_file(self._search_paths, actual_target)
+            syms = DebugInfo.from_file(self._s2e_prefix, self._search_paths, actual_target)
             self._targets[target] = syms
         except Exception as e:
             logger.debug(e, exc_info=1)
