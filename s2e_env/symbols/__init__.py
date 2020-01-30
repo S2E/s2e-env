@@ -37,7 +37,6 @@ from .debuglink import get_debug_file_for_binary
 from .functions import FunctionInfo
 from .lines import LineInfoEntry, LinesByAddr
 from .paths import guess_target_path, guess_source_file_path
-from .pe import PEFile
 
 logger = logging.getLogger('symbols')
 
@@ -128,6 +127,8 @@ class DebugInfo(object, metaclass=ABCMeta):
 
         logger.info('Looking for debug information in %s', target_path)
 
+        # addrs2lines should work with PE/ELF files that contain DWARF information
+        # It may not work in case there is a debug link, so pyelftools-based parser will deal with that.
         try:
             syms = Addrs2LinesDebugInfo(target_path, search_paths, s2e_prefix)
             syms.parse()
@@ -136,7 +137,7 @@ class DebugInfo(object, metaclass=ABCMeta):
             logger.debug(e, exc_info=1)
             errors.append(e)
 
-        for cls in (ELFFile, PEFile):
+        for cls in [ELFFile]:
             try:
                 syms = DwarfDebugInfo(target_path, search_paths, cls)
                 syms.parse()
