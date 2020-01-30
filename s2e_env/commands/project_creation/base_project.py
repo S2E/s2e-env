@@ -86,8 +86,7 @@ class BaseProject(AbstractProject):
         target_arch = target.arch
 
         if target.is_empty():
-            logger.warn('Creating a project without a target file. You must '
-                        'manually edit bootstrap.sh')
+            logger.warning('Creating a project without a target file. You must manually edit bootstrap.sh')
 
         # Decide on the image to be used
         img_desc = self._select_image(target, options.get('image'),
@@ -102,7 +101,7 @@ class BaseProject(AbstractProject):
         # Determine if guestfs is available for this image
         guestfs_path = self._select_guestfs(img_desc)
         if not guestfs_path:
-            logger.warn('No guestfs available. The VMI plugin may not run optimally')
+            logger.warning('No guestfs available. The VMI plugin may not run optimally')
 
         # Generate the name of the project directory. The default project name
         # is the target program name without any file extension

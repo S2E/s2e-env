@@ -105,8 +105,7 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
             func_graph = r2.cmdj('agj %#x' % func['offset'])
 
             if not func_graph:
-                logger.warn('Function %s has an empty graph. Skipping...',
-                            func_name)
+                logger.warning('Function %s has an empty graph. Skipping...', func_name)
                 continue
 
             # For some reason Radare returns the function graph in a list with

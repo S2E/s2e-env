@@ -134,8 +134,8 @@ class ModuleMap(object):
 
             idx = _index(pid_sections, section)
             if idx != None:
-                logger.warn('Section already loaded: %s - module %s',
-                            section, self._section_to_module[(mod.pid, pid_sections[idx])])
+                logger.warning('Section already loaded: %s - module %s',
+                               section, self._section_to_module[(mod.pid, pid_sections[idx])])
                 continue
 
             bisect.insort(pid_sections, section)

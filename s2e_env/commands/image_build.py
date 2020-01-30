@@ -344,12 +344,12 @@ class Command(EnvCommand):
         if not self._headless:
             env['GRAPHICS'] = ''
         else:
-            logger.warn('Image creation will run in headless mode. '
-                        'Use --gui to see graphic output for debugging')
+            logger.warning('Image creation will run in headless mode. '
+                           'Use --gui to see graphic output for debugging')
 
         if not self._use_kvm:
             env['QEMU_KVM'] = ''
-            logger.warn('Image build without KVM. This will be slow')
+            logger.warning('Image build without KVM. This will be slow')
 
         try:
             make = sh.Command('make').bake(file=os.path.join(img_build_dir,

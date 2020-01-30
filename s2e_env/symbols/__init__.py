@@ -196,7 +196,7 @@ class DwarfDebugInfo(DebugInfo):
                 elif highpc_attr_class == 'constant':
                     highpc = lowpc + highpc_attr.value
                 else:
-                    logger.warn('invalid DW_AT_high_pc class: %s', highpc_attr_class)
+                    logger.warning('invalid DW_AT_high_pc class: %s', highpc_attr_class)
                     continue
 
                 funcname = die.attributes['DW_AT_name'].value
@@ -400,7 +400,7 @@ class JsonDebugInfo(DebugInfo):
 def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only, get_coverage):
     addrs2lines = os.path.join(s2e_prefix, 'bin', 'addrs2lines')
     if not os.path.exists(addrs2lines):
-        logger.warn('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
+        logger.warning('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
         raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), addrs2lines)
 
     args = [addrs2lines]
@@ -532,5 +532,5 @@ class SymbolManager(object):
             return _get_coverage_fast(self._s2e_prefix, self._search_paths, target, addr_counts,
                                       include_covered_files_only)
         except Exception as e:
-            logger.warn('addrs2lines failed (%s), trying to get coverage using pyelftools (may be slow!)', e)
+            logger.warning('addrs2lines failed (%s), trying to get coverage using pyelftools (may be slow!)', e)
             return self.get_target(target).get_coverage(addr_counts, include_covered_files_only)

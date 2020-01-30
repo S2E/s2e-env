@@ -113,7 +113,7 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
         f.write('TN:\n')
         for src_file in file_line_info:
             if ignore_missing_files and not os.path.exists(src_file):
-                logger.warn('%s does not exist, skipping', src_file)
+                logger.warning('%s does not exist, skipping', src_file)
                 continue
             else:
                 logger.info(src_file)

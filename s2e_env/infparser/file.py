@@ -133,7 +133,7 @@ class InfFile(object):
                     continue
 
             if not manufacturer.strip():
-                logger.warn('Empty manufacturer string %s', manufacturer)
+                logger.warning('Empty manufacturer string %s', manufacturer)
 
             # Parse the multiple versions
             models_section = mfg.data[mfg_key].split(',')
@@ -169,7 +169,7 @@ class InfFile(object):
             dev_key = '%s.%s' % (dev_key, version)
 
         if dev_key not in self._sections:
-            logger.warn('No section for %s', dev_key)
+            logger.warning('No section for %s', dev_key)
             return ret
 
         devices = self._sections[dev_key]
@@ -202,7 +202,7 @@ class InfFile(object):
         ret = dict()
 
         if not self._sections.prefixed_keys(install_section_key):
-            logger.warn('Section %s does not exist', install_section_key)
+            logger.warning('Section %s does not exist', install_section_key)
             return ret
 
         for fk in self._sections.prefixed_keys(install_section_key):
@@ -236,7 +236,7 @@ class InfFile(object):
             return ret
 
         if file_list_section_key not in self._sections:
-            logger.warn('File list section %s does not exist', file_list_section_key)
+            logger.warning('File list section %s does not exist', file_list_section_key)
             return ret
 
         for f in self._sections[file_list_section_key].data.keys():

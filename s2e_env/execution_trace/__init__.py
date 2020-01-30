@@ -242,7 +242,7 @@ class ExecutionTraceParser(object):
 
         if hdr_type not in _TRACE_ENTRY_MAP:
             # If an unknown item type is found, just skip it
-            logger.warn('Found unknown trace item `%s`', hdr_type)
+            logger.warning('Found unknown trace item `%s`', hdr_type)
             return None
 
         item = _TRACE_ENTRY_MAP[hdr_type]()
@@ -290,7 +290,7 @@ class ExecutionTraceParser(object):
                 break
             except Exception as e:
                 # This usually means that the trace was truncated (e.g., S2E was killed)
-                logger.warn('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
+                logger.warning('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
                 break
 
             if not item:

@@ -158,9 +158,9 @@ class Command(EnvCommand):
         """
         guestfs_path = self.image_path(image_name, 'guestfs')
         if not os.path.exists(guestfs_path):
-            logger.warn('%s does not exist, despite the original project '
-                        'using the guestfs. The VMI plugin may not run '
-                        'optimally', guestfs_path)
+            logger.warning('%s does not exist, despite the original project '
+                           'using the guestfs. The VMI plugin may not run '
+                           'optimally', guestfs_path)
             return
 
         logger.info('Creating a symlink to %s', guestfs_path)

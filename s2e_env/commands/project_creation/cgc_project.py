@@ -49,17 +49,17 @@ class CGCProject(BaseProject):
 
         use_seeds = config.get('use_seeds', False)
         if not use_seeds:
-            logger.warn('CGC requires seeds, forcing seed option on')
+            logger.warning('CGC requires seeds, forcing seed option on')
             config['use_seeds'] = True
 
         use_recipes = config.get('use_recipes', False)
         if not use_recipes:
-            logger.warn('CGC requires recipes, forcing recipe option on')
+            logger.warning('CGC requires recipes, forcing recipe option on')
             config['use_recipes'] = True
 
         enable_pov_generation = config.get('enable_pov_generation', False)
         if not enable_pov_generation:
-            logger.warn('CGC required PoV generation, forcing POV generation option on')
+            logger.warning('CGC required PoV generation, forcing POV generation option on')
             config['enable_pov_generation'] = True
 
         # CGC binaries do not have input files

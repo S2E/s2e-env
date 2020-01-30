@@ -67,7 +67,7 @@ def _get_run_test_scripts(project_root):
 
         run_tests_path = os.path.join(project_root, path, 'run-tests')
         if not os.path.exists(run_tests_path):
-            logger.warn('%s does not exist, skipping test project %s', run_tests_path, fn)
+            logger.warning('%s does not exist, skipping test project %s', run_tests_path, fn)
 
         tests.append(run_tests_path)
 
@@ -143,7 +143,7 @@ class TestsuiteGenerator(EnvCommand):
         if build_options.get('windows-build-server', False):
             if not self._cmd_options.get('with_windows_build'):
                 # Skip tests that require a windows build server if instructed
-                logger.warn('Skipping test %s, because it requires a Windows build machine', test_name)
+                logger.warning('Skipping test %s, because it requires a Windows build machine', test_name)
                 return False
 
             host = self.config.get('windows_build_server', {}).get('host', '')
@@ -175,7 +175,7 @@ class TestsuiteGenerator(EnvCommand):
 
             for image_name in images:
                 if image_name in blacklisted_images:
-                    logger.warn('%s is blacklisted, skipping tests for that image', image_name)
+                    logger.warning('%s is blacklisted, skipping tests for that image', image_name)
                     continue
 
                 if target_images and image_name not in target_images:
@@ -244,7 +244,7 @@ class TestsuiteLister(EnvCommand):
 
         tests = _get_tests(ts_dir)
         if not tests:
-            logger.warn('There are no tests available')
+            logger.warning('There are no tests available')
             return
 
         logger.info('Available tests')
@@ -356,7 +356,7 @@ class TestsuiteRunner(EnvCommand):
                 item.wait(timeout=9999999)
 
         except KeyboardInterrupt:
-            logger.warn('Terminating testsuite (CTRL+C)')
+            logger.warning('Terminating testsuite (CTRL+C)')
             pool.terminate()
         finally:
             pool.join()
