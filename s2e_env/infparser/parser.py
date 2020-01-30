@@ -36,7 +36,7 @@ logger = logging.getLogger('infparser')
 SECTION_PATTERN = re.compile(r'\[(.+)\]')
 
 
-class InfFileParser(object):
+class InfFileParser:
     def __init__(self):
         self._sections = CaseInsensitiveDict()
 

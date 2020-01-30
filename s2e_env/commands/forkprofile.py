@@ -37,7 +37,7 @@ from s2e_env.symbols import SymbolManager
 logger = logging.getLogger('forkprofile')
 
 
-class ForkProfiler(object):
+class ForkProfiler:
     def __init__(self, trace, syms):
         self._trace = trace
         self._fp = SortedDict()

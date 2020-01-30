@@ -24,7 +24,7 @@ from .coverage import Coverage
 from .stats import CGCStats
 
 
-class CollectorThreads(object):
+class CollectorThreads:
     coverage = None
     stats = None
 

@@ -33,7 +33,7 @@ logger = logging.getLogger('infparser')
 MACRO_PATTERN = re.compile(r'(%.+%)')
 
 
-class InfFile(object):
+class InfFile:
     def __init__(self, filename):
         self._filename = filename
         self._sections = {}

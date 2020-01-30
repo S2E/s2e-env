@@ -25,7 +25,7 @@ from collections import MutableMapping
 from pytrie import SortedStringTrie as Trie
 
 
-class CaseInsensitiveStringMixin(object):
+class CaseInsensitiveStringMixin:
     def __eq__(self, other):
         return self.lower() == other.lower()
 

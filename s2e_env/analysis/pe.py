@@ -24,7 +24,7 @@ SOFTWARE.
 import pefile
 
 
-class PEAnalysis(object):
+class PEAnalysis:
     """
     Support class for doing some simple static analysis on PE files.
     """

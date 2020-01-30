@@ -65,7 +65,7 @@ def _decompress(path):
         raise CommandError(e)
 
 
-class ImageDownloader(object):
+class ImageDownloader:
     """
     Downloads images from a given URL to a given destination directory.
 

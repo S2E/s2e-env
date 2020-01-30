@@ -30,7 +30,7 @@ from .modules import Module, ModuleMap
 logger = logging.getLogger('analyzer')
 
 
-class AnalyzerState(object):
+class AnalyzerState:
     def __init__(self, modules=None):
         if not modules:
             modules = ModuleMap()
@@ -45,7 +45,7 @@ class AnalyzerState(object):
         return AnalyzerState(self._modules.clone())
 
 
-class Analyzer(object):
+class Analyzer:
     """
     This class provides a mechanism to walk execution trees. Walking is done in depth-first order.
     The client is passed a callback that the analyzer calls on every trace item.

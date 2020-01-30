@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 
-class Device(object):
+class Device:
     def __init__(self, name, install_section, hardware_id):
         self.name = name
         self.install_section = install_section
@@ -121,7 +121,7 @@ class USBDevice(Device):
         return 'DEVICE USB VID=%x PID=%x [%s]' % (self.vendorId, self.deviceId, self.name)
 
 
-class InstallInfo(object):
+class InstallInfo:
     def __init__(self):
         self.copyFiles = set()
         self.version = None

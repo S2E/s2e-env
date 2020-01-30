@@ -39,7 +39,7 @@ from . import get_tb_files, aggregate_tb_files_per_state
 logger = logging.getLogger('basicblock')
 
 
-class BasicBlock(object):
+class BasicBlock:
     """
     Immutable basic block representation.
     """

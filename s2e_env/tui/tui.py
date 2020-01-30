@@ -36,7 +36,7 @@ _s_screen = None
 # pylint: disable=no-self-use
 
 
-class Form(object):
+class Form:
     def __init__(self, parent, x, y, w=None, h=None):
         self._children = []
         self._parent = parent
@@ -226,7 +226,7 @@ class Table(Form):
         self._wnd.refresh()
 
 
-class Tui(object):
+class Tui:
     def __init__(self):
         self._updated = True
         self._data = {}

@@ -129,7 +129,7 @@ class TargetError(Exception):
     pass
 
 
-class Target(object):
+class Target:
     """
     Encapsulates a program (e.g., executable, driver, DLL, etc.) to be analyzed
     by S2E.

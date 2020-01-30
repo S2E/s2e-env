@@ -41,7 +41,7 @@ from .paths import guess_target_path, guess_source_file_path
 logger = logging.getLogger('symbols')
 
 
-class DebugInfo(object, metaclass=ABCMeta):
+class DebugInfo(metaclass=ABCMeta):
     """
     This class abstracts away debug information for various binary file formats.
     It must be subclassed to handle specific formats (ELF, PE, etc.).
@@ -450,7 +450,7 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
     return ret
 
 
-class SymbolManager(object):
+class SymbolManager:
     """
     This class manages debug information for binary files.
     It implements addr2line equivalent and provides methods to compute code coverage.

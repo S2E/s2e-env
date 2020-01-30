@@ -55,7 +55,7 @@ _TRACE_ENTRY_MAP = {
 }
 
 
-class TraceEntryFork(object):
+class TraceEntryFork:
     """
     We need a custom fork entry because we need to modify the children field
     to be a dictionary rather than a list of state ids.
@@ -66,7 +66,7 @@ class TraceEntryFork(object):
         self.children = children
 
 
-class ExecutionTraceParser(object):
+class ExecutionTraceParser:
     """
     Parser for S2E execution trace files.
 

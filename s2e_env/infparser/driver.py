@@ -28,7 +28,7 @@ from .file import InfFile
 logger = logging.getLogger('infparser')
 
 
-class Driver(object):
+class Driver:
     def __init__(self, filename):
         self._filename = filename
         self._all_files = set()

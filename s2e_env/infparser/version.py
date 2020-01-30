@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 
-class InfVersion(object):
+class InfVersion:
     """
     This class represents version information.
     Driver inf files encode it as follows:

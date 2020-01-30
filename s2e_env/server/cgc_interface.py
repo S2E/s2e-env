@@ -51,7 +51,7 @@ def translate_paths(analysis, data):
         data[k] = os.path.join(s2e_output_path, original)
 
 
-class CGCInterfacePlugin(object):
+class CGCInterfacePlugin:
     crash_count = 0
     pov1_count = 0
     pov2_count = 0

@@ -102,7 +102,7 @@ def call_command(command_name, *args, **options):
     return command.execute(*args, **defaults)
 
 
-class CommandManager(object):
+class CommandManager:
     """
     Manages and executes commands.
     """

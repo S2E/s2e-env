@@ -29,7 +29,7 @@ logger = logging.getLogger('lines')
 
 
 @total_ordering
-class LineInfoEntry(object):
+class LineInfoEntry:
     __slots__ = '_filename', '_line', '_addr'
 
     def __init__(self, filename, line, addr):
@@ -64,7 +64,7 @@ class LineInfoEntry(object):
         return '%s:%d (%#x)' % (self._filename, self._line, self._addr)
 
 
-class LinesByAddr(object):
+class LinesByAddr:
     """
     This class maintains a mapping from addresses to line information.
     Lookup and insertion are done using binary search.

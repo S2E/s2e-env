@@ -31,7 +31,7 @@ logger = logging.getLogger('analyzer')
 
 
 @total_ordering
-class SectionDescriptor(object):
+class SectionDescriptor:
     __slots__ = (
         'name', 'runtime_load_base', 'native_load_base', 'size',
         'readable', 'writable', 'executable'
@@ -64,7 +64,7 @@ class SectionDescriptor(object):
 
 
 @total_ordering
-class Module(object):
+class Module:
     __slots__ = (
         'name', 'path', 'pid', 'sections'
     )
@@ -116,7 +116,7 @@ def _index(sections, x):
     return None
 
 
-class ModuleMap(object):
+class ModuleMap:
     def __init__(self):
         self._pid_to_sections = {}
         self._section_to_module = {}

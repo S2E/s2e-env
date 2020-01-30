@@ -28,7 +28,7 @@ from elftools.elf.sections import SymbolTableSection
 from s2e_env import CONSTANTS
 
 
-class ELFAnalysis(object):
+class ELFAnalysis:
     """
     Support class for doing some simple static analysis on ELF files.
     """

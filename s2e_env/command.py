@@ -69,7 +69,7 @@ class CommandParser(ArgumentParser):
             raise CommandError(message)
 
 
-class BaseCommand(object, metaclass=ABCMeta):
+class BaseCommand(metaclass=ABCMeta):
     """
     The base class that all commands ultimately derive from.
 
