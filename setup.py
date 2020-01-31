@@ -39,7 +39,7 @@ else:
 setup(
     name='s2e-env',
     description='A command-line tool for administering S2E environments',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md', 'r', encoding='utf8').read(),
     author='Adrian Herrera',
     author_email='adrian.herrera@epfl.ch',
     version=open(os.path.join('s2e_env', 'dat', 'VERSION'), 'r').read().strip(),

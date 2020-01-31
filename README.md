@@ -11,8 +11,11 @@ might be the analysis of the ``file`` program from
 # Prerequisites
 
 We assume that you are working on an Ubuntu 18.04 LTS 64-bit OS.
-[Repo](https://code.google.com/p/git-repo/) only works with Python 2.7, so you
-should use Python 2.7 too. You will also need `gcc` and `python-dev` installed.
+You will need the following packages:
+
+```console
+$ sudo apt-get install git gcc python3 python3-dev python3-venv
+```
 
 Some commands (such as basic block coverage) require a disassembler. Supported
 disassemblers include:
@@ -24,19 +27,18 @@ disassemblers include:
 
 # Install
 
+We recommend installing ``s2e-env`` into a virtual environment.
+
 ```console
 git clone https://github.com/S2E/s2e-env.git
 cd s2e-env
+python3 -m venv venv
+. venv/bin/activate
 pip install .
 
 # Note: if you use pip earlier than version 19, you must add --process-dependency-links:
 pip install . --process-dependency-links
 ```
-
-If you wish to install `s2e-env` to a Python
-[virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/),
-please create and activate this virtualenv before installing `s2e-env` with
-pip.
 
 # Tests
 

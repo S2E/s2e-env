@@ -36,7 +36,8 @@ dependencies:
         - texinfo
         - flex
         - bison
-        - python-dev
+        - python3
+        - python3-dev
 
         # Image build dependencies
         - libguestfs-tools
