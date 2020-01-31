@@ -24,11 +24,11 @@ SOFTWARE.
 import datetime
 import logging
 import os
-import platform
 import shutil
 import stat
 import sys
 
+import distro
 import requests
 import sh
 from sh import ErrorReturnCode
@@ -107,9 +107,9 @@ def _get_ubuntu_version():
     If an unsupported OS/Ubuntu version is found a warning is printed and
     ``None`` is returned.
     """
-    distname, version, _ = platform.dist()
+    id_name, version, _ = distro.linux_distribution(full_distribution_name=False)
 
-    if distname.lower() != 'ubuntu':
+    if id_name.lower() != 'ubuntu':
         logger.warning('You are running on a non-Ubuntu system. Skipping S2E '
                        'dependencies - please install them manually')
         return None
