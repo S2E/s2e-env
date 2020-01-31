@@ -56,7 +56,6 @@ class LineInfoEntry:
         return not self < other and not other < self
 
     def __lt__(self, other):
-        # pylint: disable=protected-access
         # Access fields directly, using properties is too slow
         return self._addr < other._addr
 
@@ -70,7 +69,7 @@ class LinesByAddr:
     Lookup and insertion are done using binary search.
     """
 
-    __slots__ = '_lines',
+    __slots__ = ('_lines',)
 
     def __init__(self):
         self._lines = []

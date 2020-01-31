@@ -111,23 +111,23 @@ def _binary_search(tb_start_addr, bbs):
 
     if tb_start_addr <= bbs[0].end_addr:
         return 0
-    elif tb_start_addr > bbs[hi].end_addr:
+    if tb_start_addr > bbs[hi].end_addr:
         return num_bbs
 
     while lo < hi:
         mid = (lo + hi) // 2
 
-        if tb_start_addr <= bbs[mid].end_addr and tb_start_addr > bbs[mid - 1].end_addr:
+        if bbs[mid - 1].end_addr < tb_start_addr <= bbs[mid].end_addr:
             return mid
-        elif tb_start_addr <= bbs[mid].end_addr:
+        if tb_start_addr <= bbs[mid].end_addr:
             hi = mid
         else:
             lo = mid
 
-    if tb_start_addr <= bbs[lo].end_addr and tb_start_addr > bbs[lo - 1].end_addr:
+    if bbs[lo - 1].end_addr < tb_start_addr <= bbs[lo].end_addr:
         return lo
 
-    if tb_start_addr <= bbs[hi].end_addr and tb_start_addr > bbs[hi - 1].end_addr:
+    if bbs[hi - 1].end_addr < tb_start_addr <= bbs[hi].end_addr:
         return hi
 
     return num_bbs

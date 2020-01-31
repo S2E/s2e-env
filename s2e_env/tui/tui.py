@@ -32,7 +32,6 @@ _s_screen = None
 # TODO: this module requires clean up
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-# pylint: disable=protected-access
 # pylint: disable=no-self-use
 
 

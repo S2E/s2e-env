@@ -52,6 +52,7 @@ class PEAnalysis:
         """
         exports = []
 
+        # pylint: disable=no-member
         for export in self._pe.DIRECTORY_ENTRY_EXPORT.symbols:
             if export.name:
                 exports.append(export.name)

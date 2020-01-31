@@ -73,13 +73,14 @@ def _make_json_entry(header, item):
 
 
 class TraceEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, bytes):
+    # pylint: disable=method-hidden
+    def default(self, o):
+        if isinstance(o, bytes):
             chars = []
-            for b in obj:
+            for b in o:
                 chars.append(b)
             return chars
-        return super(TraceEncoder, self).default(obj)
+        return super(TraceEncoder, self).default(o)
 
 
 class Command(ProjectCommand):

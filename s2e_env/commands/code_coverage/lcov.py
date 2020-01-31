@@ -115,8 +115,8 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
             if ignore_missing_files and not os.path.exists(src_file):
                 logger.warning('%s does not exist, skipping', src_file)
                 continue
-            else:
-                logger.info(src_file)
+
+            logger.info(src_file)
 
             num_non_zero_lines = 0
             num_instrumented_lines = 0

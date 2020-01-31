@@ -104,12 +104,13 @@ def _splitall(path):
         if parts[0] == path:
             allparts.insert(0, parts[0])
             break
-        elif parts[1] == path:
+
+        if parts[1] == path:
             allparts.insert(0, parts[1])
             break
-        else:
-            path = parts[0]
-            allparts.insert(0, parts[1])
+
+        path = parts[0]
+        allparts.insert(0, parts[1])
 
     return allparts
 

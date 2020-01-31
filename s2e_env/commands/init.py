@@ -24,6 +24,7 @@ SOFTWARE.
 import datetime
 import logging
 import os
+import platform
 import shutil
 import stat
 import sys
@@ -106,8 +107,6 @@ def _get_ubuntu_version():
     If an unsupported OS/Ubuntu version is found a warning is printed and
     ``None`` is returned.
     """
-    import platform
-
     distname, version, _ = platform.dist()
 
     if distname.lower() != 'ubuntu':

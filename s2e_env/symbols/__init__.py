@@ -282,7 +282,7 @@ class DwarfDebugInfo(DebugInfo):
         if there is debug info in the target file, and if not, tries to use the debug link.
         """
         try:
-            logger.debug(f'Attempting to look for DWARF info in {self.path} using {self._class}')
+            logger.debug('Attempting to look for DWARF info in %s using %s', self.path, str(self._class))
             self._locate_debug_info(self.path)
             return
         except Exception as e:
@@ -332,7 +332,7 @@ class Addrs2LinesDebugInfo(DebugInfo):
         for path in candidates:
             try:
                 stdout_data = _invoke_addrs2_lines(self._s2e_prefix, path, '', False, False)
-            except:
+            except Exception:
                 continue
 
             lines = json.loads(stdout_data)
@@ -348,7 +348,7 @@ class Addrs2LinesDebugInfo(DebugInfo):
                 break
 
         if not parsed:
-            raise Exception("Could not get debug info from {self.path} using addrs2lines")
+            raise Exception('Could not get debug info from {self.path} using addrs2lines')
 
 
 class JsonDebugInfo(DebugInfo):
@@ -393,7 +393,7 @@ class JsonDebugInfo(DebugInfo):
                 self._parse_info(lines)
                 return
 
-        raise Exception(f"Could not find any of {candidates}")
+        raise Exception(f'Could not find any of {candidates}')
 
 
 def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only, get_coverage):

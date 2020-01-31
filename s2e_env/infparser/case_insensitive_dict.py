@@ -47,10 +47,9 @@ class CaseInsensitiveUnicode(CaseInsensitiveStringMixin, str):
 def case_insensitive(string):
     if isinstance(string, str):
         return CaseInsensitiveUnicode(string)
-    elif isinstance(string, str):
+    if isinstance(string, str):
         return CaseInsensitiveStr(string)
-    else:
-        raise Exception('Invalid object')
+    raise Exception('Invalid object')
 
 
 class CaseInsensitiveDict(MutableMapping):
@@ -60,7 +59,6 @@ class CaseInsensitiveDict(MutableMapping):
     It also allows looking up the keys by prefix.
     """
     def __init__(self, *args, **kwargs):
-        # pylint: disable=super-init-not-called
         self._dict = {}
         self._trie = Trie(*args, **kwargs)
 

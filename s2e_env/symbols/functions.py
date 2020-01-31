@@ -53,7 +53,6 @@ class FunctionInfoEntry:
         return not self < other and not other < self
 
     def __lt__(self, other):
-        # pylint: disable=protected-access
         # Access fields directly, using properties is too slow
         return self._end_addr < other._start_addr
 
@@ -66,7 +65,7 @@ class FunctionInfo:
     This class provides an efficient lookup from address to function name.
     """
 
-    __slots__ = '_funcs',
+    __slots__ = ('_funcs',)
 
     def __init__(self):
         self._funcs = []

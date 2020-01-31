@@ -197,8 +197,8 @@ def type1_shellcode(fp, arch, platform, gp_reg_index):
 
     write_stripped_string(fp, header)
 
-    for i in range(0, len(assembled)):
-        fp.write('[{2}+{0}] == {1}\n'.format(i, assembled[i], PCREG[arch]))
+    for i, val in enumerate(assembled):
+        fp.write('[{2}+{0}] == {1}\n'.format(i, val, PCREG[arch]))
 
 
 def type2_decree_shellcode_i386_0(fp):
@@ -238,8 +238,8 @@ def type2_decree_shellcode_i386_0(fp):
 
     write_stripped_string(fp, header)
 
-    for i in range(0, len(assembled)):
-        fp.write('[EIP+{0}] == {1}\n'.format(i, assembled[i]))
+    for i, val in enumerate(assembled):
+        fp.write('[EIP+{0}] == {1}\n'.format(i, val))
 
 
 def type2_decree_shellcode_i386_1(fp):
@@ -274,8 +274,8 @@ def type2_decree_shellcode_i386_1(fp):
     :exec_mem=EIP
     """
     write_stripped_string(fp, header)
-    for i in range(0, len(assembled)):
-        fp.write('[EIP+{0}] == {1}\n'.format(i, assembled[i]))
+    for i, val in enumerate(assembled):
+        fp.write('[EIP+{0}] == {1}\n'.format(i, val))
 
 
 class Command(ProjectCommand):

@@ -65,7 +65,8 @@ class WindowsDLLProject(WindowsProject):
         config['processes'] = []
 
         if config.get('use_seeds', False):
-            logger.warning('Seeds have been enabled, however they are not supported for DLLs. This flag will be ignored')
+            logger.warning('Seeds have been enabled, however they are not supported for DLLs. '
+                           'This flag will be ignored')
             config['use_seeds'] = False
 
         if not config.get('target_args', []):

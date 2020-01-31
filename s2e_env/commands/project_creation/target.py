@@ -115,8 +115,7 @@ def _extract_inf_files(target_path):
             if full_path.endswith('.cat'):
                 logger.warning('Catalog file %s is missing', full_path)
                 continue
-            else:
-                raise TargetError('%s does not exist' % full_path)
+            raise TargetError('%s does not exist' % full_path)
 
         logger.info('    %s', full_path)
         file_paths.append(full_path)

@@ -110,8 +110,7 @@ def _wait_for_termination(timeout):
         if timeout:
             time.sleep(timeout * 60)
             return
-        else:
-            time.sleep(1)
+        time.sleep(1)
 
 
 class S2EThread(Thread):
@@ -126,6 +125,7 @@ class S2EThread(Thread):
 
     def run(self):
         # Launch s2e
+        # pylint: disable=subprocess-popen-preexec-fn
         global s2e_main_process
         s2e_main_process = subprocess.Popen(
             self._args, preexec_fn=_s2e_preexec, env=self._env, cwd=self._cwd,
@@ -201,7 +201,6 @@ class Command(ProjectCommand):
                                            '(in minutes) expires. This option '
                                            'has no effect when the TUI is enabled')
 
-    # pylint: disable=too-many-locals
     # TODO: split this method
     def handle(self, *args, **options):
         no_tui = options['no_tui']

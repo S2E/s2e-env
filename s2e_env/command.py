@@ -150,7 +150,7 @@ class BaseCommand(metaclass=ABCMeta):
             if not os.getuid():
                 raise CommandError('Please do not run s2e as root')
 
-            output = self.execute(*args, **cmd_options)
+            self.execute(*args, **cmd_options)
         except Exception as e:
             # Only handle CommandErrors here
             if not isinstance(e, CommandError):
@@ -159,8 +159,6 @@ class BaseCommand(metaclass=ABCMeta):
             logger = logging.getLogger(self.name)
             logger.error(e)
             sys.exit(1)
-
-        return output
 
     def handle_common_args(self, **options):
         """
@@ -362,6 +360,7 @@ class ProjectCommand(EnvCommand):
         # Put import here to avoid circular dependency
         # https://github.com/PyCQA/pylint/issues/850
         # pylint: disable=cyclic-import
+        # pylint: disable=import-outside-toplevel
         from s2e_env.utils import images
 
         if not self._image:

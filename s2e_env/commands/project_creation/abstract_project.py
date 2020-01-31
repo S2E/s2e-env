@@ -109,11 +109,14 @@ class AbstractProject(EnvCommand):
         raise NotImplementedError('Subclasses of AbstractProject must provide '
                                   'a _create method')
 
+    # pylint: disable=unused-argument
+    # pylint: disable=no-self-use
     def _get_instructions(self, config):
         """
         Generate instructions for the user on how to use their newly-created
         project. These instructions should be returned as a string.
         """
+        return ''
 
     def _is_valid_image(self, target, os_desc):
         """

@@ -295,9 +295,9 @@ class TestsuiteRunner(EnvCommand):
                 status = None
                 try:
                     subprocess.check_call([script], env=env, stdout=so, stderr=se)
-                    status = "SUCCESS"
+                    status = 'SUCCESS'
                 except Exception:
-                    status = "FAILURE"
+                    status = 'FAILURE'
                 finally:
                     end_time = datetime.datetime.now()
                     diff_time = end_time - start_time

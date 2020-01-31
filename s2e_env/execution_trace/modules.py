@@ -48,7 +48,7 @@ class SectionDescriptor:
             self.executable = pb_section.executable
 
     def contains(self, pc):
-        return (self.runtime_load_base <= pc) and (pc < self.runtime_load_base + self.size)
+        return self.runtime_load_base <= pc < (self.runtime_load_base + self.size)
 
     def __hash__(self):
         return hash((self.runtime_load_base, self.size))
@@ -133,7 +133,7 @@ class ModuleMap:
                 raise Exception('Section %s of module %s has zero size' % (section, mod))
 
             idx = _index(pid_sections, section)
-            if idx != None:
+            if idx is not None:
                 logger.warning('Section already loaded: %s - module %s',
                                section, self._section_to_module[(mod.pid, pid_sections[idx])])
                 continue
@@ -145,7 +145,7 @@ class ModuleMap:
         pid_sections = self._pid_to_sections[mod.pid]
         for section in mod.sections:
             idx = _index(pid_sections, section)
-            if idx != None:
+            if idx is not None:
                 del pid_sections[idx]
                 del self._section_to_module[(mod.pid, section)]
 
