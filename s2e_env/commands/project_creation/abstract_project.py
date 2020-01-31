@@ -114,7 +114,6 @@ class AbstractProject(EnvCommand):
         Generate instructions for the user on how to use their newly-created
         project. These instructions should be returned as a string.
         """
-        pass
 
     def _is_valid_image(self, target, os_desc):
         """
@@ -123,7 +122,6 @@ class AbstractProject(EnvCommand):
         This validation may vary depending on the target and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
-        pass
 
     #
     # Image helper methods

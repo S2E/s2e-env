@@ -257,7 +257,6 @@ class BaseProject(AbstractProject):
         This method may modify values in the ``config`` dictionary. If an
         invalid configuration is found, a ``CommandError` should be thrown.
         """
-        pass
 
     def _analyze_target(self, target, config):
         """
@@ -266,7 +265,6 @@ class BaseProject(AbstractProject):
         The results of this analysis can be used to add and/or modify values in
         the ``config`` dictionary.
         """
-        pass
 
     def _create_launch_script(self, project_dir, config):
         """

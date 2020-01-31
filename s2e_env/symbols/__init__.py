@@ -110,7 +110,6 @@ class DebugInfo(metaclass=ABCMeta):
         """
         To be implemented by clients that load debug info lazily
         """
-        pass
 
     @staticmethod
     def from_file(s2e_prefix, search_paths, target_path):

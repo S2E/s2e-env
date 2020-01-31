@@ -275,7 +275,6 @@ class BasicBlockCoverage(ProjectCommand):
         """
         Initialize the backend disassembler.
         """
-        pass
 
     @abstractmethod
     def _get_disassembly_info(self, module_path):

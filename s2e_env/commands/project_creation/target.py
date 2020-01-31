@@ -126,7 +126,6 @@ def _extract_inf_files(target_path):
 
 class TargetError(Exception):
     """An error occurred when creating a new S2E analysis target."""
-    pass
 
 
 class Target:

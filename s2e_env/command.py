@@ -49,7 +49,6 @@ class CommandError(Exception):
     sensible description of the error) is the preferred way to indicate that
     something has gone wrong in the execution of the command.
     """
-    pass
 
 
 class CommandParser(ArgumentParser):
@@ -126,7 +125,6 @@ class BaseCommand(metaclass=ABCMeta):
         """
         Entry point for subclassed commands to add custom arguments.
         """
-        pass
 
     def print_help(self, prog_name, subcommand):
         """
@@ -169,7 +167,6 @@ class BaseCommand(metaclass=ABCMeta):
         Handle any common command options here and remove them from the options
         dict given to the command.
         """
-        pass
 
     def execute(self, *args, **options):
         """
