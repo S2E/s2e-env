@@ -42,11 +42,14 @@ pip install . --process-dependency-links
 
 # Tests
 
-Tests can be run via
+Run tests with the following command:
 
 ```console
-python setup.py test
+$ ./test.sh
 ```
+
+This will create a fresh virtual environment ``venv-test``, install all requirements,
+run pylint, the tests, and record coverage.
 
 # Configuring
 

@@ -19,21 +19,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# This script checks out, installs, and tests the specified s2e-env repository
+# This script creates a test venv in the current directory, installs s2e-env there,
+# checks code style and tests it.
+#
+# Set SRC_DIR to the location that contains s2e-env in case you run this script from a different directory.
 
 set -ex
+
+SRC_DIR=${SRC_DIR:-.}
 
 python3 -m venv venv-test
 . venv-test/bin/activate
 pip install --upgrade pip
 
-pip install .
-pip install pylint
+pip install "$SRC_DIR"
+pip install pylint pytest-cov mock
 
 echo Running pylint...
-pylint -rn --rcfile=./pylint_rc s2e_env
+pylint -rn --rcfile=${SRC_DIR}/pylint_rc ${SRC_DIR}/s2e_env
 
 echo Running tests...
 export TERM=linux
 export TERMINFO=/etc/terminfo
-python setup.py test
+
+# Patch buggy pwnlib
+sed -i "s/file('\/dev\/null', 'r')\.fileno()/os\.open\(os\.devnull, os\.O_RDONLY)/g" \
+    venv-test/lib/python*/site-packages/pwnlib/term/key.py
+
+pytest --cov=${SRC_DIR}/s2e_env --cov-report=html ${SRC_DIR}/tests/
