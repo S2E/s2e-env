@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import shutil
 import sys
@@ -30,7 +30,7 @@ import warnings
 
 
 # Adapted from http://stackoverflow.com/a/19299884/5894531
-class TemporaryDirectory(object):
+class TemporaryDirectory:
     """
     Create and return a temporary directory.  This has the same behavior as
     mkdtemp but can be used as a context manager. For example:

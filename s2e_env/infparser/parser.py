@@ -36,7 +36,7 @@ logger = logging.getLogger('infparser')
 SECTION_PATTERN = re.compile(r'\[(.+)\]')
 
 
-class InfFileParser(object):
+class InfFileParser:
     def __init__(self):
         self._sections = CaseInsensitiveDict()
 
@@ -76,7 +76,7 @@ class InfFileParser(object):
 
     @staticmethod
     def parse_string(input_string):
-        if not isinstance(input_string, unicode):
+        if not isinstance(input_string, str):
             input_string = InfFileParser._decode(input_string)
 
         input_string = input_string.split('\n')

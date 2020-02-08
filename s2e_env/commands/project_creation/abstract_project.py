@@ -109,12 +109,14 @@ class AbstractProject(EnvCommand):
         raise NotImplementedError('Subclasses of AbstractProject must provide '
                                   'a _create method')
 
+    # pylint: disable=unused-argument
+    # pylint: disable=no-self-use
     def _get_instructions(self, config):
         """
         Generate instructions for the user on how to use their newly-created
         project. These instructions should be returned as a string.
         """
-        pass
+        return ''
 
     def _is_valid_image(self, target, os_desc):
         """
@@ -123,7 +125,6 @@ class AbstractProject(EnvCommand):
         This validation may vary depending on the target and image type.
         Returns ``True`` if the binary is valid and ``False`` otherwise.
         """
-        pass
 
     #
     # Image helper methods
@@ -176,7 +177,7 @@ class AbstractProject(EnvCommand):
         """
         images = []
 
-        for k, v in image_templates.iteritems():
+        for k, v in image_templates.items():
             if self._is_valid_image(target, v['os']):
                 images.append(k)
 

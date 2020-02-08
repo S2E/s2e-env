@@ -24,7 +24,7 @@ SOFTWARE.
 import pefile
 
 
-class PEAnalysis(object):
+class PEAnalysis:
     """
     Support class for doing some simple static analysis on PE files.
     """
@@ -52,6 +52,7 @@ class PEAnalysis(object):
         """
         exports = []
 
+        # pylint: disable=no-member
         for export in self._pe.DIRECTORY_ENTRY_EXPORT.symbols:
             if export.name:
                 exports.append(export.name)

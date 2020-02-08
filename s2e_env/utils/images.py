@@ -65,7 +65,7 @@ def _decompress(path):
         raise CommandError(e)
 
 
-class ImageDownloader(object):
+class ImageDownloader:
     """
     Downloads images from a given URL to a given destination directory.
 
@@ -147,6 +147,6 @@ def get_image_descriptor(image_dir):
             return ret
     except CommandError:
         raise
-    except Exception, e:
+    except Exception as e:
         raise CommandError('Unable to open image description %s: %s' %
                            (img_json_path, e))

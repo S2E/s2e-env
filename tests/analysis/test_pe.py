@@ -34,4 +34,4 @@ class PETestCase(TestCase):
     def test_myputs_dll_x64(self):
         """Test analysis of x64 DLL."""
         with PEAnalysis(MYPUTS_DLL_X64_PATH) as pe:
-            self.assertItemsEqual(pe.get_exports(), [u'MyPuts'])
+            self.assertCountEqual(pe.get_exports(), [b'MyPuts'])

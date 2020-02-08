@@ -24,7 +24,7 @@ SOFTWARE.
 from .case_insensitive_dict import CaseInsensitiveDict
 
 
-class InfSection(object):
+class InfSection:
     def __init__(self, name):
         # The name of the section
         self.name = name

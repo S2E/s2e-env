@@ -113,10 +113,9 @@ def _extract_inf_files(target_path):
         full_path = os.path.join(base_dir, f)
         if not os.path.exists(full_path):
             if full_path.endswith('.cat'):
-                logger.warn('Catalog file %s is missing', full_path)
+                logger.warning('Catalog file %s is missing', full_path)
                 continue
-            else:
-                raise TargetError('%s does not exist' % full_path)
+            raise TargetError('%s does not exist' % full_path)
 
         logger.info('    %s', full_path)
         file_paths.append(full_path)
@@ -126,10 +125,9 @@ def _extract_inf_files(target_path):
 
 class TargetError(Exception):
     """An error occurred when creating a new S2E analysis target."""
-    pass
 
 
-class Target(object):
+class Target:
     """
     Encapsulates a program (e.g., executable, driver, DLL, etc.) to be analyzed
     by S2E.

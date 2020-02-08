@@ -104,12 +104,13 @@ def _splitall(path):
         if parts[0] == path:
             allparts.insert(0, parts[0])
             break
-        elif parts[1] == path:
+
+        if parts[1] == path:
             allparts.insert(0, parts[1])
             break
-        else:
-            path = parts[0]
-            allparts.insert(0, parts[1])
+
+        path = parts[0]
+        allparts.insert(0, parts[1])
 
     return allparts
 
@@ -141,7 +142,7 @@ def guess_source_file_path(search_paths, path):
     if os.path.isabs(path):
         # Try to strip prefixes until we find something
         components = _splitall(path)
-        for i in xrange(0, len(components)):
+        for i in range(0, len(components)):
             c = os.path.join(*components[i:])
             guessed_path = _guess_rel_path(search_paths, c)
             if guessed_path:

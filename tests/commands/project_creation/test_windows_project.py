@@ -142,10 +142,10 @@ class WindowsProjectTestCase(TestCase):
         # Assert that the target is the one given
         self.assertEqual(config['target_path'], SCANNER_INF_PATH)
         self.assertEqual(config['target_arch'], 'x86_64')
-        self.assertItemsEqual(config['target_files'],
+        self.assertCountEqual(config['target_files'],
                               [SCANNER_INF_PATH, SCANNER_SYS_PATH,
                                SCANNER_USER_EXE_PATH])
-        self.assertItemsEqual(config['modules'], [(SCANNER_SYS, True)])
+        self.assertCountEqual(config['modules'], [(SCANNER_SYS, True)])
 
         # Assert that the x86_64 Windows 7 image was selected
         self.assertDictEqual(config['image'], WINDOWS_7SP1_X64_IMAGE_DESC)
@@ -176,7 +176,7 @@ class WindowsProjectTestCase(TestCase):
         # Assert that the target is the one given
         self.assertEqual(config['target_path'], MYPUTS_DLL_PATH)
         self.assertEqual(config['target_arch'], 'x86_64')
-        self.assertItemsEqual(config['target_files'], [MYPUTS_DLL_PATH])
+        self.assertCountEqual(config['target_files'], [MYPUTS_DLL_PATH])
         self.assertListEqual(config['modules'], [(MYPUTS_DLL, False)])
 
         # Assert that the x86_64 Windows 7 image was selected
@@ -186,7 +186,7 @@ class WindowsProjectTestCase(TestCase):
         self.assertEqual(config['target_args'], ['MyPuts'])
 
         # Verify static analysis results
-        self.assertItemsEqual(config['dll_exports'], [u'MyPuts'])
+        self.assertCountEqual(config['dll_exports'], [b'MyPuts'])
 
         # Disabled by default
         self.assertFalse(config['processes'])

@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import glob
 import json
@@ -63,7 +63,7 @@ class Command(EnvCommand):
 
         output = {
             'env_path': self.env_path(),
-            's2e_built': True if s2e_install_files else False,
+            's2e_built': bool(s2e_install_files),
             'images': images,
             'projects': projects,
         }

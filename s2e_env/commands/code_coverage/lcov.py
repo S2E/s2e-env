@@ -41,7 +41,7 @@ def _merge_coverage(coverage, module_name, module_coverage):
         coverage[module_name] = module_coverage
 
     cov = coverage[module_name]
-    for addr, cnt in module_coverage.iteritems():
+    for addr, cnt in module_coverage.items():
         if addr in cov:
             cov[addr] += cnt
         else:
@@ -75,12 +75,12 @@ def _get_addr_coverage(directory, aggregated_coverage):
     tb_coverage_files = aggregate_tb_files(tb_files)
 
     # Get the number of times each address was executed by S2E
-    for module_path, coverage in tb_coverage_files.iteritems():
+    for module_path, coverage in tb_coverage_files.items():
         addr_counts = {}
 
         for start_addr, _, size in coverage:
             # TODO: it's better to use an interval map instead
-            for byte in xrange(0, size):
+            for byte in range(0, size):
                 addr = start_addr + byte
                 # The coverage files we get do not indicate how many times an bb has been
                 # executed. It's more of an approximation of how many times
@@ -113,16 +113,16 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
         f.write('TN:\n')
         for src_file in file_line_info:
             if ignore_missing_files and not os.path.exists(src_file):
-                logger.warn('%s does not exist, skipping', src_file)
+                logger.warning('%s does not exist, skipping', src_file)
                 continue
-            else:
-                logger.info(src_file)
+
+            logger.info(src_file)
 
             num_non_zero_lines = 0
             num_instrumented_lines = 0
 
             f.write('SF:%s\n' % src_file)
-            for line, count in file_line_info[src_file].iteritems():
+            for line, count in file_line_info[src_file].items():
                 f.write('DA:%d,%d\n' % (line, count))
 
                 if count:
@@ -173,7 +173,7 @@ class LineCoverage(ProjectCommand):
             logger.info('Extracting coverage info from %s...', directory)
             _get_addr_coverage(directory, coverage)
 
-        for module_path, addr_counts in coverage.iteritems():
+        for module_path, addr_counts in coverage.items():
             try:
                 cov = options.get('include_covered_files_only', False)
                 file_line_info = syms.get_coverage(module_path, addr_counts, cov)

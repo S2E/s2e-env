@@ -28,7 +28,7 @@ from elftools.elf.sections import SymbolTableSection
 from s2e_env import CONSTANTS
 
 
-class ELFAnalysis(object):
+class ELFAnalysis:
     """
     Support class for doing some simple static analysis on ELF files.
     """
@@ -39,7 +39,7 @@ class ELFAnalysis(object):
         self._elf = None
 
     def __enter__(self):
-        self._elf_file = open(self._elf_path, 'r')
+        self._elf_file = open(self._elf_path, 'rb')
         self._elf = ELFFile(self._elf_file)
 
         return self

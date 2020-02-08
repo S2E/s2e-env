@@ -65,11 +65,12 @@ class WindowsDLLProject(WindowsProject):
         config['processes'] = []
 
         if config.get('use_seeds', False):
-            logger.warn('Seeds have been enabled, however they are not supported for DLLs. This flag will be ignored')
+            logger.warning('Seeds have been enabled, however they are not supported for DLLs. '
+                           'This flag will be ignored')
             config['use_seeds'] = False
 
         if not config.get('target_args', []):
-            logger.warn('No DLL entry point provided - defaulting to ``DllEntryPoint``')
+            logger.warning('No DLL entry point provided - defaulting to ``DllEntryPoint``')
             config['target_args'] = ['DllEntryPoint']
 
     def _analyze_target(self, target, config):

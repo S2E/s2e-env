@@ -23,7 +23,7 @@ SOFTWARE.
 
 import logging
 import sys
-import urlparse
+import urllib.parse
 
 import requests
 
@@ -36,7 +36,7 @@ CHUNK_SIZE = 32768
 # http://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive
 
 def _get_confirm_token(response):
-    for key, value in response.cookies.iteritems():
+    for key, value in response.cookies.items():
         if key.startswith('download_warning'):
             return value
 
@@ -78,6 +78,6 @@ def _download(docid, destination):
 
 
 def download(public_url, destination):
-    o = urlparse.urlparse(public_url)
-    q = urlparse.parse_qs(o.query)
+    o = urllib.parse.urlparse(public_url)
+    q = urllib.parse.parse_qs(o.query)
     _download(q['id'], destination)

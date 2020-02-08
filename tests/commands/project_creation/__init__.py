@@ -33,6 +33,6 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'dat')
 def monkey_patch_project(project, img_desc):
     """Monkey patch the given project to mock the appropriate values."""
     project._select_image = MagicMock(return_value=img_desc)
-    project._env_dir = MagicMock(return_value=gettempdir())
+    project._env_dir = gettempdir()
 
     return project

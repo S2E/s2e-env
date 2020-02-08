@@ -27,7 +27,7 @@ from .collector_threads import CollectorThreads
 logger = logging.getLogger(__name__)
 
 
-class WebServiceInterfacePlugin(object):
+class WebServiceInterfacePlugin:
     coverage = None
     stats = None
     crash_count = 0

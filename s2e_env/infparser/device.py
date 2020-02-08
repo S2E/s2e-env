@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 
-class Device(object):
+class Device:
     def __init__(self, name, install_section, hardware_id):
         self.name = name
         self.install_section = install_section
@@ -54,10 +54,10 @@ class Device(object):
         return isinstance(self, PCIDevice)
 
     def __unicode__(self):
-        return u'DEVICE %s %s [%s]' % (self.install_section, self.hardware_id, self.name)
+        return 'DEVICE %s %s [%s]' % (self.install_section, self.hardware_id, self.name)
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        return str(self).encode('utf-8')
 
 
 class PCIDevice(Device):
@@ -96,7 +96,7 @@ class PCIDevice(Device):
         }
 
     def __unicode__(self):
-        return u'DEVICE PCI VID=%x PID=%x SUBSYS=%x [%s] %s %s %s' % (
+        return 'DEVICE PCI VID=%x PID=%x SUBSYS=%x [%s] %s %s %s' % (
             self.vendorId, self.deviceId, self.subsystemId,
             self.name, self.hardware_id, self.install_section, self.version
         )
@@ -105,8 +105,8 @@ class PCIDevice(Device):
 class USBDevice(Device):
     def __init__(self, name, install_section, hardware_id):
         super(USBDevice, self).__init__(name, install_section, hardware_id)
-        enumerator = hardware_id.split(u'\\')
-        desc = enumerator[1].split(u'&')
+        enumerator = hardware_id.split('\\')
+        desc = enumerator[1].split('&')
         self.vendorId = 0
         self.deviceId = 0
         self.subsystemId = 0
@@ -118,10 +118,10 @@ class USBDevice(Device):
                 self.deviceId = int(f.split('PID_')[1], 16)
 
     def __unicode__(self):
-        return u'DEVICE USB VID=%x PID=%x [%s]' % (self.vendorId, self.deviceId, self.name)
+        return 'DEVICE USB VID=%x PID=%x [%s]' % (self.vendorId, self.deviceId, self.name)
 
 
-class InstallInfo(object):
+class InstallInfo:
     def __init__(self):
         self.copyFiles = set()
         self.version = None

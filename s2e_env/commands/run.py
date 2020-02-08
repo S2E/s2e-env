@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import argparse
 import ctypes.util
@@ -88,7 +88,7 @@ def _terminate_s2e():
 
     # Give S2E time to quit
     logger.warning('Waiting for S2E processes to quit...')
-    for _ in xrange(15):
+    for _ in range(15):
         if not _has_s2e_processes(s2e_main_process.pid):
             logger.warning('All S2E processes terminated, exiting.')
             return
@@ -110,8 +110,7 @@ def _wait_for_termination(timeout):
         if timeout:
             time.sleep(timeout * 60)
             return
-        else:
-            time.sleep(1)
+        time.sleep(1)
 
 
 class S2EThread(Thread):
@@ -126,6 +125,7 @@ class S2EThread(Thread):
 
     def run(self):
         # Launch s2e
+        # pylint: disable=subprocess-popen-preexec-fn
         global s2e_main_process
         s2e_main_process = subprocess.Popen(
             self._args, preexec_fn=_s2e_preexec, env=self._env, cwd=self._cwd,
@@ -201,7 +201,6 @@ class Command(ProjectCommand):
                                            '(in minutes) expires. This option '
                                            'has no effect when the TUI is enabled')
 
-    # pylint: disable=too-many-locals
     # TODO: split this method
     def handle(self, *args, **options):
         no_tui = options['no_tui']
@@ -312,7 +311,7 @@ class Command(ProjectCommand):
 
     def _get_data(self):
         elapsed_time = datetime.datetime.now() - self._start_time
-        binaries = ', '.join(CollectorThreads.coverage.tb_coverage.keys())
+        binaries = ', '.join(list(CollectorThreads.coverage.tb_coverage.keys()))
         if not binaries:
             binaries = 'Waiting for analysis to start...'
 

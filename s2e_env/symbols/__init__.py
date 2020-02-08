@@ -1,5 +1,5 @@
 """
-Copyright (c) 2018 Cyberhaven
+Copyright (c) 2018-2020 Cyberhaven
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,19 +37,15 @@ from .debuglink import get_debug_file_for_binary
 from .functions import FunctionInfo
 from .lines import LineInfoEntry, LinesByAddr
 from .paths import guess_target_path, guess_source_file_path
-from .pe import PEFile
 
 logger = logging.getLogger('symbols')
 
 
-class DebugInfo(object):
+class DebugInfo(metaclass=ABCMeta):
     """
     This class abstracts away debug information for various binary file formats.
     It must be subclassed to handle specific formats (ELF, PE, etc.).
     """
-
-    # Abstract class
-    __metaclass__ = ABCMeta
 
     def __init__(self, path, search_paths=None):
         self._path = path
@@ -66,7 +62,7 @@ class DebugInfo(object):
         This function may be overridden in case a particular debug info provider
         wants to provide line information lazily.
 
-        :param addr: the addess in the binary
+        :param addr: the address in the binary
         :return: a pair of LineInfoEntry, FunctionInfoEntry
         """
         sym = self._lines.get(addr)
@@ -84,7 +80,7 @@ class DebugInfo(object):
 
     def get_coverage(self, addr_counts, include_covered_files_only=False):
         if include_covered_files_only:
-            for addr in addr_counts.iterkeys():
+            for addr in addr_counts.keys():
                 try:
                     self.get(addr)
                 except Exception:
@@ -114,10 +110,9 @@ class DebugInfo(object):
         """
         To be implemented by clients that load debug info lazily
         """
-        pass
 
     @staticmethod
-    def from_file(search_paths, target_path):
+    def from_file(s2e_prefix, search_paths, target_path):
         """
         Creates an instance of DebugInfo for the given binary specified in target path.
 
@@ -129,9 +124,19 @@ class DebugInfo(object):
         errors = []
         target_path = os.path.realpath(target_path)
 
-        logger.info('Looking for debug information for %s', target_path)
+        logger.info('Looking for debug information in %s', target_path)
 
-        for cls in (ELFFile, PEFile):
+        # addrs2lines should work with PE/ELF files that contain DWARF information
+        # It may not work in case there is a debug link, so pyelftools-based parser will deal with that.
+        try:
+            syms = Addrs2LinesDebugInfo(target_path, search_paths, s2e_prefix)
+            syms.parse()
+            return syms
+        except Exception as e:
+            logger.debug(e, exc_info=1)
+            errors.append(e)
+
+        for cls in [ELFFile]:
             try:
                 syms = DwarfDebugInfo(target_path, search_paths, cls)
                 syms.parse()
@@ -139,7 +144,7 @@ class DebugInfo(object):
             except Exception as e:
                 logger.debug(e, exc_info=1)
                 errors.append(e)
-                errors.append('Could not read DWARF information from %s' % target_path)
+                errors.append(f'Could not read DWARF information from {target_path} using {cls}')
 
         try:
             syms = JsonDebugInfo(target_path, search_paths)
@@ -152,7 +157,7 @@ class DebugInfo(object):
             errors.append(err)
 
         logger.error('Could not find debug information for %s', target_path)
-        with open(target_path, 'r') as fp:
+        with open(target_path, 'rb') as fp:
             sig = fp.read(2)
             if sig == 'MZ':
                 logger.error('   It looks like this is a Windows binary. If it has an associated PDB file,')
@@ -190,7 +195,7 @@ class DwarfDebugInfo(DebugInfo):
                 elif highpc_attr_class == 'constant':
                     highpc = lowpc + highpc_attr.value
                 else:
-                    logger.warn('invalid DW_AT_high_pc class: %s', highpc_attr_class)
+                    logger.warning('invalid DW_AT_high_pc class: %s', highpc_attr_class)
                     continue
 
                 funcname = die.attributes['DW_AT_name'].value
@@ -249,7 +254,7 @@ class DwarfDebugInfo(DebugInfo):
     # pylint: disable=protected-access
     # (accessing useful internal pyelftools methods)
     def _locate_debug_info(self, path):
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             binary = self._class(f)
 
             if not binary.has_dwarf_info():
@@ -277,7 +282,7 @@ class DwarfDebugInfo(DebugInfo):
         if there is debug info in the target file, and if not, tries to use the debug link.
         """
         try:
-            logger.debug('Attempting to look for DWARF info in %s', self.path)
+            logger.debug('Attempting to look for DWARF info in %s using %s', self.path, str(self._class))
             self._locate_debug_info(self.path)
             return
         except Exception as e:
@@ -315,6 +320,37 @@ class DwarfDebugInfo(DebugInfo):
         return DebugInfo.get(self, addr)
 
 
+class Addrs2LinesDebugInfo(DebugInfo):
+    def __init__(self, path, search_paths=None, s2e_prefix=''):
+        super(Addrs2LinesDebugInfo, self).__init__(path, search_paths)
+        self._s2e_prefix = s2e_prefix
+
+    def parse(self):
+        candidates = [self.path, os.path.realpath(self.path)]
+
+        parsed = False
+        for path in candidates:
+            try:
+                stdout_data = _invoke_addrs2_lines(self._s2e_prefix, path, '', False, False)
+            except Exception:
+                continue
+
+            lines = json.loads(stdout_data)
+
+            for source_file, data in list(lines.items()):
+                file_path = guess_source_file_path(self._search_paths, source_file)
+                for line in data.get('lines', []):
+                    for address in line[1]:
+                        self.add(file_path, line[0], address)
+                        parsed = True
+
+            if parsed:
+                break
+
+        if not parsed:
+            raise Exception('Could not get debug info from {self.path} using addrs2lines')
+
+
 class JsonDebugInfo(DebugInfo):
     """
     The line information must have the following format:
@@ -333,7 +369,7 @@ class JsonDebugInfo(DebugInfo):
     data in the above format.
     """
     def _parse_info(self, lines):
-        for filepath, line_info in lines.iteritems():
+        for filepath, line_info in lines.items():
             filepath = guess_source_file_path(self._search_paths, filepath)
             for line in line_info:
                 line_number = line[0]
@@ -355,23 +391,29 @@ class JsonDebugInfo(DebugInfo):
             with open(path, 'r') as f:
                 lines = json.loads(f.read())
                 self._parse_info(lines)
+                return
+
+        raise Exception(f'Could not find any of {candidates}')
 
 
-def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only):
+def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files_only, get_coverage):
     addrs2lines = os.path.join(s2e_prefix, 'bin', 'addrs2lines')
     if not os.path.exists(addrs2lines):
-        logger.warn('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
+        logger.warning('%s does not exist. Make sure you have updated and rebuilt S2E.', addrs2lines)
         raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), addrs2lines)
 
-    args = [addrs2lines, '-coverage', '-pretty']
-    if include_covered_files_only:
-        args.append('-include-covered-files-only')
+    args = [addrs2lines]
+
+    if get_coverage:
+        args += ['-coverage', '-pretty']
+        if include_covered_files_only:
+            args.append('-include-covered-files-only')
 
     args.append(target_path)
 
     p = Popen(args, stdout=PIPE, stdin=PIPE)
 
-    stdout_data = p.communicate(input=json_in)[0]
+    stdout_data = p.communicate(input=json_in.encode())[0]
     if p.returncode:
         raise Exception('addrs2lines failed with error code %d' % p.returncode)
 
@@ -385,20 +427,20 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
     vs a few (tens) of minutes with pyelftools.
     """
     address_ranges = []
-    for addr, _ in addr_counts.items():
+    for addr, _ in list(addr_counts.items()):
         address_ranges.append((addr, 1))
 
     stdout_data = _invoke_addrs2_lines(
         s2e_prefix,
         guess_target_path(search_paths, target),
         json.dumps(address_ranges),
-        include_covered_files_only
+        include_covered_files_only, True
     )
 
     lines = json.loads(stdout_data)
 
     ret = {}
-    for source_file, data in lines.items():
+    for source_file, data in list(lines.items()):
         line_counts = {}
         for line in data.get('lines', []):
             line_counts[line[0]] = line[1]
@@ -407,7 +449,7 @@ def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_co
     return ret
 
 
-class SymbolManager(object):
+class SymbolManager:
     """
     This class manages debug information for binary files.
     It implements addr2line equivalent and provides methods to compute code coverage.
@@ -429,12 +471,12 @@ class SymbolManager(object):
         syms = None
 
         logger.debug('Fetching target %s', target)
-        if self._targets.has_key(target):
+        if target in self._targets:
             return self._targets[target]
 
         try:
             actual_target = guess_target_path(self._search_paths, target)
-            syms = DebugInfo.from_file(self._search_paths, actual_target)
+            syms = DebugInfo.from_file(self._s2e_prefix, self._search_paths, actual_target)
             self._targets[target] = syms
         except Exception as e:
             logger.debug(e, exc_info=1)
@@ -489,5 +531,5 @@ class SymbolManager(object):
             return _get_coverage_fast(self._s2e_prefix, self._search_paths, target, addr_counts,
                                       include_covered_files_only)
         except Exception as e:
-            logger.warn('addrs2lines failed (%s), trying to get coverage using pyelftools (may be slow!)', e)
+            logger.warning('addrs2lines failed (%s), trying to get coverage using pyelftools (may be slow!)', e)
             return self.get_target(target).get_coverage(addr_counts, include_covered_files_only)

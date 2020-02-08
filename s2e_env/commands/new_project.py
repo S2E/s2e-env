@@ -90,7 +90,7 @@ def _handle_empty_project(proj_class, *args, **options):
     # If the project class wasn't explicitly overridden programmatically, get
     # one of the default project classes from the command line
     if not proj_class:
-        project_types = PROJECT_TYPES.keys()
+        project_types = list(PROJECT_TYPES.keys())
         if options['type'] not in project_types:
             raise CommandError('An empty project requires a type. Use the -t '
                                'option and specify one from %s' % project_types)
@@ -140,7 +140,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-t', '--type', required=False, default=None,
                             help='Project type (%s), valid only when creating empty projects' %
-                            ','.join(PROJECT_TYPES.keys()))
+                            ','.join(list(PROJECT_TYPES.keys())))
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '

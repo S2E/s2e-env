@@ -55,7 +55,7 @@ _TRACE_ENTRY_MAP = {
 }
 
 
-class TraceEntryFork(object):
+class TraceEntryFork:
     """
     We need a custom fork entry because we need to modify the children field
     to be a dictionary rather than a list of state ids.
@@ -66,7 +66,7 @@ class TraceEntryFork(object):
         self.children = children
 
 
-class ExecutionTraceParser(object):
+class ExecutionTraceParser:
     """
     Parser for S2E execution trace files.
 
@@ -183,7 +183,7 @@ class ExecutionTraceParser(object):
         """
         # Parse individual trace files
         for trace_file_path in self._trace_files:
-            with open(trace_file_path, 'r') as trace_file:
+            with open(trace_file_path, 'rb') as trace_file:
                 logger.debug('Parsing %s', trace_file_path)
                 self._parse_trace_file(trace_file, path_ids)
 
@@ -201,7 +201,7 @@ class ExecutionTraceParser(object):
             # the root of the execution tree
             states_to_return.discard(0)
         else:
-            states_to_return = self._path_info.keys()
+            states_to_return = list(self._path_info.keys())
 
         # Reconstruct the execution tree for the given state IDs
         for state_id in sorted(states_to_return, reverse=True):
@@ -242,7 +242,7 @@ class ExecutionTraceParser(object):
 
         if hdr_type not in _TRACE_ENTRY_MAP:
             # If an unknown item type is found, just skip it
-            logger.warn('Found unknown trace item `%s`', hdr_type)
+            logger.warning('Found unknown trace item `%s`', hdr_type)
             return None
 
         item = _TRACE_ENTRY_MAP[hdr_type]()
@@ -290,7 +290,7 @@ class ExecutionTraceParser(object):
                 break
             except Exception as e:
                 # This usually means that the trace was truncated (e.g., S2E was killed)
-                logger.warn('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
+                logger.warning('Could not parse entry %d in file %s (%s)', current_element, trace_file.name, e)
                 break
 
             if not item:

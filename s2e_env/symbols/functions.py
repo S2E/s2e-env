@@ -26,7 +26,7 @@ from functools import total_ordering
 
 
 @total_ordering
-class FunctionInfoEntry(object):
+class FunctionInfoEntry:
     __slots__ = '_name', '_start_addr', '_end_addr'
 
     def __init__(self, funcname, start_addr, end_addr):
@@ -53,7 +53,6 @@ class FunctionInfoEntry(object):
         return not self < other and not other < self
 
     def __lt__(self, other):
-        # pylint: disable=protected-access
         # Access fields directly, using properties is too slow
         return self._end_addr < other._start_addr
 
@@ -61,12 +60,12 @@ class FunctionInfoEntry(object):
         return '%s@%#x_%#x' % (self._name, self._start_addr, self._end_addr)
 
 
-class FunctionInfo(object):
+class FunctionInfo:
     """
     This class provides an efficient lookup from address to function name.
     """
 
-    __slots__ = '_funcs',
+    __slots__ = ('_funcs',)
 
     def __init__(self):
         self._funcs = []
@@ -96,6 +95,6 @@ class FunctionInfo(object):
     @staticmethod
     def from_dict(fcns):
         ret = FunctionInfo()
-        for name, se in fcns.iteritems():
+        for name, se in fcns.items():
             ret.add(name, se[0], se[1])
         return ret

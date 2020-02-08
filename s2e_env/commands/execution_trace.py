@@ -57,7 +57,7 @@ def _make_json_entry(header, item):
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
     if header.type == TraceEntries_pb2.TRACE_FORK:
-        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.iteritems()}
+        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
         item = TraceEntryFork(children)
 
     header_dict = protobuf_to_dict(header, use_enum_labels=True)
@@ -70,6 +70,17 @@ def _make_json_entry(header, item):
         entry.update(protobuf_to_dict(item, use_enum_labels=True))
 
     return entry
+
+
+class TraceEncoder(json.JSONEncoder):
+    # pylint: disable=method-hidden
+    def default(self, o):
+        if isinstance(o, bytes):
+            chars = []
+            for b in o:
+                chars.append(b)
+            return chars
+        return super(TraceEncoder, self).default(o)
 
 
 class Command(ProjectCommand):
@@ -107,8 +118,9 @@ class Command(ProjectCommand):
         json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
         with open(json_trace_file, 'w') as f:
             if options['pretty_print']:
-                json.dump(execution_tree_json, f, indent=4, sort_keys=True)
+                json.dump(execution_tree_json, f, indent=4, sort_keys=True, cls=TraceEncoder)
             else:
-                json.dump(execution_tree_json, f)
+                print(execution_tree_json)
+                json.dump(execution_tree_json, f, cls=TraceEncoder)
 
         logger.success('Execution trace saved to %s', json_trace_file)

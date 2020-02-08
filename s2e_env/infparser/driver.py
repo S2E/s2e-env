@@ -28,7 +28,7 @@ from .file import InfFile
 logger = logging.getLogger('infparser')
 
 
-class Driver(object):
+class Driver:
     def __init__(self, filename):
         self._filename = filename
         self._all_files = set()
@@ -46,24 +46,24 @@ class Driver(object):
 
         manufacturers = inf_file.get_manufacturers()
 
-        for k in manufacturers.iterkeys():
+        for k in manufacturers.keys():
             logger.info('  %s = %s', k, manufacturers[k])
             for version in manufacturers[k]:
                 logger.info('  version: %s', version)
                 devices = inf_file.get_models(version[0], version[1])
                 drv_files = set()
-                for dk in devices.iterkeys():
-                    for ver in devices[dk].installInfo.iterkeys():
+                for dk in devices.keys():
+                    for ver in devices[dk].installInfo.keys():
                         drv_files |= devices[dk].installInfo[ver].copyFiles
 
                         logger.info('    %s %s', devices[dk], drv_files)
                     self._all_files |= drv_files
 
-        for m in inf_file.get_manufacturers().iterkeys():
+        for m in inf_file.get_manufacturers().keys():
             self._all_manufacturers.add(m)
 
         default_install = inf_file.get_install_info('DefaultInstall')
-        for value in default_install.itervalues():
+        for value in default_install.values():
             self._all_files |= value.copyFiles
 
     def get_files(self):

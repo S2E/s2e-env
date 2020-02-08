@@ -29,7 +29,7 @@ logger = logging.getLogger('lines')
 
 
 @total_ordering
-class LineInfoEntry(object):
+class LineInfoEntry:
     __slots__ = '_filename', '_line', '_addr'
 
     def __init__(self, filename, line, addr):
@@ -56,7 +56,6 @@ class LineInfoEntry(object):
         return not self < other and not other < self
 
     def __lt__(self, other):
-        # pylint: disable=protected-access
         # Access fields directly, using properties is too slow
         return self._addr < other._addr
 
@@ -64,13 +63,13 @@ class LineInfoEntry(object):
         return '%s:%d (%#x)' % (self._filename, self._line, self._addr)
 
 
-class LinesByAddr(object):
+class LinesByAddr:
     """
     This class maintains a mapping from addresses to line information.
     Lookup and insertion are done using binary search.
     """
 
-    __slots__ = '_lines',
+    __slots__ = ('_lines',)
 
     def __init__(self):
         self._lines = []

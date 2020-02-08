@@ -113,7 +113,7 @@ class TargetTestCase(TestCase):
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'x86_64')
         self.assertEqual(target.operating_system, 'windows')
-        self.assertItemsEqual(target.aux_files,
+        self.assertCountEqual(target.aux_files,
                               [os.path.join(DATA_DIR, 'scanner.sys'),
                                os.path.join(DATA_DIR, 'scanuser.exe')])
         self.assertIsInstance(target.initialize_project(), WindowsDriverProject)

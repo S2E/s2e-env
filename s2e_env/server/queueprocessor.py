@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 from threading import Thread
-from Queue import Queue
+from queue import Queue
 
 
 class QueueProcessor(Thread):

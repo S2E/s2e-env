@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 
-class InfVersion(object):
+class InfVersion:
     """
     This class represents version information.
     Driver inf files encode it as follows:
@@ -40,7 +40,7 @@ class InfVersion(object):
         if version is None:
             return
 
-        version = unicode(version.lower())
+        version = str(version.lower())
         if not version.startswith('nt'):
             return
 

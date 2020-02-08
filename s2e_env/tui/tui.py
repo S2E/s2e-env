@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-from __future__ import print_function
+
 
 import curses
 import time
@@ -32,11 +32,10 @@ _s_screen = None
 # TODO: this module requires clean up
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-# pylint: disable=protected-access
 # pylint: disable=no-self-use
 
 
-class Form(object):
+class Form:
     def __init__(self, parent, x, y, w=None, h=None):
         self._children = []
         self._parent = parent
@@ -128,9 +127,9 @@ class Form(object):
 
         # Center the form in the parent window if needed
         if self._hcenter:
-            x = (self._parent._w - self._w) / 2
+            x = (self._parent._w - self._w) // 2
         if self._vcenter:
-            y = (self._parent._h - self._h) / 2
+            y = (self._parent._h - self._h) // 2
 
         x += ax
         y += ay
@@ -198,7 +197,7 @@ class Table(Form):
         max_data_width = 0
         max_height = len(self._layout)
 
-        for k, v in self._data.iteritems():
+        for k, v in self._data.items():
             l = self._legend[k]
             max_legend_width = max(max_legend_width, len(l))
             max_data_width = max(max_data_width, len(str(v)))
@@ -226,7 +225,7 @@ class Table(Form):
         self._wnd.refresh()
 
 
-class Tui(object):
+class Tui:
     def __init__(self):
         self._updated = True
         self._data = {}

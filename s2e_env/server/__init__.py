@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 
-import SocketServer
+import socketserver
 import socket
 import json
 import threading
@@ -39,10 +39,10 @@ _PLUGINS = {
 }
 
 
-class QMPTCPServer(SocketServer.TCPServer):
+class QMPTCPServer(socketserver.TCPServer):
     def __init__(self, server_address, RequestHandlerClass):
         # SocketServer is an "old style class"
-        SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
+        socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
 
         self._daemon_threads = False
         self._stopped = False
@@ -87,7 +87,7 @@ class QMPTCPServer(SocketServer.TCPServer):
 
     def shutdown(self):
         self._stopped = True
-        SocketServer.TCPServer.shutdown(self)
+        socketserver.TCPServer.shutdown(self)
         self.wait_threads()
 
     @property
@@ -95,11 +95,11 @@ class QMPTCPServer(SocketServer.TCPServer):
         return self._stopped
 
 
-class LineRequestHandler(SocketServer.BaseRequestHandler):
+class LineRequestHandler(socketserver.BaseRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.buf = ''
-        self.sep = '\n'
-        SocketServer.BaseRequestHandler.__init__(self, *args, **kwargs)
+        self.buf = b''
+        self.sep = b'\n'
+        socketserver.BaseRequestHandler.__init__(self, *args, **kwargs)
 
     def handle(self):
         self.request.settimeout(5)
@@ -185,7 +185,7 @@ class QMPConnectionHandler(LineRequestHandler):
         processed = True
         data = message['s2e-event']
 
-        for k in data.iterkeys():
+        for k in data.keys():
             if k in _PLUGINS:
                 _PLUGINS[k].process(data[k], analysis)
             else:

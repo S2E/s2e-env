@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from __future__ import print_function
+
 
 import logging
 import os
@@ -37,7 +37,7 @@ from s2e_env.symbols import SymbolManager
 logger = logging.getLogger('forkprofile')
 
 
-class ForkProfiler(object):
+class ForkProfiler:
     def __init__(self, trace, syms):
         self._trace = trace
         self._fp = SortedDict()
@@ -81,8 +81,8 @@ class ForkProfiler(object):
 
     def get_profile(self):
         fp = []
-        for mod, counts in self._fp.items():
-            for rel_pc, count in counts.iteritems():
+        for mod, counts in list(self._fp.items()):
+            for rel_pc, count in counts.items():
                 try:
                     sym, fcn = self._syms.get(mod.path, rel_pc)
                 except Exception as e:

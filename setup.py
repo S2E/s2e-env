@@ -26,12 +26,13 @@ import os
 import pip
 from setuptools import setup, find_packages
 
-pyelftools_url = 'git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+s2e'
+pyelftools_version = '0.24+s2e'
+pyelftools_url = f'git+https://github.com/S2E/pyelftools.git#egg=pyelftools-{pyelftools_version}'
 
 version = pip.__version__.split('.')
 if int(version[0]) < 19:
     # For use together with --process-dependency-links
-    pyelftools = 'pyelftools==0.24+s2e'
+    pyelftools = f'pyelftools=={pyelftools_version}'
 else:
     pyelftools = 'pyelftools@%s' % pyelftools_url
 
@@ -39,7 +40,7 @@ else:
 setup(
     name='s2e-env',
     description='A command-line tool for administering S2E environments',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md', 'r', encoding='utf8').read(),
     author='Adrian Herrera',
     author_email='adrian.herrera@epfl.ch',
     version=open(os.path.join('s2e_env', 'dat', 'VERSION'), 'r').read().strip(),
@@ -51,6 +52,7 @@ setup(
         'pygments',
 
         # s2e-env requirements
+        'distro',
         'enum34',
         'jinja2',
         'pefile',
@@ -62,10 +64,9 @@ setup(
         'sh',
         'termcolor',
         'pytrie',
-        'pwntools==3.12.0',
+        'pwntools==4.0.1',
         'psutil',
-        'multiprocessing',
-        'protobuf-to-dict'
+        'protobuf3-to-dict'
     ],
     tests_require=[
         'mock',

@@ -33,7 +33,7 @@ logger = logging.getLogger('infparser')
 MACRO_PATTERN = re.compile(r'(%.+%)')
 
 
-class InfFile(object):
+class InfFile:
     def __init__(self, filename):
         self._filename = filename
         self._sections = {}
@@ -70,7 +70,7 @@ class InfFile(object):
             return key
 
         string_key = self.to_string_key(key)
-        if not self._sections['strings'].data.has_key(string_key):
+        if string_key not in self._sections['strings'].data:
             return ''
 
         return self._sections['strings'].data[string_key]
@@ -91,7 +91,7 @@ class InfFile(object):
         return key
 
     def has_manufacturers(self):
-        return self._sections.has_key('manufacturer')
+        return 'manufacturer' in self._sections
 
     def get_class(self):
         try:
@@ -123,7 +123,7 @@ class InfFile(object):
         mfg = self._sections['manufacturer']
 
         # For each manufacturer...
-        for mfg_key in mfg.data.iterkeys():
+        for mfg_key in mfg.data.keys():
             # The key is the string identifier,
             # the value is the section that defines the manufacturer
             manufacturer = mfg_key
@@ -133,7 +133,7 @@ class InfFile(object):
                     continue
 
             if not manufacturer.strip():
-                logger.warn('Empty manufacturer string %s', manufacturer)
+                logger.warning('Empty manufacturer string %s', manufacturer)
 
             # Parse the multiple versions
             models_section = mfg.data[mfg_key].split(',')
@@ -168,12 +168,12 @@ class InfFile(object):
         if version:
             dev_key = '%s.%s' % (dev_key, version)
 
-        if not self._sections.has_key(dev_key):
-            logger.warn('No section for %s', dev_key)
+        if dev_key not in self._sections:
+            logger.warning('No section for %s', dev_key)
             return ret
 
         devices = self._sections[dev_key]
-        for k in devices.data.iterkeys():
+        for k in devices.data.keys():
             device_name = self.expand_key(k)
             install_section = ''
             hardware_id = ''
@@ -202,7 +202,7 @@ class InfFile(object):
         ret = dict()
 
         if not self._sections.prefixed_keys(install_section_key):
-            logger.warn('Section %s does not exist', install_section_key)
+            logger.warning('Section %s does not exist', install_section_key)
             return ret
 
         for fk in self._sections.prefixed_keys(install_section_key):
@@ -231,15 +231,15 @@ class InfFile(object):
     def get_files(self, file_list_section_key):
         ret = set()
 
-        if file_list_section_key[0:1] == u'@':
+        if file_list_section_key[0:1] == '@':
             ret.add(file_list_section_key[1:])
             return ret
 
         if file_list_section_key not in self._sections:
-            logger.warn('File list section %s does not exist', file_list_section_key)
+            logger.warning('File list section %s does not exist', file_list_section_key)
             return ret
 
-        for f in self._sections[file_list_section_key].data.iterkeys():
+        for f in self._sections[file_list_section_key].data.keys():
             components = f.split(',')
             ret.add(self.expand_key(components[0].lower()))
 

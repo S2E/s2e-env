@@ -86,8 +86,7 @@ class BaseProject(AbstractProject):
         target_arch = target.arch
 
         if target.is_empty():
-            logger.warn('Creating a project without a target file. You must '
-                        'manually edit bootstrap.sh')
+            logger.warning('Creating a project without a target file. You must manually edit bootstrap.sh')
 
         # Decide on the image to be used
         img_desc = self._select_image(target, options.get('image'),
@@ -102,7 +101,7 @@ class BaseProject(AbstractProject):
         # Determine if guestfs is available for this image
         guestfs_path = self._select_guestfs(img_desc)
         if not guestfs_path:
-            logger.warn('No guestfs available. The VMI plugin may not run optimally')
+            logger.warning('No guestfs available. The VMI plugin may not run optimally')
 
         # Generate the name of the project directory. The default project name
         # is the target program name without any file extension
@@ -258,7 +257,6 @@ class BaseProject(AbstractProject):
         This method may modify values in the ``config`` dictionary. If an
         invalid configuration is found, a ``CommandError` should be thrown.
         """
-        pass
 
     def _analyze_target(self, target, config):
         """
@@ -267,7 +265,6 @@ class BaseProject(AbstractProject):
         The results of this analysis can be used to add and/or modify values in
         the ``config`` dictionary.
         """
-        pass
 
     def _create_launch_script(self, project_dir, config):
         """

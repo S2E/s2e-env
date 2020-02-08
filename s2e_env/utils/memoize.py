@@ -25,7 +25,7 @@ import collections
 import functools
 
 
-class memoize(object):
+class memoize:
     """
     Memoize dectorator.
 
