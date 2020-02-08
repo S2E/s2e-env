@@ -72,7 +72,7 @@ def _link_existing_install(env_path, existing_install):
     repos.git_clone_to_source(env_path, guest_images_repo)
 
 
-def _install_dependencies():
+def _install_dependencies(interactive):
     """
     Install S2E's dependencies.
 
@@ -93,9 +93,16 @@ def _install_dependencies():
         dpkg_add_arch('i386')
 
         # Perform apt-get install
-        apt_get = sudo.bake('apt-get', _fg=True)
+        install_opts = ['--no-install-recommends'] + install_packages
+        env = {}
+        if not interactive:
+            logger.info('Running install in non-interactive mode')
+            env['DEBIAN_FRONTEND'] = 'noninteractive'
+            install_opts = ['-y'] + install_opts
+
+        apt_get = sudo.bake('apt-get', _fg=True, _env=env)
         apt_get.update()
-        apt_get.install(install_packages)
+        apt_get.install(install_opts)
     except ErrorReturnCode as e:
         raise CommandError(e)
 
@@ -252,6 +259,10 @@ class Command(BaseCommand):
                                  'this location')
         parser.add_argument('-mb', '--manifest-branch', type=str, required=False, default='master',
                             help='Specify an alternate branch for the repo manifest')
+        parser.add_argument('-n', '--non-interactive', required=False,
+                            action='store_true', default=False,
+                            help='Install packages without user interaction. '
+                                 'This is useful for unattended installation.')
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -298,7 +309,7 @@ class Command(BaseCommand):
             else:
                 # Install S2E's dependencies via apt-get
                 if not options['skip_dependencies']:
-                    _install_dependencies()
+                    _install_dependencies(not options['non_interactive'])
 
                 # Get the source repositories
                 _get_s2e_sources(env_path, options['manifest_branch'])
