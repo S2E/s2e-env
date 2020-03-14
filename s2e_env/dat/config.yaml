@@ -85,6 +85,9 @@ dependencies:
         - g++-multilib
         - libpixman-1-dev
 
+        # Testing dependencies
+        - wine-stable
+
         # s2e-env dependencies
         - lcov
         - jq
