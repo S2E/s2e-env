@@ -169,7 +169,7 @@ def _check_core_num(value):
                        '10 is recommended for best image building performance')
 
 
-def _translate_image_name(templates, image_name):
+def _translate_image_name(templates, image_names):
     """
     Translates a set of user-friendly image names into a set of actual image
     names that can be sent to the makefile. For example, "all" will be
@@ -177,19 +177,21 @@ def _translate_image_name(templates, image_name):
     translated to the appropriate subset of Windows or Linux images.
     """
     ret = []
-    if image_name == 'all':
-        ret = list(templates.keys())
-    elif image_name in Command.image_groups:
-        for k, v in templates.items():
-            if v['image_group'] == image_name:
-                ret.append(k)
-    elif image_name in templates:
-        ret = [image_name]
-    else:
-        raise CommandError('Invalid image name: %s. Run ``s2e image_build`` '
-                           'to list available images' % image_name)
 
-    return ret
+    for image_name in image_names:
+        if image_name == 'all':
+            ret = list(templates.keys())
+        elif image_name in Command.image_groups:
+            for k, v in templates.items():
+                if v['image_group'] == image_name:
+                    ret.append(k)
+        elif image_name in templates:
+            ret.append(image_name)
+        else:
+            raise CommandError('Invalid image name: %s. Run ``s2e image_build`` '
+                               'to list available images' % image_name)
+
+    return sorted(set(ret))
 
 
 def _check_product_keys(templates, image_names):
@@ -245,7 +247,7 @@ class Command(EnvCommand):
 
         parser.add_argument('name',
                             help='The name of the image to build. If empty,'
-                                 ' shows available images', nargs='?')
+                                 ' shows available images', nargs='*')
         parser.add_argument('-g', '--gui', action='store_true',
                             help='Display QEMU GUI during image build')
         parser.add_argument('-c', '--cores', required=False, default=2,
@@ -287,14 +289,14 @@ class Command(EnvCommand):
             self._invoke_make(img_build_dir, ['clean'], num_cores)
             return
 
-        image_name = options['name']
-        if not image_name:
+        image_names = options['name']
+        if not image_names:
             self._print_image_list()
             return
 
         templates = get_image_templates(img_build_dir)
 
-        image_names = _translate_image_name(templates, image_name)
+        image_names = _translate_image_name(templates, image_names)
         logger.info('The following images will be built:')
         for image in image_names:
             logger.info(' * %s', image)
@@ -342,7 +344,7 @@ class Command(EnvCommand):
 
         self._invoke_make(img_build_dir, rule_names, num_cores, iso_dir)
 
-        logger.success('Built image \'%s\'', image_name)
+        logger.success('Built image(s) \'%s\'', ' '.join(image_names))
 
     def _invoke_make(self, img_build_dir, rule_names, num_cores, iso_dir=None):
         env = os.environ.copy()
@@ -377,7 +379,7 @@ class Command(EnvCommand):
                                            _out=sys.stdout, _err=sys.stderr,
                                            _env=env, _fg=True)
 
-            make_image = make.bake(j=num_cores)
+            make_image = make.bake(j=num_cores, r=True, warn_undefined_variables=True)
             make_image(rule_names)
         except ErrorReturnCode as e:
             raise CommandError(e)
