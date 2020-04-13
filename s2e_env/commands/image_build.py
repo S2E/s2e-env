@@ -22,8 +22,6 @@ SOFTWARE.
 """
 
 
-
-
 import glob
 import grp
 import logging
@@ -107,11 +105,29 @@ def _check_virtualbox():
     # to avoid race conditions
     for proc in psutil.process_iter():
         try:
-            if proc.name == 'VBoxHeadless':
+            if proc.name() == 'VBoxHeadless':
                 raise CommandError('S2E uses KVM to build images. VirtualBox '
                                    'is currently running, which is not '
                                    'compatible with KVM. Please close all '
-                                   'VirtualBox VMs and try again')
+                                   'VirtualBox VMs and try again.')
+        except NoSuchProcess:
+            pass
+
+
+def _check_vmware():
+    """
+    Check if VMWare is running.
+
+    VMware conflicts with S2E's requirement for KVM, so VMWare must
+    *not* be running together with S2E.
+    """
+    for proc in psutil.process_iter():
+        try:
+            if proc.name() == 'vmware-vmx':
+                raise CommandError('S2E uses KVM to build images. VMware '
+                                   'is currently running, which is not '
+                                   'compatible with KVM. Please close all '
+                                   'VMware VMs and try again.')
         except NoSuchProcess:
             pass
 
@@ -315,7 +331,10 @@ class Command(EnvCommand):
 
         _check_groups_docker()
         _check_vmlinux()
-        _check_virtualbox()
+
+        if self._use_kvm:
+            _check_virtualbox()
+            _check_vmware()
 
         # Clone kernel if needed.
         # This is necessary if the s2e env has been initialized with -b flag.
