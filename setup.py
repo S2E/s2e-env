@@ -66,7 +66,14 @@ setup(
         'pytrie',
         'pwntools==4.0.1',
         'psutil',
-        'protobuf3-to-dict'
+        'protobuf3-to-dict',
+
+        # Dependencies for symchk
+        'pdbparse==1.5',
+        'pefile==2019.4.18',
+        'construct==2.9.52',
+        'patool==1.12',
+        'pyunpack==0.1.2'
     ],
     tests_require=[
         'mock',
