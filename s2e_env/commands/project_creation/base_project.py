@@ -166,6 +166,8 @@ class BaseProject(AbstractProject):
             # This will add analysis overhead, so disable unless requested by
             # the user. Also enabled by default for Decree targets.
             'enable_pov_generation': options.get('enable_pov_generation', False),
+
+            'single_path': options.get('single_path', False)
         }
 
         # Do some basic analysis on the target (if it exists)
@@ -221,6 +223,7 @@ class BaseProject(AbstractProject):
         # Display relevant messages to the user
         display_marker_warning = config['target_path'] and \
                                  config['warn_input_file'] and \
+                                 not config['single_path'] and \
                                  not (config['use_symb_input_file'] or config['sym_args'])
 
         if display_marker_warning:
@@ -280,6 +283,7 @@ class BaseProject(AbstractProject):
             'qemu_memory': config['image']['memory'],
             'qemu_snapshot': config['image']['snapshot'],
             'qemu_extra_flags': config['image']['qemu_extra_flags'],
+            'single_path': config['single_path'],
         }
 
         template = 'launch-s2e.sh'
@@ -305,6 +309,7 @@ class BaseProject(AbstractProject):
             'use_test_case_generator': config['use_test_case_generator'],
             'enable_pov_generation': config['enable_pov_generation'],
             'seeds_dir': config['seeds_dir'],
+            'single_path': config['single_path'],
             'has_guestfs': config['has_guestfs'],
             'guestfs_path': config['guestfs_path'],
             'recipes_dir': config['recipes_dir'],
@@ -345,6 +350,7 @@ class BaseProject(AbstractProject):
             'use_seeds': config['use_seeds'],
             'use_fault_injection': config['use_fault_injection'],
             'enable_pov_generation': config['enable_pov_generation'],
+            'single_path': config['single_path'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
             'target_files': [os.path.basename(tf) for tf in config['target_files']],
