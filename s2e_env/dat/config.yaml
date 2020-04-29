@@ -118,6 +118,7 @@ required_versions:
     # Ubuntu OS major version
     ubuntu_major_ver:
         - 18
+        - 20
     # images.json must have this version
     guest_images: 3
 
