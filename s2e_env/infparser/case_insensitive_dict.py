@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from pytrie import SortedStringTrie as Trie
 
 

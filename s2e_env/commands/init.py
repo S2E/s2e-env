@@ -89,7 +89,7 @@ def _install_dependencies(interactive):
 
     try:
         # Enable 32-bit libraries
-        dpkg_add_arch = sudo.bake('dpkg', add_architecture=True, _fg=True)
+        dpkg_add_arch = sudo.bake('dpkg', add_architecture=True)
         dpkg_add_arch('i386')
 
         # Perform apt-get install
@@ -100,7 +100,7 @@ def _install_dependencies(interactive):
             env['DEBIAN_FRONTEND'] = 'noninteractive'
             install_opts = ['-y'] + install_opts
 
-        apt_get = sudo.bake('apt-get', _fg=True, _env=env)
+        apt_get = sudo.bake('apt-get', _env=env)
         apt_get.update()
         apt_get.install(install_opts)
     except ErrorReturnCode as e:
@@ -154,8 +154,8 @@ def _get_s2e_sources(env_path, manifest_branch):
         # Now use repo to initialize all the repositories
         logger.info('Fetching %s from %s', git_s2e_repo, git_url)
         repo.init(u='%s/%s' % (git_url, git_s2e_repo), b=manifest_branch,
-                  _out=sys.stdout, _err=sys.stderr, _fg=True)
-        repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
+                  _out=sys.stdout, _err=sys.stderr)
+        repo.sync(_out=sys.stdout, _err=sys.stderr)
     except ErrorReturnCode as e:
         # Clean up - remove the half-created S2E environment
         shutil.rmtree(env_path)

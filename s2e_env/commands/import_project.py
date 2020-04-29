@@ -148,7 +148,7 @@ class Command(EnvCommand):
         try:
             logger.info('Decompressing archive %s', archive_path)
             tar(extract=True, xz=True, verbose=True, file=archive_path,
-                directory=self.projects_path(), _fg=True, _out=sys.stdout,
+                directory=self.projects_path(), _out=sys.stdout,
                 _err=sys.stderr)
         except ErrorReturnCode as e:
             raise CommandError('Failed to decompress project archive - %s' % e)

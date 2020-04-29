@@ -141,7 +141,7 @@ def _gen_html(lcov_info_path, lcov_html_dir):
     """
     try:
         genhtml(lcov_info_path, output_directory=lcov_html_dir,
-                _out=sys.stdout, _err=sys.stderr, _fg=True)
+                _out=sys.stdout, _err=sys.stderr)
     except ErrorReturnCode as e:
         raise CommandError(e)
 

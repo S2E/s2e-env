@@ -149,7 +149,7 @@ class Command(ProjectCommand):
             logger.info('Creating archive %s', archive_path)
             create_archive = tar.bake(create=True, xz=True, verbose=True,
                                       file=archive_path, directory=export_dir,
-                                      _fg=True, _out=sys.stdout,
+                                      _out=sys.stdout,
                                       _err=sys.stderr)
             create_archive(self._project_name)
         except ErrorReturnCode as e:

@@ -65,7 +65,7 @@ class Command(EnvCommand):
 
         try:
             logger.info('Updating S2E')
-            repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
+            repo.sync(_out=sys.stdout, _err=sys.stderr)
         except ErrorReturnCode as e:
             raise CommandError(e)
         finally:

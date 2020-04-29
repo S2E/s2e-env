@@ -377,7 +377,7 @@ class Command(EnvCommand):
                                                              'Makefile'),
                                            directory=self.image_path(),
                                            _out=sys.stdout, _err=sys.stderr,
-                                           _env=env, _fg=True)
+                                           _env=env)
 
             make_image = make.bake(j=num_cores, r=True, warn_undefined_variables=True)
             make_image(rule_names)
