@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import datetime
 import logging
 import os
@@ -40,7 +39,6 @@ from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
 from s2e_env.utils.templates import render_template
-
 
 logger = logging.getLogger('init')
 
@@ -85,22 +83,22 @@ def _install_dependencies(interactive):
         return
 
     install_packages = CONSTANTS['dependencies']['common'] + \
-                       CONSTANTS['dependencies']['ida']
+        CONSTANTS['dependencies'].get(f'ubuntu-{ubuntu_ver}', [])
+
+    install_opts = ['--no-install-recommends'] + install_packages
+    env = {}
+    if not interactive:
+        logger.info('Running install in non-interactive mode')
+        env['DEBIAN_FRONTEND'] = 'noninteractive'
+        install_opts = ['-y'] + install_opts
 
     try:
         # Enable 32-bit libraries
-        dpkg_add_arch = sudo.bake('dpkg', add_architecture=True)
+        dpkg_add_arch = sudo.bake('dpkg', add_architecture=True, _fg=True)
         dpkg_add_arch('i386')
 
         # Perform apt-get install
-        install_opts = ['--no-install-recommends'] + install_packages
-        env = {}
-        if not interactive:
-            logger.info('Running install in non-interactive mode')
-            env['DEBIAN_FRONTEND'] = 'noninteractive'
-            install_opts = ['-y'] + install_opts
-
-        apt_get = sudo.bake('apt-get', _env=env)
+        apt_get = sudo.bake('apt-get', _fg=True, _env=env)
         apt_get.update()
         apt_get.install(install_opts)
     except ErrorReturnCode as e:
@@ -280,7 +278,6 @@ class Command(BaseCommand):
                                    'update your existing environment? Try '
                                    '``s2e build`` or ``s2e update`` instead' %
                                    env_path)
-
 
         try:
             # Create environment if it doesn't exist

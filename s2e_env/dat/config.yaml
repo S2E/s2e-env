@@ -38,11 +38,11 @@ dependencies:
         - bison
         - python3
         - python3-dev
+        - python3-pip
 
         # Image build dependencies
         - libguestfs-tools
         - genisoimage
-        - python-pip
         - xz-utils
         - docker.io
         - p7zip-full
@@ -91,16 +91,20 @@ dependencies:
         # s2e-env dependencies
         - lcov
         - jq
-    ida:
+
         # IDA Pro TUI dependencies
         - lib32ncurses5
         - lib32ncurses5-dev
         - libncurses5-dev
-        - libx32ncurses5-dev
         - libncurses5-dev:i386
 
         # IDA Pro GUI dependencies
         - libglib2.0-0:i386
+
+    ubuntu-18:
+        - libx32ncurses5-dev
+        - python-distro
+
 
 # S2E Git repos
 repos:
