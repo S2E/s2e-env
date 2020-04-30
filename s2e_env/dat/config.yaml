@@ -46,7 +46,6 @@ dependencies:
         - xz-utils
         - docker.io
         - p7zip-full
-        - pxz
         - fuse
         - libhivex-bin
         - jigdo-file
@@ -93,17 +92,30 @@ dependencies:
         - jq
 
         # IDA Pro TUI dependencies
-        - lib32ncurses5
-        - lib32ncurses5-dev
-        - libncurses5-dev
-        - libncurses5-dev:i386
+
 
         # IDA Pro GUI dependencies
         - libglib2.0-0:i386
 
     ubuntu-18:
+        # IDA Pro TUI dependencies
+        - lib32ncurses5
+        - lib32ncurses5-dev
+        - libncurses5-dev
+        - libncurses5-dev:i386
         - libx32ncurses5-dev
+
         - python-distro
+
+        # Image build dependencies
+        - pxz
+
+    ubuntu-20:
+        - lib32ncurses-dev
+
+        # Ubuntu 20.04 doesn't have pxz package (at least not on the release date),
+        # so we install it manually
+        - http://mirrors.kernel.org/ubuntu/pool/universe/p/pxz/pxz_4.999.99~beta5+gitfcfea93-2_amd64.deb
 
 
 # S2E Git repos

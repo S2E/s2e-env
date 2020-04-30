@@ -26,6 +26,7 @@ import os
 import shutil
 import stat
 import sys
+import urllib
 
 import distro
 import requests
@@ -82,10 +83,18 @@ def _install_dependencies(interactive):
     if not ubuntu_ver:
         return
 
-    install_packages = CONSTANTS['dependencies']['common'] + \
+    all_install_packages = CONSTANTS['dependencies']['common'] + \
         CONSTANTS['dependencies'].get(f'ubuntu-{ubuntu_ver}', [])
 
-    install_opts = ['--no-install-recommends'] + install_packages
+    install_packages = []
+    deb_package_urls = []
+    for package in all_install_packages:
+        if '.deb' in package:
+            deb_package_urls.append(package)
+        else:
+            install_packages.append(package)
+
+    install_opts = ['--no-install-recommends']
     env = {}
     if not interactive:
         logger.info('Running install in non-interactive mode')
@@ -100,9 +109,17 @@ def _install_dependencies(interactive):
         # Perform apt-get install
         apt_get = sudo.bake('apt-get', _fg=True, _env=env)
         apt_get.update()
-        apt_get.install(install_opts)
+        apt_get.install(install_opts + install_packages)
     except ErrorReturnCode as e:
         raise CommandError(e)
+
+    # Install deb files at the end
+    for url in deb_package_urls:
+        logger.info('Installing deb %s...', url)
+        filename, _ = urllib.request.urlretrieve(url)
+        os.rename(filename, f'{filename}.deb')
+        apt_get = sudo.bake('apt-get', _fg=True, _env=env)
+        apt_get.install(install_opts + [f'{filename}.deb'])
 
 
 def _get_ubuntu_version():
