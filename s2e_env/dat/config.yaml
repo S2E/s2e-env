@@ -91,14 +91,7 @@ dependencies:
         - lcov
         - jq
 
-        # IDA Pro TUI dependencies
-
-
-        # IDA Pro GUI dependencies
-        - libglib2.0-0:i386
-
     ubuntu-18:
-        # IDA Pro TUI dependencies
         - lib32ncurses5
         - lib32ncurses5-dev
         - libncurses5-dev
@@ -112,6 +105,9 @@ dependencies:
 
     ubuntu-20:
         - lib32ncurses-dev
+        - lib32ncurses6
+        - libncurses5-dev
+        - libncurses5-dev:i386
 
         # Ubuntu 20.04 doesn't have pxz package (at least not on the release date),
         # so we install it manually
