@@ -11,6 +11,9 @@ INSTALL_DIR="$ENV_DIR/install"
 BUILD_DIR="$ENV_DIR/build"
 BUILD=debug
 
+# Either s2e for symbolic execution support or s2e_sp for single-path mode
+S2E_MODE={% if single_path %}s2e_sp{% else %}s2e{% endif %}
+
 # Comment this out to enable QEMU GUI
 GRAPHICS=-nographic
 
@@ -51,7 +54,7 @@ if [ "x$DEBUG" != "x" ]; then
     fi
 
     QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
-    LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-s2e-softmmu/libs2e.so"
+    LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-$S2E_MODE-softmmu/libs2e.so"
 
     rm -f gdb.ini
 
@@ -82,7 +85,7 @@ if [ "x$DEBUG" != "x" ]; then
 else
 
     QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
-    LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-s2e.so"
+    LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-$S2E_MODE.so"
 
     LD_PRELOAD=$LIBS2E $QEMU $QEMU_DRIVE \
         -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \

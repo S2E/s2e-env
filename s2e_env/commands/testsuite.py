@@ -81,7 +81,7 @@ def _build_test(s2e_config, s2e_source_root, test_root):
     env['S2ESRC'] = s2e_source_root
     env['WINDOWS_BUILD_HOST'] = s2e_config.get('windows_build_server', {}).get('host', '')
     env['WINDOWS_BUILD_USER'] = s2e_config.get('windows_build_server', {}).get('user', '')
-    make = sh.Command('make').bake('-C', test_root, 'all', _out=sys.stdout, _err=sys.stderr, _fg=True, _env=env)
+    make = sh.Command('make').bake('-C', test_root, 'all', _out=sys.stdout, _err=sys.stderr, _env=env)
     make()
 
 
@@ -108,7 +108,7 @@ def _call_post_project_gen_script(test_dir, test_config, options):
     env['TARGET'] = options['target'].path
     env['TESTSUITE_ROOT'] = options['testsuite_root']
 
-    cmd = sh.Command(script).bake(_out=sys.stdout, _err=sys.stderr, _fg=True, _env=env)
+    cmd = sh.Command(script).bake(_out=sys.stdout, _err=sys.stderr, _env=env)
     cmd()
 
 

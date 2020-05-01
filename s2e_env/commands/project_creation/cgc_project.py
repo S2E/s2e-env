@@ -47,6 +47,11 @@ class CGCProject(BaseProject):
             raise CommandError('Command line arguments for Decree binaries '
                                'not supported')
 
+        single_path = config.get('single_path', False)
+        if single_path:
+            logger.warning('CGC requires multi-path mode, forcing single path option off')
+            config['single_path'] = False
+
         use_seeds = config.get('use_seeds', False)
         if not use_seeds:
             logger.warning('CGC requires seeds, forcing seed option on')

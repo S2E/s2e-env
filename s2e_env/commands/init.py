@@ -20,13 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import datetime
 import logging
 import os
 import shutil
 import stat
 import sys
+import urllib
 
 import distro
 import requests
@@ -40,7 +40,6 @@ from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
 from s2e_env.utils.templates import render_template
-
 
 logger = logging.getLogger('init')
 
@@ -84,8 +83,23 @@ def _install_dependencies(interactive):
     if not ubuntu_ver:
         return
 
-    install_packages = CONSTANTS['dependencies']['common'] + \
-                       CONSTANTS['dependencies']['ida']
+    all_install_packages = CONSTANTS['dependencies']['common'] + \
+        CONSTANTS['dependencies'].get(f'ubuntu-{ubuntu_ver}', [])
+
+    install_packages = []
+    deb_package_urls = []
+    for package in all_install_packages:
+        if '.deb' in package:
+            deb_package_urls.append(package)
+        else:
+            install_packages.append(package)
+
+    install_opts = ['--no-install-recommends']
+    env = {}
+    if not interactive:
+        logger.info('Running install in non-interactive mode')
+        env['DEBIAN_FRONTEND'] = 'noninteractive'
+        install_opts = ['-y'] + install_opts
 
     try:
         # Enable 32-bit libraries
@@ -93,18 +107,19 @@ def _install_dependencies(interactive):
         dpkg_add_arch('i386')
 
         # Perform apt-get install
-        install_opts = ['--no-install-recommends'] + install_packages
-        env = {}
-        if not interactive:
-            logger.info('Running install in non-interactive mode')
-            env['DEBIAN_FRONTEND'] = 'noninteractive'
-            install_opts = ['-y'] + install_opts
-
         apt_get = sudo.bake('apt-get', _fg=True, _env=env)
         apt_get.update()
-        apt_get.install(install_opts)
+        apt_get.install(install_opts + install_packages)
     except ErrorReturnCode as e:
         raise CommandError(e)
+
+    # Install deb files at the end
+    for url in deb_package_urls:
+        logger.info('Installing deb %s...', url)
+        filename, _ = urllib.request.urlretrieve(url)
+        os.rename(filename, f'{filename}.deb')
+        apt_get = sudo.bake('apt-get', _fg=True, _env=env)
+        apt_get.install(install_opts + [f'{filename}.deb'])
 
 
 def _get_ubuntu_version():
@@ -154,8 +169,8 @@ def _get_s2e_sources(env_path, manifest_branch):
         # Now use repo to initialize all the repositories
         logger.info('Fetching %s from %s', git_s2e_repo, git_url)
         repo.init(u='%s/%s' % (git_url, git_s2e_repo), b=manifest_branch,
-                  _out=sys.stdout, _err=sys.stderr, _fg=True)
-        repo.sync(_out=sys.stdout, _err=sys.stderr, _fg=True)
+                  _out=sys.stdout, _err=sys.stderr)
+        repo.sync(_out=sys.stdout, _err=sys.stderr)
     except ErrorReturnCode as e:
         # Clean up - remove the half-created S2E environment
         shutil.rmtree(env_path)
@@ -280,7 +295,6 @@ class Command(BaseCommand):
                                    'update your existing environment? Try '
                                    '``s2e build`` or ``s2e update`` instead' %
                                    env_path)
-
 
         try:
             # Create environment if it doesn't exist

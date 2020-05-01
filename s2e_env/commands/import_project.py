@@ -74,6 +74,8 @@ class Command(EnvCommand):
         parser.add_argument('-f', '--force', action='store_true',
                             help='If a project with the same name as the '
                                  'imported project already exists, replace it')
+        parser.add_argument('-i', '--image', required=False,
+                            help='Override the guest image')
 
     def handle(self, *args, **options):
         # Check the archive
@@ -111,7 +113,17 @@ class Command(EnvCommand):
                              'to determine the guest tools to symlink')
                 return
 
+            override_image = options.get('image', None)
+            if override_image:
+                dn = os.path.dirname(proj_desc['image'])
+                old_image = os.path.basename(proj_desc['image'])
+                proj_desc['image'] = os.path.join(dn, override_image)
+
+                rewrite_files(project_path, CONSTANTS['import_export']['project_files'],
+                              old_image, override_image)
+
             image_path = os.path.join(proj_desc['image'], 'image.json')
+
             if not os.path.exists(image_path):
                 logger.error('%s does not exist, please check that the guest image is built properly', image_path)
                 return
@@ -136,7 +148,7 @@ class Command(EnvCommand):
         try:
             logger.info('Decompressing archive %s', archive_path)
             tar(extract=True, xz=True, verbose=True, file=archive_path,
-                directory=self.projects_path(), _fg=True, _out=sys.stdout,
+                directory=self.projects_path(), _out=sys.stdout,
                 _err=sys.stderr)
         except ErrorReturnCode as e:
             raise CommandError('Failed to decompress project archive - %s' % e)

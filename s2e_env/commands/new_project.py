@@ -151,6 +151,9 @@ class Command(EnvCommand):
         parser.add_argument('--enable-pov-generation', action='store_true',
                             help='Enables PoV generation')
 
+        parser.add_argument('--single-path', action='store_true', default=False,
+                            help='Enables PoV generation')
+
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
                             help='A space-separated list of target argument '
                                  'indices to make symbolic')
@@ -160,8 +163,26 @@ class Command(EnvCommand):
                                  'exists, replace it')
 
     def handle(self, *args, **options):
+        # Check argument consistency
+        has_errors = False
+        if options['single_path']:
+            if options['use_seeds']:
+                logger.error('Cannot use seeds in single-path mode')
+                has_errors = True
+
+            if options['enable_pov_generation']:
+                logger.error('Cannot use POV generation in single-path mode')
+                has_errors = True
+
+            if '@@' in options['target_args']:
+                logger.error('Cannot use symbolic input in single-path mode')
+                has_errors = True
+
+        if has_errors:
+            return
+
         # The 'project_class' option is not exposed as a command-line argument:
-        # it is typically used when creating a custom project programatically.
+        # it is typically used when creating a custom project programmatically.
         # It provides a class that is instantiated with the current
         # command-line arguments and options
         proj_class = options.pop('project_class', None)

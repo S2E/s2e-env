@@ -37,7 +37,7 @@ def git_clone(git_repo_url, git_repo_dir):
     try:
         logger.info('Fetching from %s to %s', git_repo_url, git_repo_dir)
         git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
-                  _err=sys.stderr, _fg=True)
+                  _err=sys.stderr)
     except ErrorReturnCode as e:
         raise CommandError(e)
 

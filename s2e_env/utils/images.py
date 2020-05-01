@@ -59,7 +59,7 @@ def _decompress(path):
     logger.info('Decompressing %s', path)
     try:
         tar(extract=True, xz=True, verbose=True, file=path,
-            directory=os.path.dirname(path), _fg=True, _out=sys.stdout,
+            directory=os.path.dirname(path), _out=sys.stdout,
             _err=sys.stderr)
     except ErrorReturnCode as e:
         raise CommandError(e)
