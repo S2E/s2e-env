@@ -160,15 +160,6 @@ def _check_vmlinux():
                            'sudo chmod ugo+r /boot/vmlinu*')
 
 
-def _check_core_num(value):
-    """
-    Ensure that the number of CPU cores is sensible.
-    """
-    if value <= 0 or value > 10:
-        logger.warning('The specified number of cores seems high. Less than '
-                       '10 is recommended for best image building performance')
-
-
 def _translate_image_name(templates, image_names):
     """
     Translates a set of user-friendly image names into a set of actual image
@@ -277,7 +268,6 @@ class Command(EnvCommand):
             self._use_kvm = False
 
         num_cores = options['cores']
-        _check_core_num(num_cores)
 
         # The path could have been deleted by a previous clean
         if not os.path.exists(self.image_path()):
