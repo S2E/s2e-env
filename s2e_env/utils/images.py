@@ -97,10 +97,10 @@ class ImageDownloader:
         _download(url, dest_file)
         _decompress(dest_file)
 
+
 #
 # Image utility functions
 #
-
 def _validate_version(descriptor, filename):
     version = descriptor.get('version')
     required_version = CONSTANTS['required_versions']['guest_images']
@@ -111,8 +111,8 @@ def _validate_version(descriptor, filename):
                            (filename, required_version, version))
 
 
-def get_image_templates(img_build_dir):
-    images = os.path.join(img_build_dir, 'images.json')
+def _get_templates(img_build_dir, filename, key):
+    images = os.path.join(img_build_dir, filename)
 
     try:
         with open(images, 'r') as f:
@@ -123,7 +123,15 @@ def get_image_templates(img_build_dir):
 
     _validate_version(template_json, images)
 
-    return template_json['images']
+    return template_json[key]
+
+
+def get_image_templates(img_build_dir):
+    return _get_templates(img_build_dir, 'images.json', 'images')
+
+
+def get_app_templates(img_build_dir):
+    return _get_templates(img_build_dir, 'apps.json', 'apps')
 
 
 def get_image_descriptor(image_dir):
