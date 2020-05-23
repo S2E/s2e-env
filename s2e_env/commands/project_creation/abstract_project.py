@@ -42,6 +42,34 @@ FILE_DIR = os.path.dirname(__file__)
 LIBRARY_LUA_PATH = os.path.join(FILE_DIR, '..', '..', 'dat', 'library.lua')
 
 
+def symlink_guest_tools(install_path, project_dir, img_desc):
+    """
+    Create a symlink to the guest tools directory.
+
+    Args:
+        install_path: path to S2E installation
+        project_dir: The project directory.
+        img_desc: A dictionary that describes the image that will be used,
+                  from `$S2EDIR/source/guest-images/images.json`.
+    """
+    img_arch = img_desc['qemu_build']
+    guest_tools_path = \
+        os.path.join(install_path, 'bin', CONSTANTS['guest_tools'][img_arch])
+
+    logger.info('Creating a symlink to %s', guest_tools_path)
+    os.symlink(guest_tools_path,
+               os.path.join(project_dir, CONSTANTS['guest_tools'][img_arch]))
+
+    # Also link 32-bit guest tools for 64-bit guests.
+    # This is required on Linux to have 32-bit s2e.so when loading 32-bit binaries
+    if img_arch == 'x86_64':
+        guest_tools_path_32 = \
+            os.path.join(install_path, 'bin', CONSTANTS['guest_tools']['i386'])
+
+        os.symlink(guest_tools_path_32,
+                   os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
+
+
 class AbstractProject(EnvCommand):
     """
     An abstract class for creating S2E analysis projects.
@@ -249,31 +277,7 @@ class AbstractProject(EnvCommand):
             os.symlink(os.path.abspath(f), os.path.join(project_dir, target_file))
 
     def _symlink_guest_tools(self, project_dir, img_desc):
-        """
-        Create a symlink to the guest tools directory.
-
-        Args:
-            project_dir: The project directory.
-            img_desc: A dictionary that describes the image that will be used,
-                      from `$S2EDIR/source/guest-images/images.json`.
-        """
-        img_arch = img_desc['qemu_build']
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][img_arch])
-
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path,
-                   os.path.join(project_dir, CONSTANTS['guest_tools'][img_arch]))
-
-        # Also link 32-bit guest tools for 64-bit guests.
-        # This is required on Linux to have 32-bit s2e.so when loading 32-bit binaries
-        if img_arch == 'x86_64':
-            guest_tools_path_32 = \
-                self.install_path('bin', CONSTANTS['guest_tools']['i386'])
-
-            os.symlink(guest_tools_path_32,
-                       os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
-
+        return symlink_guest_tools(self.install_path(), project_dir, img_desc)
 
     def _select_guestfs(self, img_desc):
         """

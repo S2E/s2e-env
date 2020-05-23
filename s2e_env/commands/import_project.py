@@ -33,6 +33,7 @@ from sh import tar, ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, rewrite_files
+from s2e_env.commands.project_creation.abstract_project import symlink_guest_tools
 
 
 logger = logging.getLogger('import')
@@ -157,12 +158,7 @@ class Command(EnvCommand):
         """
         Create a symlink to the guest tools directory.
         """
-        qemu_arch = image['qemu_build']
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][qemu_arch])
-
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path, os.path.join(project_path, 'guest-tools'))
+        symlink_guest_tools(self.install_path(), project_path, image)
 
     def _symlink_guestfs(self, project_path, image_name):
         """
