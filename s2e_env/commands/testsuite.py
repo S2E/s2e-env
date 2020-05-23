@@ -57,15 +57,12 @@ def _get_tests(testsuite_root):
     return tests
 
 
-def _get_run_test_scripts(project_root):
+def _get_run_test_scripts(testsuite_root):
     tests = []
 
-    for fn in os.listdir(project_root):
-        path = os.path.join(project_root, fn)
-        if not fn.startswith('testsuite_'):
-            continue
-
-        run_tests_path = os.path.join(project_root, path, 'run-tests')
+    for fn in os.listdir(testsuite_root):
+        path = os.path.join(testsuite_root, fn)
+        run_tests_path = os.path.join(testsuite_root, path, 'run-tests')
         if not os.path.exists(run_tests_path):
             logger.warning('%s does not exist, skipping test project %s', run_tests_path, fn)
 
@@ -182,7 +179,7 @@ class TestsuiteGenerator(EnvCommand):
                     logger.debug('%s is not in target-images, skipping', image_name)
                     continue
 
-                name = 'testsuite_%s_%s_%s' % (test, os.path.basename(target_name), image_name)
+                name = 'testsuite/%s_%s_%s' % (test, os.path.basename(target_name), image_name)
                 options = {
                     'image': image_name,
                     'name': name,
@@ -201,7 +198,6 @@ class TestsuiteGenerator(EnvCommand):
                 self._generate_run_tests(ts_dir, test, run_tests_template, options)
                 _call_post_project_gen_script(test_root, test_config, options)
 
-
     def _get_tests(self):
         ts_dir = self.source_path('s2e', 'testsuite')
         if not os.path.isdir(ts_dir):
@@ -212,7 +208,6 @@ class TestsuiteGenerator(EnvCommand):
             tests = _get_tests(ts_dir)
 
         return tests
-
 
     def handle(self, *args, **options):
         logger.info('Generating testsuite...')
@@ -317,7 +312,7 @@ class TestsuiteRunner(EnvCommand):
         logger.info('Running %d tests in parallel', actual_instances)
 
         # Compute the tests to run
-        test_scripts = _get_run_test_scripts(self.projects_path())
+        test_scripts = _get_run_test_scripts(self.projects_path('testsuite'))
         scripts_to_run = test_scripts
 
         # Filter out tests we don't want to run.

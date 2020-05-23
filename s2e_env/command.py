@@ -302,6 +302,14 @@ class ProjectCommand(EnvCommand):
         """
         super(ProjectCommand, self).handle_common_args(**options)
 
+        project = options['project']
+        if os.path.isabs(project):
+            projects_dir = self.env_path('projects')
+            if projects_dir not in os.path.commonpath([projects_dir, project]):
+                raise CommandError(f'Specified project path is not a subdirectory of {projects_dir}')
+            project = os.path.relpath(project, projects_dir)
+        options['project'] = project
+
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])
         self._project_name = options.pop('project', ())

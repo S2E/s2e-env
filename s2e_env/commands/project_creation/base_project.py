@@ -45,6 +45,11 @@ def _check_project_dir(project_dir, force=False):
     If such a project exists, only continue if the ``force`` flag has been
     specified.
     """
+
+    logger.warning(project_dir)
+    if os.path.exists(project_dir) and not os.path.isdir(project_dir):
+        raise CommandError(f'The path {project_dir} already exists and is a file.')
+
     if not os.path.isdir(project_dir):
         return
 
@@ -106,9 +111,15 @@ class BaseProject(AbstractProject):
         # Generate the name of the project directory. The default project name
         # is the target program name without any file extension
         project_name = options.get('name')
-        if not project_name:
+        if project_name:
+            dir_name, name = os.path.split(project_name)
+            if not name:
+                raise CommandError(f'{project_name} is invalid.')
+            project_name = name
+            project_dir = self.env_path('projects', dir_name, project_name)
+        else:
             project_name, _ = os.path.splitext(os.path.basename(target_path))
-        project_dir = self.env_path('projects', project_name)
+            project_dir = self.env_path('projects', project_name)
 
         # Prepare the project configuration
         config = {
@@ -190,7 +201,7 @@ class BaseProject(AbstractProject):
         _check_project_dir(project_dir, force)
 
         # Create the project directory
-        os.mkdir(project_dir)
+        os.makedirs(project_dir)
 
         if config['use_seeds'] and not os.path.isdir(config['seeds_dir']):
             os.mkdir(config['seeds_dir'])
@@ -218,7 +229,7 @@ class BaseProject(AbstractProject):
         # Generate recipes for PoV generation
         if config['use_recipes']:
             os.makedirs(config['recipes_dir'])
-            call_command(RecipeCommand(), [], project=os.path.basename(project_dir))
+            call_command(RecipeCommand(), [], project=project_dir)
 
         # Display relevant messages to the user
         display_marker_warning = config['target_path'] and \
