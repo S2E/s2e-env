@@ -104,8 +104,8 @@ class BaseProject(AbstractProject):
                                                          img_desc['os']['arch']))
 
         # Determine if guestfs is available for this image
-        guestfs_path = self._select_guestfs(img_desc)
-        if not guestfs_path:
+        guestfs_paths = self._select_guestfs(img_desc)
+        if not guestfs_paths:
             logger.warning('No guestfs available. The VMI plugin may not run optimally')
 
         # Generate the name of the project directory. The default project name
@@ -156,8 +156,8 @@ class BaseProject(AbstractProject):
             'recipes_dir': os.path.join(project_dir, 'recipes'),
 
             # The use of guestfs is dependent on the specific image
-            'has_guestfs': guestfs_path is not None,
-            'guestfs_path': guestfs_path,
+            'has_guestfs': guestfs_paths is not None,
+            'guestfs_paths': guestfs_paths,
 
             # These options are determined by a static analysis of the target
             'dynamically_linked': False,
@@ -214,8 +214,8 @@ class BaseProject(AbstractProject):
         self._symlink_guest_tools(project_dir, config['image'])
 
         # Create a symlink to guestfs (if it exists)
-        if config['guestfs_path']:
-            self._symlink_guestfs(project_dir, config['guestfs_path'])
+        if config['guestfs_paths']:
+            self._symlink_guestfs(project_dir, config['guestfs_paths'])
 
         # Render the templates
         self._create_launch_script(project_dir, config)
@@ -322,7 +322,7 @@ class BaseProject(AbstractProject):
             'seeds_dir': config['seeds_dir'],
             'single_path': config['single_path'],
             'has_guestfs': config['has_guestfs'],
-            'guestfs_path': config['guestfs_path'],
+            'guestfs_paths': config['guestfs_paths'],
             'recipes_dir': config['recipes_dir'],
             'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
