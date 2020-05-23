@@ -12,7 +12,7 @@ function execute_target {
     TARGET="$1"
     SYMB_FILE="$2"
 
-    ./${TARGET} {{ target_args | join(' ') }} > /dev/null 2> /dev/null
+    run_cmd "${TARGET}" {{ target_args | join(' ') }} > /dev/null 2> /dev/null
 }
 
 {% include 'bootstrap.windows_common.sh' %}

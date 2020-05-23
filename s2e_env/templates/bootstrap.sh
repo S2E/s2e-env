@@ -242,7 +242,13 @@ ${S2EGET} "{{ tf }}"
 
 {% if target %}
 # Run the analysis
-execute "./{{ target }}"
+
+{% if project_type == 'windows' %}
+  execute "{{ target }}"
+{% else %}
+  execute "./{{ target }}"
+{% endif %}
+
 {% else %}
 ##### NO TARGET HAS BEEN SPECIFIED DURING PROJECT CREATION #####
 ##### Please fetch and execute the target files manually   #####
