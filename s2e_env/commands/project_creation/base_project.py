@@ -348,6 +348,10 @@ class BaseProject(AbstractProject):
         parsed_args = ['${SYMB_FILE}' if arg == '@@' else arg
                        for arg in config['target_args']]
 
+        # Quote arguments that have spaces in them
+        parsed_args = [f'"{arg}"' if ' ' in arg else arg
+                       for arg in parsed_args]
+
         target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
