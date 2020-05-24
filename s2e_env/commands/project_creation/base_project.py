@@ -87,9 +87,6 @@ class BaseProject(AbstractProject):
         self._lua_template = lua_template
 
     def _configure(self, target, *args, **options):
-        target_path = target.path
-        target_arch = target.arch
-
         if target.is_empty():
             logger.warning('Creating a project without a target file. You must manually edit bootstrap.sh')
 
@@ -98,9 +95,9 @@ class BaseProject(AbstractProject):
                                       options.get('download_image', False))
 
         # Check architecture consistency (if the target has been specified)
-        if target_path and not is_valid_arch(target_arch, img_desc['os']):
+        if target.path and not is_valid_arch(target.arch, img_desc['os']):
             raise CommandError('Binary is %s while VM image is %s. Please '
-                               'choose another image' % (target_arch,
+                               'choose another image' % (target.arch,
                                                          img_desc['os']['arch']))
 
         # Determine if guestfs is available for this image
@@ -118,7 +115,7 @@ class BaseProject(AbstractProject):
             project_name = name
             project_dir = self.env_path('projects', dir_name, project_name)
         else:
-            project_name, _ = os.path.splitext(os.path.basename(target_path))
+            project_name, _ = os.path.splitext(target.name)
             project_dir = self.env_path('projects', project_name)
 
         # Prepare the project configuration
@@ -126,20 +123,19 @@ class BaseProject(AbstractProject):
             'creation_time': str(datetime.datetime.now()),
             'project_dir': project_dir,
             'image': img_desc,
-            'target_path': target_path,
-            'target_arch': target_arch,
+            'target_path': target.path,
+            'target_arch': target.arch,
             'target_args': options.get('target_args', []),
 
-            # This contains paths to all the files that must be downloaded into
-            # the guest
-            'target_files': ([target_path] if target_path else []) + target.aux_files,
+            # This contains paths to all the files that must be downloaded into the guest
+            'target_files': target.files,
 
             # List of module names that go into ModuleExecutionDetector
-            'modules': [(os.path.basename(target_path), False)] if target_path else [],
+            'modules': [(target.name, False)] if target.name else [],
 
             # List of binaries that go into ProcessExecutionDetector. These are
             # normally executable files
-            'processes': [os.path.basename(target_path)] if target_path else [],
+            'processes': [target.name] if target.name else [],
 
             # Target arguments to be made symbolic
             'sym_args': options.get('sym_args', []),
@@ -182,14 +178,13 @@ class BaseProject(AbstractProject):
         }
 
         # Do some basic analysis on the target (if it exists)
-        if target_path:
+        if target.path:
             self._analyze_target(target, config)
 
         if config['enable_pov_generation']:
             config['use_recipes'] = True
 
-        # The config dictionary may be modified here. After this point the
-        # config dictionary should NOT be modified
+        # After this point the config dictionary should NOT be modified
         self._finalize_config(config)
 
         return config

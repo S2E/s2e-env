@@ -184,8 +184,7 @@ class Target:
     def __init__(self, path, arch, operating_sys, project_class, aux_files=None):
         """
         This constructor should not be called directly. Rather, the
-        ``from_file`` or ``empty`` static methods should be used to create a
-        ``Target``.
+        ``from_file`` or ``empty`` static methods should be used to create a ``Target``.
         """
         self._path = path
         self._arch = arch
@@ -203,11 +202,13 @@ class Target:
         return self._path
 
     @property
+    def name(self):
+        """The basename of the target path"""
+        return os.path.basename(self.path) if self.path else None
+
+    @property
     def arch(self):
-        """
-        The architecture (e.g., i386, x86-64, etc.) of the program under
-        analysis.
-        """
+        """The architecture (e.g., i386, x86-64, etc.) of the program under analysis."""
         return self._arch
 
     @property
@@ -217,11 +218,12 @@ class Target:
 
     @property
     def aux_files(self):
-        """
-        A list of any auxillary files required by S2E to analysis the target
-        program.
-        """
+        """A list of any auxiliary files required by S2E to analysis the target program."""
         return self._aux_files
+
+    @property
+    def files(self):
+        return ([self.path] if self.path else []) + self.aux_files
 
     def initialize_project(self):
         """Initialize an s2e-env analysis project for this target."""
