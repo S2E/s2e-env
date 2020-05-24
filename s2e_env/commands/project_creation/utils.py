@@ -29,5 +29,5 @@ class ConfigEncoder(JSONEncoder):
     # pylint: disable=method-hidden
     def default(self, o):
         if isinstance(o, Target):
-            return o.__dict__
+            return o.toJSON()
         return super(ConfigEncoder, self).default(o)

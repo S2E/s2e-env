@@ -94,3 +94,13 @@ class Target:
 
     def __str__(self):
         return 'Target(path=%s,arch=%s)' % (self._path, self._arch)
+
+    def toJSON(self):
+        return {
+            'path': self.path,
+            'files': self.files,
+            'name': self.name,
+            'arch': self.arch,
+            'os': self.operating_system,
+            'aux_files': self.aux_files
+        }
