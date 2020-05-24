@@ -55,6 +55,10 @@ PE64_REGEX = re.compile(r'^PE32\+ executable')
 MSDOS_REGEX = re.compile(r'^MS-DOS executable')
 
 
+class TargetError(Exception):
+    """An error occurred when creating a new S2E analysis target."""
+
+
 def _determine_arch_and_proj(target_path):
     """
     Check that the given target is supported by S2E.
@@ -123,8 +127,38 @@ def _extract_inf_files(target_path):
     return list(set(file_paths))
 
 
-class TargetError(Exception):
-    """An error occurred when creating a new S2E analysis target."""
+def _translate_target_to_files(path):
+    """
+    :param path: The path to the target
+    :return: The list of files associated with the target. The first
+    item in the list is the main target name.
+    """
+
+    if not os.path.isfile(path):
+        raise TargetError('Target %s does not exist' % path)
+
+    if path.endswith('.inf'):
+        logger.info('Detected Windows INF file, attempting to create a driver project...')
+        driver_files = _extract_inf_files(path)
+
+        first_sys_file = None
+        for f in driver_files:
+            if f.endswith('.sys'):
+                first_sys_file = f
+
+        # TODO: prompt the user to select the right driver
+        if not first_sys_file:
+            raise TargetError('Could not find a *.sys file in the INF '
+                              'file. Make sure that the INF file is valid '
+                              'and belongs to a Windows driver')
+
+        path_to_analyze = first_sys_file
+        aux_files = driver_files
+    else:
+        path_to_analyze = path
+        aux_files = []
+
+    return [path_to_analyze] + aux_files
 
 
 class Target:
@@ -135,42 +169,18 @@ class Target:
 
     @staticmethod
     def from_file(path, project_class=None):
-        # Check that the target is a valid file
-        if not os.path.isfile(path):
-            raise TargetError('Target %s does not exist' % path)
-
-        if path.endswith('.inf'):
-            logger.info('Detected Windows INF file, attempting to create a '
-                        'driver project...')
-            driver_files = _extract_inf_files(path)
-
-            first_sys_file = None
-            for f in driver_files:
-                if f.endswith('.sys'):
-                    first_sys_file = f
-
-            # TODO: prompt the user to select the right driver
-            if not first_sys_file:
-                raise TargetError('Could not find a *.sys file in the INF '
-                                  'file. Make sure that the INF file is valid '
-                                  'and belongs to a Windows driver')
-
-            path_to_analyze = first_sys_file
-            aux_files = driver_files
-        else:
-            path_to_analyze = path
-            aux_files = []
+        files = _translate_target_to_files(path)
+        path_to_analyze = files[0]
+        aux_files = files[1:]
 
         arch, operating_sys, proj_class = _determine_arch_and_proj(path_to_analyze)
         if not arch:
-            raise TargetError('Could not determine architecture for %s' %
-                              path_to_analyze)
+            raise TargetError(f'Could not determine architecture for {path_to_analyze}')
 
         # Overwrite the automatically-derived project class if one is provided
         if project_class:
             if not issubclass(project_class, AbstractProject):
-                raise TargetError('Custom projects must be a subclass of '
-                                  '`AbstractProject`')
+                raise TargetError('Custom projects must be a subclass of AbstractProject')
             proj_class = project_class
 
         return Target(path, arch, operating_sys, proj_class, aux_files)
@@ -223,6 +233,7 @@ class Target:
 
     @property
     def files(self):
+        """This contains paths to all the files that must be downloaded into the guest."""
         return ([self.path] if self.path else []) + self.aux_files
 
     def initialize_project(self):
