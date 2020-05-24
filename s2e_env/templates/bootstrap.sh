@@ -236,7 +236,7 @@ sudo swapoff -a
 target_init
 
 # Download the target file to analyze
-{% for tf in target_files -%}
+{% for tf in target.names -%}
 ${S2EGET} "{{ tf }}"
 {% endfor %}
 
@@ -244,9 +244,9 @@ ${S2EGET} "{{ tf }}"
 # Run the analysis
 
 {% if project_type == 'windows' %}
-  execute "{{ target }}"
+  execute "{{ target.name }}"
 {% else %}
-  execute "./{{ target }}"
+  execute "./{{ target.name }}"
 {% endif %}
 
 {% else %}

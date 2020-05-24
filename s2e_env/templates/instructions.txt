@@ -23,7 +23,7 @@ include:
 s2e.so
 ======
 
-{{ target_path }} is dynamically linked - you can use s2e.so to
+{{ target.path }} is dynamically linked - you can use s2e.so to
 generate symbolic command line arguments.
 
 {% endif %}
@@ -34,7 +34,7 @@ generate symbolic command line arguments.
 Function Models
 ===============
 
-{{ target_path }} is dynamically linked and imports the following
+{{ target.path }} is dynamically linked and imports the following
 functions:
 
 {% for modelled_function in modelled_functions %}    * {{ modelled_function }}

@@ -20,16 +20,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import argparse
 import logging
+import os
+import re
+
+from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.commands.project_creation import CGCProject
-from s2e_env.commands.project_creation import LinuxProject
+from s2e_env.commands.project_creation import CGCProject, LinuxProject, AbstractProject
 from s2e_env.commands.project_creation import WindowsProject, \
         WindowsDLLProject, WindowsDriverProject
 from s2e_env.commands.project_creation import Target
+from s2e_env.infparser.driver import Driver
 from s2e_env.manage import call_command
 
 
@@ -42,6 +45,124 @@ PROJECT_TYPES = {
     'windows_dll': WindowsDLLProject,
     'windows_driver': WindowsDriverProject,
 }
+
+# Paths
+FILE_DIR = os.path.dirname(__file__)
+CGC_MAGIC = os.path.join(FILE_DIR, '..', 'dat', 'cgc.magic')
+
+# Magic regexs
+CGC_REGEX = re.compile(r'^CGC 32-bit')
+ELF32_REGEX = re.compile(r'^ELF 32-bit')
+ELF64_REGEX = re.compile(r'^ELF 64-bit')
+DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
+DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
+WIN32_DRIVER_REGEX = re.compile(r'^PE32 executable \(native\)')
+WIN64_DRIVER_REGEX = re.compile(r'^PE32\+ executable \(native\)')
+PE32_REGEX = re.compile(r'^PE32 executable')
+PE64_REGEX = re.compile(r'^PE32\+ executable')
+MSDOS_REGEX = re.compile(r'^MS-DOS executable')
+
+
+def _determine_arch_and_proj(target_path):
+    """
+    Check that the given target is supported by S2E.
+
+    The target's magic is checked to see if it is a supported file type (e.g.
+    ELF, PE, etc.). The architecture and operating system that the target was
+    compiled for (e.g., i386 Windows, x64 Linux, etc.) is also checked.
+
+    Returns:
+        A tuple containing the target's architecture, operating system and a
+        project class. A tuple containing three ``None``s is returned on
+        failure.
+    """
+    default_magic = Magic()
+    magic_checks = (
+        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386', 'decree'),
+        (default_magic, ELF32_REGEX, LinuxProject, 'i386', 'linux'),
+        (default_magic, ELF64_REGEX, LinuxProject, 'x86_64', 'linux'),
+        (default_magic, DLL32_REGEX, WindowsDLLProject, 'i386', 'windows'),
+        (default_magic, DLL64_REGEX, WindowsDLLProject, 'x86_64', 'windows'),
+        (default_magic, WIN32_DRIVER_REGEX, WindowsDriverProject, 'i386', 'windows'),
+        (default_magic, WIN64_DRIVER_REGEX, WindowsDriverProject, 'x86_64', 'windows'),
+        (default_magic, PE32_REGEX, WindowsProject, 'i386', 'windows'),
+        (default_magic, PE64_REGEX, WindowsProject, 'x86_64', 'windows'),
+        (default_magic, MSDOS_REGEX, WindowsProject, 'i386', 'windows'),
+    )
+
+    # Need to resolve symbolic links, otherwise magic will report the file type
+    # as being a symbolic link
+    target_path = os.path.realpath(target_path)
+
+    # Check the target program against the valid file types
+    for magic_check, regex, proj_class, arch, operating_sys in magic_checks:
+        magic = magic_check.from_file(target_path)
+
+        # If we find a match, create that project
+        if regex.match(magic):
+            return arch, operating_sys, proj_class
+
+    return None, None, None
+
+
+def _extract_inf_files(target_path):
+    """Extract Windows driver files from an INF file."""
+    driver = Driver(target_path)
+    driver.analyze()
+    driver_files = driver.get_files()
+    if not driver_files:
+        raise Exception('Driver has no files')
+
+    base_dir = os.path.dirname(target_path)
+
+    logger.info('  Driver files:')
+    file_paths = []
+    for f in driver_files:
+        full_path = os.path.join(base_dir, f)
+        if not os.path.exists(full_path):
+            if full_path.endswith('.cat'):
+                logger.warning('Catalog file %s is missing', full_path)
+                continue
+            raise Exception('%s does not exist' % full_path)
+
+        logger.info('    %s', full_path)
+        file_paths.append(full_path)
+
+    return list(set(file_paths))
+
+
+def _translate_target_to_files(path):
+    """
+    :param path: The path to the target
+    :return: The list of files associated with the target. The first
+    item in the list is the main target name.
+    """
+
+    if not os.path.isfile(path):
+        raise Exception('Target %s does not exist' % path)
+
+    if path.endswith('.inf'):
+        logger.info('Detected Windows INF file, attempting to create a driver project...')
+        driver_files = _extract_inf_files(path)
+
+        first_sys_file = None
+        for f in driver_files:
+            if f.endswith('.sys'):
+                first_sys_file = f
+
+        # TODO: prompt the user to select the right driver
+        if not first_sys_file:
+            raise Exception('Could not find a *.sys file in the INF '
+                            'file. Make sure that the INF file is valid '
+                            'and belongs to a Windows driver')
+
+        path_to_analyze = first_sys_file
+        aux_files = driver_files
+    else:
+        path_to_analyze = path
+        aux_files = []
+
+    return [path_to_analyze] + aux_files
 
 
 def _parse_sym_args(sym_args_str):
@@ -67,11 +188,29 @@ def _parse_sym_args(sym_args_str):
     return sym_args
 
 
+def target_from_file(path, project_class=None):
+    files = _translate_target_to_files(path)
+    path_to_analyze = files[0]
+    aux_files = files[1:]
+
+    arch, op_sys, proj_class = _determine_arch_and_proj(path_to_analyze)
+    if not arch:
+        raise Exception(f'Could not determine architecture for {path_to_analyze}')
+
+    # Overwrite the automatically-derived project class if one is provided
+    if project_class:
+        if not issubclass(project_class, AbstractProject):
+            raise Exception('Custom projects must be a subclass of AbstractProject')
+        proj_class = project_class
+
+    return Target(path, arch, op_sys, aux_files), proj_class
+
+
 def _handle_with_file(target_path, proj_class, *args, **options):
-    target = Target.from_file(target_path, proj_class)
+    target, proj_class = target_from_file(target_path, proj_class)
     options['target'] = target
 
-    return call_command(target.initialize_project(), *args, **options)
+    return call_command(proj_class(), *args, **options)
 
 
 def _handle_empty_project(proj_class, *args, **options):
@@ -96,10 +235,9 @@ def _handle_empty_project(proj_class, *args, **options):
                                'option and specify one from %s' % project_types)
         proj_class = PROJECT_TYPES[options['type']]
 
-    target = Target.empty(proj_class)
-    options['target'] = target
+    options['target'] = Target.empty()
 
-    return call_command(target.initialize_project(), *args, **options)
+    return call_command(proj_class(), *args, **options)
 
 
 class Command(EnvCommand):

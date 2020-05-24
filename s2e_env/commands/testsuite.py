@@ -37,7 +37,7 @@ import sh
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
-from s2e_env.commands.project_creation import Target
+from s2e_env.commands.new_project import target_from_file
 from s2e_env.commands.run import send_signal_to_children_on_exit
 from s2e_env.utils.images import get_image_templates
 from s2e_env.utils.templates import render_template
@@ -166,8 +166,10 @@ class TestsuiteGenerator(EnvCommand):
 
         for target_name in test_config['targets']:
             target_path = os.path.join(test_root, target_name)
-            target = Target.from_file(target_path)
-            project = target.initialize_project()
+
+            target, proj_class = target_from_file(target_path)
+            project = proj_class()
+
             images = project.get_usable_images(target, img_templates)
 
             for image_name in images:

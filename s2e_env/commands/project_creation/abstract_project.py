@@ -34,6 +34,7 @@ from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.images import ImageDownloader, get_image_templates, \
         get_image_descriptor
 
+from .utils import ConfigEncoder
 
 logger = logging.getLogger('new_project')
 
@@ -297,7 +298,7 @@ class AbstractProject(EnvCommand):
 
         project_desc_path = os.path.join(project_dir, 'project.json')
         with open(project_desc_path, 'w') as f:
-            s = json.dumps(config_copy, sort_keys=True, indent=4)
+            s = json.dumps(config_copy, sort_keys=True, indent=4, cls=ConfigEncoder)
             f.write(s)
 
     # pylint: disable=no-self-use

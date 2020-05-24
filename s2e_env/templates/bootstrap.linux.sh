@@ -12,7 +12,7 @@ function execute_target {
     TARGET="$1"
     SYMB_FILE="$2"
 
-    {% if target_arch=='x86_64' %}
+    {% if target.arch =='x86_64' %}
     S2E_SO="${TARGET_TOOLS64_ROOT}/s2e.so"
     {% else %}
     S2E_SO="${TARGET_TOOLS32_ROOT}/s2e.so"

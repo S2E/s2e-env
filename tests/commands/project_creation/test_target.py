@@ -29,6 +29,7 @@ from s2e_env.commands.project_creation import LinuxProject
 from s2e_env.commands.project_creation import WindowsProject, \
         WindowsDLLProject, WindowsDriverProject
 from s2e_env.commands.project_creation import Target
+from s2e_env.commands.new_project import target_from_file
 
 from . import DATA_DIR
 
@@ -37,78 +38,77 @@ class TargetTestCase(TestCase):
     def test_cgc_target(self):
         """Test CGC executable target."""
         target_path = os.path.join(DATA_DIR, 'CADET_00001')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'i386')
         self.assertEqual(target.operating_system, 'decree')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), CGCProject)
+        self.assertIsInstance(cls(), CGCProject)
         self.assertFalse(target.is_empty())
 
     def test_empty_cgc_target(self):
         """Test empty CGC target."""
-        target = Target.empty(CGCProject)
+        target = Target.empty()
 
         self.assertFalse(target.path)
         self.assertFalse(target.arch)
         self.assertFalse(target.operating_system)
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), CGCProject)
         self.assertTrue(target.is_empty())
 
     def test_linux_i386_target(self):
         """Test Linux i386 executable target."""
         target_path = os.path.join(DATA_DIR, 'cat')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'i386')
         self.assertEqual(target.operating_system, 'linux')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), LinuxProject)
+        self.assertIsInstance(cls(), LinuxProject)
         self.assertFalse(target.is_empty())
 
     def test_windows_x86_64_target(self):
         """Test Windows x86_64 executable target."""
         target_path = os.path.join(DATA_DIR, 'scanuser.exe')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'x86_64')
         self.assertEqual(target.operating_system, 'windows')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), WindowsProject)
+        self.assertIsInstance(cls(), WindowsProject)
         self.assertFalse(target.is_empty())
 
     def test_windows_x86_64_dll_target(self):
         """Test Windows x86_64 DLL target."""
         target_path = os.path.join(DATA_DIR, 'myputs.dll')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'x86_64')
         self.assertEqual(target.operating_system, 'windows')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), WindowsDLLProject)
+        self.assertIsInstance(cls(), WindowsDLLProject)
         self.assertFalse(target.is_empty())
 
     def test_windows_x86_64_sys_target(self):
         """Test Windows x86_64 SYS driver target."""
         target_path = os.path.join(DATA_DIR, 'scanner.sys')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'x86_64')
         self.assertEqual(target.operating_system, 'windows')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(target.initialize_project(), WindowsDriverProject)
+        self.assertIsInstance(cls(), WindowsDriverProject)
         self.assertFalse(target.is_empty())
 
     def test_windows_x86_64_inf_target(self):
         """Test Windows x86_64 INF driver target."""
         target_path = os.path.join(DATA_DIR, 'scanner.inf')
-        target = Target.from_file(target_path)
+        target, cls = target_from_file(target_path)
 
         self.assertEqual(target.path, target_path)
         self.assertEqual(target.arch, 'x86_64')
@@ -116,5 +116,5 @@ class TargetTestCase(TestCase):
         self.assertCountEqual(target.aux_files,
                               [os.path.join(DATA_DIR, 'scanner.sys'),
                                os.path.join(DATA_DIR, 'scanuser.exe')])
-        self.assertIsInstance(target.initialize_project(), WindowsDriverProject)
+        self.assertIsInstance(cls(), WindowsDriverProject)
         self.assertFalse(target.is_empty())

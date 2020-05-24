@@ -25,8 +25,8 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from s2e_env.commands.project_creation import LinuxProject
-from s2e_env.commands.project_creation import Target
+from s2e_env.commands.project_creation import LinuxProject, Target
+from s2e_env.commands.new_project import target_from_file
 
 from . import DATA_DIR, monkey_patch_project
 
@@ -60,9 +60,9 @@ CAT_X86_PATH = os.path.join(DATA_DIR, CAT_X86)
 class LinuxProjectTestCase(TestCase):
     def test_empty_x86_project_config(self):
         """Test empty Linux x86 project creation."""
-        target = Target.empty(LinuxProject)
-        project = monkey_patch_project(target.initialize_project(),
-                                       LINUX_IMAGE_DESC)
+        target = Target.empty()
+        project = monkey_patch_project(LinuxProject(), LINUX_IMAGE_DESC)
+
         options = {
             'image': 'debian-9.2.1-i386',
             'name': 'test',
@@ -74,9 +74,9 @@ class LinuxProjectTestCase(TestCase):
         self.assertEqual(config['project_type'], 'linux')
 
         # Assert that the project has no target
-        self.assertIsNone(config['target_path'])
-        self.assertIsNone(config['target_arch'])
-        self.assertFalse(config['target_files'])
+        self.assertIsNone(config['target'].path)
+        self.assertIsNone(config['target'].arch)
+        self.assertFalse(config['target'].files)
 
         # Should be empty when no target is specified
         self.assertFalse(config['processes'])
@@ -98,9 +98,8 @@ class LinuxProjectTestCase(TestCase):
         Test Linux project creation given a x86 binary (``cat``) and nothing
         else. No image, project name, symbolic arguments, etc. are provided.
         """
-        target = Target.from_file(CAT_X86_PATH)
-        project = monkey_patch_project(target.initialize_project(),
-                                       LINUX_IMAGE_DESC)
+        target, cls = target_from_file(CAT_X86_PATH)
+        project = monkey_patch_project(cls(), LINUX_IMAGE_DESC)
 
         config = project._configure(target)
 
@@ -122,9 +121,9 @@ class LinuxProjectTestCase(TestCase):
         Test Linux project creation given a x86 binary (``cat``) and a symbolic
         file argument.
         """
-        target = Target.from_file(CAT_X86_PATH)
-        project = monkey_patch_project(target.initialize_project(),
-                                       LINUX_IMAGE_DESC)
+        target, cls = target_from_file(CAT_X86_PATH)
+        project = monkey_patch_project(cls(), LINUX_IMAGE_DESC)
+
         options = {
             'target_args': ['-T', '@@'],
         }
@@ -150,9 +149,9 @@ class LinuxProjectTestCase(TestCase):
         self.assertEqual(config['project_type'], 'linux')
 
         # Assert that the target is the one given (cat)
-        self.assertEqual(config['target_path'], CAT_X86_PATH)
-        self.assertEqual(config['target_arch'], 'i386')
-        self.assertListEqual(config['target_files'], [CAT_X86_PATH])
+        self.assertEqual(config['target'].path, CAT_X86_PATH)
+        self.assertEqual(config['target'].arch, 'i386')
+        self.assertListEqual(config['target'].files, [CAT_X86_PATH])
         self.assertListEqual(config['processes'], [CAT_X86])
         self.assertListEqual(config['modules'], [(CAT_X86, False)])
 

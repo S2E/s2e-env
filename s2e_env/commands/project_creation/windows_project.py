@@ -94,7 +94,7 @@ class WindowsDriverProject(WindowsProject):
         # valid module.
         #
         # Instead, find all the *.sys files and add them to the module list.
-        sys_files = [os.path.basename(tf) for tf in config['target_files']
+        sys_files = [os.path.basename(tf) for tf in config['target'].files
                      if tf.endswith('.sys')]
         config['modules'] = [(sys_file, True) for sys_file in sys_files]
 

@@ -123,12 +123,8 @@ class BaseProject(AbstractProject):
             'creation_time': str(datetime.datetime.now()),
             'project_dir': project_dir,
             'image': img_desc,
-            'target_path': target.path,
-            'target_arch': target.arch,
+            'target': target,
             'target_args': options.get('target_args', []),
-
-            # This contains paths to all the files that must be downloaded into the guest
-            'target_files': target.files,
 
             # List of module names that go into ModuleExecutionDetector
             'modules': [(target.name, False)] if target.name else [],
@@ -191,6 +187,7 @@ class BaseProject(AbstractProject):
 
     def _create(self, config, force=False):
         project_dir = config['project_dir']
+        target = config['target']
 
         # Check if the project directory already exists
         _check_project_dir(project_dir, force)
@@ -202,8 +199,8 @@ class BaseProject(AbstractProject):
             os.mkdir(config['seeds_dir'])
 
         # Create symlinks to the target files (if they exist)
-        if config['target_files']:
-            self._symlink_project_files(project_dir, *config['target_files'])
+        if target.files:
+            self._symlink_project_files(project_dir, *target.files)
 
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools(project_dir, config['image'])
@@ -227,7 +224,7 @@ class BaseProject(AbstractProject):
             call_command(RecipeCommand(), [], project=project_dir)
 
         # Display relevant messages to the user
-        display_marker_warning = config['target_path'] and \
+        display_marker_warning = config['target'].path and \
                                  config['warn_input_file'] and \
                                  not config['single_path'] and \
                                  not (config['use_symb_input_file'] or config['sym_args'])
@@ -241,7 +238,7 @@ class BaseProject(AbstractProject):
                            'Example: %s @@\n\n'
                            'You can also make arguments symbolic using the '
                            '``S2E_SYM_ARGS`` environment variable in the '
-                           'bootstrap file', config['target_path'])
+                           'bootstrap file', config['target'].path)
 
         if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
             logger.warning('Seed files have been enabled, however you did not '
@@ -304,10 +301,9 @@ class BaseProject(AbstractProject):
 
         self._copy_lua_library(project_dir)
 
-        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': os.path.basename(target_path) if target_path else None,
+            'target': config['target'],
             'target_lua_template': self._lua_template,
             'project_dir': project_dir,
             'use_seeds': config['use_seeds'],
@@ -319,7 +315,6 @@ class BaseProject(AbstractProject):
             'has_guestfs': config['has_guestfs'],
             'guestfs_paths': config['guestfs_paths'],
             'recipes_dir': config['recipes_dir'],
-            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
@@ -347,14 +342,12 @@ class BaseProject(AbstractProject):
         parsed_args = [f'"{arg}"' if ' ' in arg else arg
                        for arg in parsed_args]
 
-        target_path = config['target_path']
         context = {
             'creation_time': config['creation_time'],
-            'target': os.path.basename(target_path) if target_path else None,
+            'target': config['target'],
             'target_args': parsed_args,
             'sym_args': config['sym_args'],
             'target_bootstrap_template': self._bootstrap_template,
-            'target_arch': config['target_arch'],
             'image_arch': config['image']['os']['arch'],
             'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
@@ -363,7 +356,6 @@ class BaseProject(AbstractProject):
             'single_path': config['single_path'],
             'dynamically_linked': config['dynamically_linked'],
             'project_type': config['project_type'],
-            'target_files': [os.path.basename(tf) for tf in config['target_files']],
             'modules': config['modules'],
             'processes': config['processes'],
         }
