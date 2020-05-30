@@ -83,7 +83,7 @@ class LinuxProjectTestCase(TestCase):
         self.assertFalse(config['modules'])
 
         # An empty project with no target will have no arguments
-        self.assertFalse(config['target_args'])
+        self.assertFalse(config['target'].args)
         self.assertFalse(config['sym_args'])
         self.assertFalse(config['use_symb_input_file'])
 
@@ -106,7 +106,7 @@ class LinuxProjectTestCase(TestCase):
         self._assert_cat_x86_common(config)
 
         # No target arguments specified
-        self.assertFalse(config['target_args'])
+        self.assertFalse(config['target'].args)
         self.assertFalse(config['sym_args'])
         self.assertFalse(config['use_symb_input_file'])
 
@@ -122,18 +122,16 @@ class LinuxProjectTestCase(TestCase):
         file argument.
         """
         target, cls = target_from_file(CAT_X86_PATH)
+        target.args = ['-T', '@@']
         project = monkey_patch_project(cls(), LINUX_IMAGE_DESC)
 
-        options = {
-            'target_args': ['-T', '@@'],
-        }
-
-        config = project._configure(target, **options)
+        config = project._configure(target)
 
         self._assert_cat_x86_common(config)
 
         # Verify symbolic arguments
-        self.assertListEqual(config['target_args'], ['-T', '@@'])
+        self.assertListEqual(config['target'].raw_args, ['-T', '@@'])
+        self.assertListEqual(config['target'].args, ['-T', '"${SYMB_FILE}"'])
         self.assertFalse(config['sym_args'])
         self.assertTrue(config['use_symb_input_file'])
 

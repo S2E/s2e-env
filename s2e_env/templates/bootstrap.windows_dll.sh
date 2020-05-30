@@ -14,7 +14,7 @@ function execute_target {
 
     # The DLL entry point (i.e. the argument directly following the comma) and
     # its arguments can be modified here
-    rundll32.exe ${TARGET},{{ target_args | join(' ') }}
+    rundll32.exe ${TARGET},{{ target.args | join(' ') }}
 }
 
 {% include 'bootstrap.windows_common.sh' %}

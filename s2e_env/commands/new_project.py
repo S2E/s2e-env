@@ -188,7 +188,7 @@ def _parse_sym_args(sym_args_str):
     return sym_args
 
 
-def target_from_file(path, project_class=None):
+def target_from_file(path, args=None, project_class=None):
     files = _translate_target_to_files(path)
     path_to_analyze = files[0]
     aux_files = files[1:]
@@ -203,11 +203,11 @@ def target_from_file(path, project_class=None):
             raise Exception('Custom projects must be a subclass of AbstractProject')
         proj_class = project_class
 
-    return Target(path, arch, op_sys, aux_files), proj_class
+    return Target(path, args, arch, op_sys, aux_files), proj_class
 
 
-def _handle_with_file(target_path, proj_class, *args, **options):
-    target, proj_class = target_from_file(target_path, proj_class)
+def _handle_with_file(target_path, target_args, proj_class, *args, **options):
+    target, proj_class = target_from_file(target_path, target_args, proj_class)
     options['target'] = target
 
     return call_command(proj_class(), *args, **options)
@@ -325,6 +325,6 @@ class Command(EnvCommand):
         # command-line arguments and options
         proj_class = options.pop('project_class', None)
         if options['target']:
-            _handle_with_file(options.pop('target'), proj_class, *args, **options)
+            _handle_with_file(options.pop('target'), options.pop('target_args'), proj_class, *args, **options)
         else:
             _handle_empty_project(proj_class, *args, **options)

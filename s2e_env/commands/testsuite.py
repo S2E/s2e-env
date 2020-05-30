@@ -168,6 +168,7 @@ class TestsuiteGenerator(EnvCommand):
             target_path = os.path.join(test_root, target_name)
 
             target, proj_class = target_from_file(target_path)
+            target.args = test_config.get('target_arguments', [])
             project = proj_class()
 
             images = project.get_usable_images(target, img_templates)
@@ -186,7 +187,6 @@ class TestsuiteGenerator(EnvCommand):
                     'image': image_name,
                     'name': name,
                     'target': target,
-                    'target_args': test_config.get('target_arguments', []),
                     'force': True,
                     'project_path': self.projects_path(name),
                     'testsuite_root': ts_dir

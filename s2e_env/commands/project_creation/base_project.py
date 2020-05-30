@@ -124,7 +124,6 @@ class BaseProject(AbstractProject):
             'project_dir': project_dir,
             'image': img_desc,
             'target': target,
-            'target_args': options.get('target_args', []),
 
             # List of module names that go into ModuleExecutionDetector
             'modules': [(target.name, False)] if target.name else [],
@@ -137,7 +136,7 @@ class BaseProject(AbstractProject):
             'sym_args': options.get('sym_args', []),
 
             # See _create_bootstrap for an explanation of the @@ marker
-            'use_symb_input_file': '@@' in options.get('target_args', []),
+            'use_symb_input_file': '@@' in target.raw_args,
 
             # The use of seeds is specified on the command line
             'use_seeds': options.get('use_seeds', False),
@@ -329,23 +328,9 @@ class BaseProject(AbstractProject):
         """
         logger.info('Creating S2E bootstrap script')
 
-        # The target arguments are specified using a format similar to the
-        # American Fuzzy Lop fuzzer. Options are specified as normal, however
-        # for programs that take input from a file, '@@' is used to mark the
-        # location in the target's command line where the input file should be
-        # placed. This will automatically be substituted with a symbolic file
-        # in the S2E bootstrap script.
-        parsed_args = ['${SYMB_FILE}' if arg == '@@' else arg
-                       for arg in config['target_args']]
-
-        # Quote arguments that have spaces in them
-        parsed_args = [f'"{arg}"' if ' ' in arg else arg
-                       for arg in parsed_args]
-
         context = {
             'creation_time': config['creation_time'],
             'target': config['target'],
-            'target_args': parsed_args,
             'sym_args': config['sym_args'],
             'target_bootstrap_template': self._bootstrap_template,
             'image_arch': config['image']['os']['arch'],

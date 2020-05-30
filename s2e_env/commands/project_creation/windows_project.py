@@ -69,9 +69,10 @@ class WindowsDLLProject(WindowsProject):
                            'This flag will be ignored')
             config['use_seeds'] = False
 
-        if not config.get('target_args', []):
+        target = config.get('target')
+        if not target.args:
             logger.warning('No DLL entry point provided - defaulting to ``DllEntryPoint``')
-            config['target_args'] = ['DllEntryPoint']
+            target.args = ['DllEntryPoint']
 
     def _analyze_target(self, target, config):
         with PEAnalysis(target.path) as pe:

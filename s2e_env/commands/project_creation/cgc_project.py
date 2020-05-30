@@ -42,7 +42,7 @@ class CGCProject(BaseProject):
     def _finalize_config(self, config):
         config['project_type'] = 'cgc'
 
-        args = config.get('target_args', [])
+        args = config.get('target').args
         if args:
             raise CommandError('Command line arguments for Decree binaries '
                                'not supported')

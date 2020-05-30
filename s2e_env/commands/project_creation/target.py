@@ -37,13 +37,14 @@ class Target:
     @staticmethod
     def empty():
         """Create an empty target."""
-        return Target(None, None, None)
+        return Target(None, None, None, None)
 
     # pylint: disable=too-many-arguments
-    def __init__(self, path, arch, _os, aux_files=None):
+    def __init__(self, path, args, arch, _os, aux_files=None):
         self._path = path
         self._arch = arch
         self._os = _os
+        self._args = args if args else []
 
         if not aux_files:
             aux_files = []
@@ -54,6 +55,34 @@ class Target:
     def path(self):
         """The path of the program under analysis."""
         return self._path
+
+    @property
+    def raw_args(self):
+        """The program arguments."""
+        return self._args
+
+    @property
+    def args(self):
+        """The processed program arguments."""
+
+        # The target arguments are specified using a format similar to the
+        # American Fuzzy Lop fuzzer. Options are specified as normal, however
+        # for programs that take input from a file, '@@' is used to mark the
+        # location in the target's command line where the input file should be
+        # placed. This will automatically be substituted with a symbolic file
+        # in the S2E bootstrap script.
+        parsed_args = ['"${SYMB_FILE}"' if arg == '@@' else arg
+                       for arg in self._args]
+
+        # Quote arguments that have spaces in them
+        parsed_args = [f'"{arg}"' if ' ' in arg else arg
+                       for arg in parsed_args]
+
+        return parsed_args
+
+    @args.setter
+    def args(self, value):
+        self._args = value
 
     @property
     def name(self):

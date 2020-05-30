@@ -119,7 +119,7 @@ class WindowsProjectTestCase(TestCase):
         self.assertFalse(config['modules'])
 
         # An empty project with no target will have no arguments
-        self.assertFalse(config['target_args'])
+        self.assertFalse(config['target'].args)
         self.assertFalse(config['sym_args'])
         self.assertFalse(config['use_symb_input_file'])
 
@@ -163,13 +163,11 @@ class WindowsProjectTestCase(TestCase):
     def test_myputs_dll_7sp1ent_x64_project_config(self):
         """Test x64 DLL project creation."""
         target, cls = target_from_file(MYPUTS_DLL_PATH)
+        target.args = ['MyPuts']
         project = monkey_patch_project(cls(),
                                        WINDOWS_7SP1_X64_IMAGE_DESC)
-        options = {
-            'target_args': ['MyPuts'],
-        }
 
-        config = project._configure(target, **options)
+        config = project._configure(target)
 
         # Assert that we have actually created a Windows project
         self.assertEqual(config['project_type'], 'windows')
@@ -184,7 +182,7 @@ class WindowsProjectTestCase(TestCase):
         self.assertDictEqual(config['image'], WINDOWS_7SP1_X64_IMAGE_DESC)
 
         # Assert that the DLL entry point is the one that we provided
-        self.assertEqual(config['target_args'], ['MyPuts'])
+        self.assertEqual(config['target'].args, ['MyPuts'])
 
         # Verify static analysis results
         self.assertCountEqual(config['dll_exports'], [b'MyPuts'])

@@ -7,7 +7,7 @@ DLL Analysis
 ============
 
 The chosen target is a Windows DLL. The DLL will be loaded with the entry point
-set to {{ target_args[0] }}.
+set to {{ target.args[0] }}.
 
 If required, you can change the entry point in bootstrap.sh. For example, some
 of the exported symbols provided by this DLL (out of {{ dll_exports | length}})
