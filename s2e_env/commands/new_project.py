@@ -282,7 +282,7 @@ class Command(EnvCommand):
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '
-                                 'symbolic files. The user must create these '
+                                 'symbolic files. Users must create these '
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
@@ -290,7 +290,7 @@ class Command(EnvCommand):
                             help='Enables PoV generation')
 
         parser.add_argument('--single-path', action='store_true', default=False,
-                            help='Enables PoV generation')
+                            help='Enables single-path mode, no symbolic execution possible')
 
         parser.add_argument('-a', '--sym-args', type=_parse_sym_args, default='',
                             help='A space-separated list of target argument '
