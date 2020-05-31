@@ -330,3 +330,28 @@ class AbstractProject(EnvCommand):
     # pylint: disable=no-self-use
     def _symlink_guestfs(self, project_dir, guestfs_paths):
         return symlink_guestfs(project_dir, guestfs_paths)
+
+    # pylint: disable=no-self-use
+    def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
+        """
+        This function converts a target path that is located in a guestfs folder to an absolute
+        guest path.
+
+        :param target_path: The target path to convert
+        :param guestfs_paths: The list if guestfs paths to inspect.
+        :return:
+        """
+        if not target_path:
+            return None
+
+        target_path = os.path.realpath(target_path)
+
+        for guestfs_path in guestfs_paths:
+            # target and guestfs may be symlinks, need to compare actual path
+            guestfs_path = os.path.realpath(guestfs_path)
+            paths = [target_path, guestfs_path]
+            common = os.path.commonpath(paths)
+            if guestfs_path in common:
+                return f'/{os.path.relpath(target_path, guestfs_path)}'
+
+        return None

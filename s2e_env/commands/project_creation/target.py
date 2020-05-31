@@ -45,6 +45,7 @@ class Target:
         self._arch = arch
         self._os = _os
         self._args = args if args else []
+        self._translated_path = None
 
         if not aux_files:
             aux_files = []
@@ -55,6 +56,20 @@ class Target:
     def path(self):
         """The path of the program under analysis."""
         return self._path
+
+    @property
+    def translated_path(self):
+        r"""
+        If the target executable is already present in the base image, this returns
+        the path inside the image. E.g., if a user specify the following binary:
+        ./images/windows-xpsp3pro-i386/office2010/guestfs/program files/microsoft office/office14/winword.exe
+        the translated path will be c:\program files\microsoft office\office14\winword.exe.
+        """
+        return self._translated_path
+
+    @translated_path.setter
+    def translated_path(self, value):
+        self._translated_path = value
 
     @property
     def raw_args(self):
@@ -115,7 +130,7 @@ class Target:
     @property
     def files(self):
         """This contains paths to all the files that must be downloaded into the guest."""
-        return ([self.path] if self.path else []) + self.aux_files
+        return ([self.path] if self.path and not self.translated_path else []) + self.aux_files
 
     def is_empty(self):
         """Returns ``True`` if the target is an empty one."""

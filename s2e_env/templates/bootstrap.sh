@@ -243,10 +243,14 @@ ${S2EGET} "{{ tf }}"
 {% if target %}
 # Run the analysis
 
-{% if project_type == 'windows' %}
-  execute "{{ target.name }}"
+{% if target.translated_path %}
+  execute '{{ target.translated_path }}'
 {% else %}
-  execute "./{{ target.name }}"
+  {% if project_type == 'windows' %}
+    execute '{{ target.name }}'
+  {% else %}
+    execute './{{ target.name }}'
+  {% endif %}
 {% endif %}
 
 {% else %}

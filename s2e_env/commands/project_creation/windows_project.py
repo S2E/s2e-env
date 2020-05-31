@@ -38,6 +38,13 @@ class WindowsProject(BaseProject):
         super(WindowsProject, self).__init__(bootstrap_template,
                                              's2e-config.windows.lua')
 
+    def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
+        translated_path = super(WindowsProject, self)._translate_target_path_to_guestfs(target_path, guestfs_paths)
+        if translated_path:
+            translated_path = translated_path.replace('/', '\\')
+            return f'c:{translated_path}'
+        return None
+
     def _is_valid_image(self, target, os_desc):
         return is_valid_arch(target.arch, os_desc) and 'pe' in os_desc['binary_formats']
 

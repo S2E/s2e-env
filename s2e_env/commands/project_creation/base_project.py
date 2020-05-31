@@ -46,7 +46,6 @@ def _check_project_dir(project_dir, force=False):
     specified.
     """
 
-    logger.warning(project_dir)
     if os.path.exists(project_dir) and not os.path.isdir(project_dir):
         raise CommandError(f'The path {project_dir} already exists and is a file.')
 
@@ -104,6 +103,8 @@ class BaseProject(AbstractProject):
         guestfs_paths = self._select_guestfs(img_desc)
         if not guestfs_paths:
             logger.warning('No guestfs available. The VMI plugin may not run optimally')
+
+        target.translated_path = self._translate_target_path_to_guestfs(target.path, guestfs_paths)
 
         # Generate the name of the project directory. The default project name
         # is the target program name without any file extension
