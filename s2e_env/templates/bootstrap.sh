@@ -113,7 +113,14 @@ function prepare_inputs {
     else
         ${S2EGET} ${SEED_FILE} >/dev/null
         if [ ! -f ${SEED_FILE} ]; then
-           ${S2ECMD} kill 1 "Could not fetch seed file ${SEED_FILE} from the host"
+            ${S2ECMD} kill 1 "Could not fetch seed file ${SEED_FILE} from the host"
+        fi
+
+        EXTENSION="${SEED_FILE##*.}"
+        if [ "x${EXTENSION}" != "x" ]; then
+            # Preserving the seed extension may be important for some programs
+            # (e.g., Office, Acrobat...).
+            SYMB_FILE=${SYMB_FILE}.${EXTENSION}
         fi
 
         {% if project_type == 'windows' %}
