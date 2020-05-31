@@ -153,6 +153,9 @@ class ModuleMap:
 
     def remove_pid(self, pid):
         self._pid_to_sections = self._pid_to_sections.delete(pid)
+        for k, _ in self._section_to_module.items():
+            if k[0] == pid:
+                self._section_to_module = self._section_to_module.delete(k)
 
     def get(self, pid, pc):
         pid = self._translate_pid(pid, pc)
