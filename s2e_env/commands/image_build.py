@@ -27,6 +27,7 @@ import grp
 import logging
 import os
 import pwd
+import re
 import socket
 import time
 
@@ -87,26 +88,21 @@ def _raise_group_error(group_name):
 
 def _check_groups_docker():
     """
-    Check that the current user belongs to the required groups to both run S2E
-    and build S2E images.
+    Check that the current user belongs to the required groups to both run S2E and build S2E images.
     """
     if not _user_belongs_to('docker'):
         _raise_group_error('docker')
 
 
 def _check_groups_kvm():
-    """
-    Being member of KVM is required only when using KVM to build images
-    """
+    """Being member of KVM is required only when using KVM to build images"""
     if not _user_belongs_to('libvirtd') and not _user_belongs_to('kvm'):
         _raise_group_error('kvm')
 
 
 def _check_virtualbox():
     """
-    Check if VirtualBox is running.
-
-    VirtualBox conflicts with S2E's requirement for KVM, so VirtualBox must
+    Check if VirtualBox is running. VirtualBox conflicts with S2E's requirement for KVM, so VirtualBox must
     *not* be running together with S2E.
     """
     # Adapted from https://github.com/giampaolo/psutil/issues/132#issuecomment-44017679
@@ -124,9 +120,7 @@ def _check_virtualbox():
 
 def _check_vmware():
     """
-    Check if VMWare is running.
-
-    VMware conflicts with S2E's requirement for KVM, so VMWare must
+    Check if VMWare is running. VMware conflicts with S2E's requirement for KVM, so VMWare must
     *not* be running together with S2E.
     """
     for proc in psutil.process_iter():
@@ -142,9 +136,7 @@ def _check_vmware():
 
 def _check_kvm():
     """
-    Check that the KVM interface exists.
-
-    This is required by libs2e to communicate with QEMU.
+    Check that the KVM interface exists. This is required by libs2e to communicate with QEMU.
     """
     if not os.path.exists(os.path.join(os.sep, 'dev', 'kvm')):
         raise CommandError('KVM interface not found - check that /dev/kvm '
@@ -154,8 +146,7 @@ def _check_kvm():
 
 def _check_vmlinux():
     """
-    Check that /boot/vmlinux* files are readable. This is important for
-    guestfish.
+    Check that /boot/vmlinux* files are readable. This is important for guestfish.
     """
     try:
         for f in glob.glob(os.path.join(os.sep, 'boot', 'vmlinu*')):
@@ -166,6 +157,37 @@ def _check_vmlinux():
                            'This is required for guestfish. Please run the '
                            'following command:\n\n'
                            'sudo chmod ugo+r /boot/vmlinu*')
+
+
+# pylint: disable=no-member
+def _check_cow(image_dir):
+    """
+    Check that the file system that stores guest images supports copy-on-write.
+    """
+    try:
+        src = f'{image_dir}/.cowcheck'
+        dst = f'{image_dir}/.cowcheck1'
+        sh.touch(src)
+        sh.cp('--reflink=always', src, dst)
+    except Exception:
+        warn_msg = f"""
+        Copy-on-write check failed.
+        The file system where images are stored ({image_dir}) does not support copy-on-write.
+        It is recommended to use an XFS or BTRFS file system with copy-on-write enabled as a storage
+        location for S2E images, as this can save up to 60% of disk space. The building process checkpoints
+        intermediate build steps with cp --reflink=auto to make use of copy-on-write if it is available.
+
+        How to upgrade:
+            1. Create an XFS or BTRFS partition large enough to store the images that you need (~300 GB for all images).
+               Make sure you use reflink=1 to enable copy-on-write when running mkfs.xfs.
+            2. Create a directory for guest images on that partition (e.g., /mnt/disk1/images)
+            3. Delete the "images" folder in your S2E environment
+            4. Create in your S2E environment a symbolic link called "images" to the directory you created in step 2
+        """
+        logger.warning(re.sub(r'^ {8}', '', warn_msg, flags=re.MULTILINE))
+    finally:
+        sh.rm('-f', src)
+        sh.rm('-f', dst)
 
 
 def _raise_invalid_image(image_name):
@@ -233,7 +255,6 @@ def _translate_image_name(images, image_groups, image_names):
         if image_name in images:
             ret.add(image_name)
         elif image_name in image_groups:
-            print(image_groups[image_name])
             ret = ret.union(image_groups[image_name])
         else:
             raise CommandError(f'{image_name} does not exist')
@@ -465,6 +486,8 @@ class Command(EnvCommand):
 
         _check_groups_docker()
         _check_vmlinux()
+
+        _check_cow(self.image_path())
 
         if self._use_kvm:
             _check_virtualbox()
