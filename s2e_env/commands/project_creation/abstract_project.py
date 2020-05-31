@@ -344,14 +344,24 @@ class AbstractProject(EnvCommand):
         if not target_path:
             return None
 
-        target_path = os.path.realpath(target_path)
+        real_target_path = os.path.realpath(target_path)
 
         for guestfs_path in guestfs_paths:
             # target and guestfs may be symlinks, need to compare actual path
-            guestfs_path = os.path.realpath(guestfs_path)
-            paths = [target_path, guestfs_path]
+            real_guestfs_path = os.path.realpath(guestfs_path)
+            paths = [real_target_path, real_guestfs_path]
             common = os.path.commonpath(paths)
-            if guestfs_path in common:
-                return f'/{os.path.relpath(target_path, guestfs_path)}'
+            if real_guestfs_path in common:
+                return f'/{os.path.relpath(real_target_path, real_guestfs_path)}'
+
+        # Check if that target_path is in the correct guestfs
+        if real_target_path.startswith(os.path.realpath(self.image_path())):
+            logger.error('%s seems to be located in a guestfs directory.', target_path)
+            logger.error('However, the selected image uses the following directories:')
+            for path in guestfs_paths:
+                logger.error('  * %s', path)
+
+            raise CommandError('Please check that you selected the proper guest image (-i option) '
+                               'and/or the binary in the right guestfs directory.')
 
         return None
