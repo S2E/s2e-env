@@ -1,0 +1,75 @@
+"""
+Copyright (c) 2020 Vitaly Chipounov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+
+import os
+from unittest import TestCase
+from s2e_env.execution_trace.modules import Module, ModuleMap, SectionDescriptor
+
+
+sec11 = SectionDescriptor(None)
+sec11.name = '.text'
+sec11.runtime_load_base = 0x123000
+sec11.native_load_base = 0xbadf000
+sec11.size = 0x1234
+
+mod1 = Module()
+mod1.name = 'test1.exe'
+mod1.path = r'c:\windows\test1.exe'
+mod1.pid = 123
+mod1.sections = [sec11]
+
+
+class ModulesTestCase(TestCase):
+    def test_module_add_remove(self):
+        map = ModuleMap()
+
+        map.add(mod1)
+        actual_mod = map.get(123, 0x123000 + 1234)
+        self.assertEqual(actual_mod, mod1)
+
+        map1 = map.clone()
+        actual_mod = map1.get(123, 0x123000 + 1234)
+        self.assertEqual(actual_mod, mod1)
+
+        map.remove(mod1)
+        self.assertRaises(Exception, map.get, 123, 0x123000 + 1234)
+        self.assertEqual(len(map._section_to_module), 0)
+
+        actual_mod = map1.get(123, 0x123000 + 1234)
+        self.assertEqual(actual_mod, mod1)
+
+    def test_get_unknown_pid(self):
+        map = ModuleMap()
+        self.assertRaises(Exception, map.get, 123, 123)
+
+    def test_remove_pid(self):
+        map = ModuleMap()
+        map.add(mod1)
+        map1 = map.clone()
+        map.remove_pid(123)
+
+        self.assertRaises(Exception, map.get, 123, 0x123000 + 1234)
+        self.assertEqual(len(map._section_to_module), 0)
+
+        actual_mod = map1.get(123, 0x123000 + 1234)
+        self.assertEqual(actual_mod, mod1)
