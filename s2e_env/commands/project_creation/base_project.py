@@ -123,6 +123,7 @@ class BaseProject(AbstractProject):
         config = {
             'creation_time': str(datetime.datetime.now()),
             'project_dir': project_dir,
+            'project_name': project_name,
             'image': img_desc,
             'target': target,
 
@@ -306,6 +307,7 @@ class BaseProject(AbstractProject):
             'target': config['target'],
             'target_lua_template': self._lua_template,
             'project_dir': project_dir,
+            'project_name': config['project_name'],
             'use_seeds': config['use_seeds'],
             'use_cupa': config['use_cupa'],
             'use_test_case_generator': config['use_test_case_generator'],
@@ -330,6 +332,7 @@ class BaseProject(AbstractProject):
         logger.info('Creating S2E bootstrap script')
 
         context = {
+            'project_name': config['project_name'],
             'creation_time': config['creation_time'],
             'target': config['target'],
             'sym_args': config['sym_args'],

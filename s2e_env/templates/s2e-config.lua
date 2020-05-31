@@ -84,7 +84,7 @@ add_plugin("MemUtils")
 -- server that listens on an address:port configured by the S2E_QMP_SERVER
 -- environment variable.
 --
--- The "s2e run {{ target }}" command sets up such a server in order to display
+-- The "s2e run {{ project_name }}" command sets up such a server in order to display
 -- stats on the dashboard.
 --
 -- You may also want to use this plugin to integrate S2E into a larger
