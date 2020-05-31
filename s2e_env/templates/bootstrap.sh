@@ -117,7 +117,7 @@ function prepare_inputs {
         fi
 
         {% if project_type == 'windows' %}
-        run_cmd "copy ${SEED_FILE} ${SYMB_FILE}"
+        run_cmd "copy ${SEED_FILE} ${SYMB_FILE}" > /dev/null
         {% else %}
         cp ${SEED_FILE} ${SYMB_FILE}
         {% endif %}
