@@ -197,12 +197,18 @@ pluginsConfig.ProcessExecutionDetector = {
 -------------------------------------------------------------------------------
 -- Keeps for each state/process an updated map of all the loaded modules.
 add_plugin("ModuleMap")
+pluginsConfig.ModuleMap = {
+  logLevel = "info"
+}
 
 
 -------------------------------------------------------------------------------
 -- Keeps for each process in ProcessExecutionDetector an updated map
 -- of memory regions.
 add_plugin("MemoryMap")
+pluginsConfig.MemoryMap = {
+  logLevel = "info"
+}
 
 {% if use_cupa == true %}
 
