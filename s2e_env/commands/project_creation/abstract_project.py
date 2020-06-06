@@ -317,9 +317,15 @@ class AbstractProject(EnvCommand):
         Create symlinks to the files that compose the project.
         """
         for f in files:
-            logger.info('Creating a symlink to %s', f)
             target_file = os.path.basename(f)
-            os.symlink(os.path.abspath(f), os.path.join(project_dir, target_file))
+
+            source_path = os.path.abspath(f)
+            symlink_path = os.path.join(project_dir, target_file)
+            if os.path.realpath(source_path) != os.path.realpath(symlink_path):
+                logger.info('Creating a symlink to %s', f)
+                os.symlink(source_path, symlink_path)
+            else:
+                logger.info('Not creating a symlink to %s, source and destination files are the same', f)
 
     def _symlink_guest_tools(self, project_dir, img_desc):
         return symlink_guest_tools(self.install_path(), project_dir, img_desc)

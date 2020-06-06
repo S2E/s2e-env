@@ -137,9 +137,6 @@ class BaseProject(AbstractProject):
             # Target arguments to be made symbolic
             'sym_args': options.get('sym_args', []),
 
-            # See _create_bootstrap for an explanation of the @@ marker
-            'use_symb_input_file': '@@' in target.raw_args,
-
             # The use of seeds is specified on the command line
             'use_seeds': options.get('use_seeds', False),
             'seeds_dir': os.path.join(project_dir, 'seeds'),
@@ -203,6 +200,12 @@ class BaseProject(AbstractProject):
         if target.files:
             self._symlink_project_files(project_dir, *target.files)
 
+        target.args.generate_symbolic_files(project_dir, config['use_seeds'])
+
+        # Create symlinks to symbolic files
+        if target.args.symbolic_files:
+            self._symlink_project_files(project_dir, *target.args.symbolic_files)
+
         # Create a symlink to the guest tools directory
         self._symlink_guest_tools(project_dir, config['image'])
 
@@ -228,12 +231,11 @@ class BaseProject(AbstractProject):
         display_marker_warning = config['target'].path and \
                                  config['warn_input_file'] and \
                                  not config['single_path'] and \
-                                 not (config['use_symb_input_file'] or config['sym_args'])
+                                 not (config['target'].args.symbolic_files or config['sym_args'])
 
         if display_marker_warning:
-            logger.warning('You did not specify the input file marker @@. '
-                           'This marker is automatically substituted by a '
-                           'file with symbolic content. You will have to '
+            logger.warning('You did not specify any symbolic input. '
+                           'Symbolic execution requires symbolic inputs. You will have to '
                            'manually edit the bootstrap file in order to run '
                            'the program on multiple paths.\n\n'
                            'Example: %s @@\n\n'
@@ -241,12 +243,17 @@ class BaseProject(AbstractProject):
                            '``S2E_SYM_ARGS`` environment variable in the '
                            'bootstrap file', config['target'].path)
 
-        if config['use_seeds'] and not config['use_symb_input_file'] and config['warn_seeds']:
-            logger.warning('Seed files have been enabled, however you did not '
-                           'specify an input file marker (i.e. \'@@\') to be '
-                           'substituted with a seed file. This means that '
-                           'seed files will be fetched but never used. Is '
-                           'this intentional?')
+        seed_files_count = len(config['target'].args.blank_seed_files)
+        if config['use_seeds'] and config['warn_seeds']:
+            if not seed_files_count:
+                logger.warning('Seed files have been enabled, however you did not '
+                               'specify an input file marker (i.e. \'@@\') to be '
+                               'substituted with a seed file. This means that '
+                               'seed files will be fetched but never used. Is '
+                               'this intentional?')
+            if seed_files_count > 1:
+                raise CommandError('You specified multiple symbolic inputs with @@. You may only have one '
+                                   'when seeds are enabled.')
 
         return project_dir
 
@@ -338,7 +345,6 @@ class BaseProject(AbstractProject):
             'sym_args': config['sym_args'],
             'target_bootstrap_template': self._bootstrap_template,
             'image_arch': config['image']['os']['arch'],
-            'use_symb_input_file': config['use_symb_input_file'],
             'use_seeds': config['use_seeds'],
             'use_fault_injection': config['use_fault_injection'],
             'enable_pov_generation': config['enable_pov_generation'],

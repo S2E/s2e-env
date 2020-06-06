@@ -250,7 +250,7 @@ ${S2EGET} "{{ tf }}"
 {% endfor %}
 
 {% if not use_seeds %}
-download_symbolic_files {{ ' '.join(target.symbolic_file_names) }}
+download_symbolic_files {{ ' '.join(target.args.symbolic_file_names) }}
 {% endif %}
 
 {% if target %}

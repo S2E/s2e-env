@@ -28,6 +28,111 @@ import os
 logger = logging.getLogger('target')
 
 
+class TargetArguments:
+    def __init__(self, args):
+        self._args = args if args else []
+        # These are seed files that we'll generate automatically when encountering an '@@' argument
+        self._blank_seed_files = []
+
+        # These are actual seed files specified by the user on the target's command line
+        self._seed_files = []
+
+        # Maps a basename on the command line to a full path of the corresponding symbolic file
+        self._name_to_path = {}
+        self._translate_args()
+
+    def _translate_args(self):
+        """
+        It is possible to pass file paths as command line arguments to a target.
+        This function guesses which arguments are file paths and ensures that these files are uploaded into the guest.
+        It also patches the argument so that it is valid in the guest.
+        """
+        new_args = []
+        input_idx = 0
+
+        for arg in self._args:
+            if arg.startswith('@@'):
+                suffix = arg[2:]
+                if suffix:
+                    name = f'input-{input_idx}-{suffix}'
+                else:
+                    name = f'input-{input_idx}'
+                new_args.append(name)
+                self._blank_seed_files.append(name)
+                input_idx += 1
+            elif os.path.exists(arg):
+                self._seed_files.append(arg)
+                na = os.path.basename(arg)
+                new_args.append(na)
+            else:
+                new_args.append(arg)
+        self._args = new_args
+
+    def generate_symbolic_files(self, root, use_seeds):
+        blank_seed_file_paths = []
+        for file in self._blank_seed_files:
+            path = os.path.join(root, file)
+            blank_seed_file_paths.append(path)
+            self._name_to_path[file] = path
+
+            if not use_seeds:
+                with open(path, 'w') as fp:
+                    fp.write('x' * 256)
+                with open(path + '.symranges', 'w') as fp:
+                    fp.write('# This file specifies offset-size pairs to make symbolic\n')
+                    fp.write('0-256')
+
+        self._blank_seed_files = blank_seed_file_paths
+
+        for file in self._seed_files:
+            name = os.path.basename(file)
+            path = os.path.join(root, name)
+            self._name_to_path[name] = file
+            with open(path + '.symranges', 'w') as fp:
+                fp.write('# This file specifies offset-size pairs to make symbolic\n')
+                fp.write('# 0-0')
+
+    @property
+    def raw_args(self):
+        return self._args
+
+    @property
+    def blank_seed_files(self):
+        return self._blank_seed_files
+
+    @property
+    def symbolic_files(self):
+        return self._blank_seed_files + self._seed_files
+
+    @property
+    def symbolic_file_names(self):
+        ret = []
+        for f in self.symbolic_files:
+            ret.append(os.path.basename(f))
+        return ret
+
+    def get_resolved_args(self, symfile_dir):
+        """The processed program arguments."""
+
+        # The target arguments are specified using a format similar to the
+        # American Fuzzy Lop fuzzer. Options are specified as normal, however
+        # for programs that take input from a file, '@@' is used to mark the
+        # location in the target's command line where the input file should be
+        # placed. This will automatically be substituted with a symbolic file
+        # in the S2E bootstrap script.
+        parsed_args = []
+        for arg in self._args:
+            if arg in self._name_to_path:
+                parsed_args.append(f'{symfile_dir}{arg}')
+            else:
+                parsed_args.append(arg)
+
+        # Quote arguments that have spaces or backslashes in them
+        parsed_args = [f"'{arg}'" if ' ' in arg or '\\' in arg else arg for arg in parsed_args]
+
+        return parsed_args
+
+
 class Target:
     """
     Encapsulates a program (e.g., executable, driver, DLL, etc.) to be analyzed
@@ -44,7 +149,7 @@ class Target:
         self._path = path
         self._arch = arch
         self._os = _os
-        self._args = args if args else []
+        self._args = TargetArguments(args)
         self._translated_path = None
 
         if not aux_files:
@@ -72,32 +177,13 @@ class Target:
         self._translated_path = value
 
     @property
-    def raw_args(self):
+    def args(self):
         """The program arguments."""
         return self._args
 
-    @property
-    def args(self):
-        """The processed program arguments."""
-
-        # The target arguments are specified using a format similar to the
-        # American Fuzzy Lop fuzzer. Options are specified as normal, however
-        # for programs that take input from a file, '@@' is used to mark the
-        # location in the target's command line where the input file should be
-        # placed. This will automatically be substituted with a symbolic file
-        # in the S2E bootstrap script.
-        parsed_args = ['"${SYMB_FILE}"' if arg == '@@' else arg
-                       for arg in self._args]
-
-        # Quote arguments that have spaces in them
-        parsed_args = [f'"{arg}"' if ' ' in arg else arg
-                       for arg in parsed_args]
-
-        return parsed_args
-
     @args.setter
     def args(self, value):
-        self._args = value
+        self._args = TargetArguments(value)
 
     @property
     def name(self):
