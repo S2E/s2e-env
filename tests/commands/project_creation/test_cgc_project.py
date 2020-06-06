@@ -82,9 +82,9 @@ class CGCProjectTestCase(TestCase):
         self.assertFalse(config['modules'])
 
         # CGC binaries have no input files
-        self.assertFalse(target.args)
+        self.assertFalse(target.args.raw_args)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['warn_input_file'])
         self.assertFalse(config['warn_seeds'])
 
@@ -121,9 +121,9 @@ class CGCProjectTestCase(TestCase):
         self.assertDictEqual(config['image'], CGC_IMAGE_DESC)
 
         # CGC binaries have no input files
-        self.assertFalse(config['target'].args)
+        self.assertFalse(config['target'].args.raw_args)
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
         self.assertFalse(config['warn_input_file'])
         self.assertFalse(config['warn_seeds'])
 

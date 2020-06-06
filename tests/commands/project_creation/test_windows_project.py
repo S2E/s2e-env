@@ -119,9 +119,9 @@ class WindowsProjectTestCase(TestCase):
         self.assertFalse(config['modules'])
 
         # An empty project with no target will have no arguments
-        self.assertFalse(config['target'].args)
+        self.assertFalse(config['target'].args.get_resolved_args(''))
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
 
         # Disabled by default
         self.assertFalse(config['enable_pov_generation'])
@@ -182,7 +182,7 @@ class WindowsProjectTestCase(TestCase):
         self.assertDictEqual(config['image'], WINDOWS_7SP1_X64_IMAGE_DESC)
 
         # Assert that the DLL entry point is the one that we provided
-        self.assertEqual(config['target'].args, ['MyPuts'])
+        self.assertEqual(config['target'].args.get_resolved_args(''), ['MyPuts'])
 
         # Verify static analysis results
         self.assertCountEqual(config['dll_exports'], [b'MyPuts'])

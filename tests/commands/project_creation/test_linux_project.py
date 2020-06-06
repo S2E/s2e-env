@@ -83,9 +83,9 @@ class LinuxProjectTestCase(TestCase):
         self.assertFalse(config['modules'])
 
         # An empty project with no target will have no arguments
-        self.assertFalse(config['target'].args)
+        self.assertFalse(config['target'].args.get_resolved_args(''))
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
 
         # Disabled by default
         self.assertFalse(config['enable_pov_generation'])
@@ -106,9 +106,9 @@ class LinuxProjectTestCase(TestCase):
         self._assert_cat_x86_common(config)
 
         # No target arguments specified
-        self.assertFalse(config['target'].args)
+        self.assertFalse(config['target'].args.get_resolved_args(''))
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
 
         # Disabled by default
         self.assertFalse(config['enable_pov_generation'])
@@ -130,10 +130,10 @@ class LinuxProjectTestCase(TestCase):
         self._assert_cat_x86_common(config)
 
         # Verify symbolic arguments
-        self.assertListEqual(config['target'].raw_args, ['-T', '@@'])
-        self.assertListEqual(config['target'].args, ['-T', '"${SYMB_FILE}"'])
+        self.assertListEqual(config['target'].args.raw_args, ['-T', 'input-0'])
+        self.assertListEqual(config['target'].args.get_resolved_args(''), ['-T', 'input-0'])
         self.assertFalse(config['sym_args'])
-        self.assertTrue(config['use_symb_input_file'])
+        self.assertTrue(config['target'].args.symbolic_files)
 
         # Disabled by default
         self.assertFalse(config['enable_pov_generation'])
