@@ -39,7 +39,8 @@ from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.new_project import target_from_file
 from s2e_env.commands.run import send_signal_to_children_on_exit
-from s2e_env.utils.images import get_image_templates
+from s2e_env.utils.images import get_image_templates, get_app_templates, get_all_images, get_image_descriptor, \
+                                 select_guestfs, translate_image_name
 from s2e_env.utils.templates import render_template
 
 logger = logging.getLogger('testsuite')
@@ -109,14 +110,65 @@ def _call_post_project_gen_script(test_dir, test_config, options):
     cmd()
 
 
+def _resolve_target_path(test_root, target_name, guestfs_dirs):
+    if target_name.startswith('$(GUEST_FS)'):
+        for directory in guestfs_dirs:
+            new_target = target_name.replace('$(GUEST_FS)', directory)
+            if os.path.exists(new_target):
+                return new_target
+        raise CommandError(f'Could not resolve {target_name} in {guestfs_dirs}')
+
+    ret = os.path.join(test_root, target_name)
+    if not os.path.exists(ret):
+        raise CommandError(f'{ret} does not exist')
+    return ret
+
+
+def _need_target_path_resolution(test_config):
+    for target_name in test_config['targets']:
+        if '$(GUEST_FS)' in target_name:
+            return True
+    return False
+
+
+def _get_test_project_name(test, target_path, image_name):
+    target_name = os.path.basename(target_path)
+
+    # We can have app images, which contain a slash
+    image_name = image_name.replace('/', '_')
+    return 'testsuite/%s_%s_%s' % (test, target_name, image_name)
+
+
+def _parse_target_arguments(test_root, test_config):
+    ret = []
+    args = test_config.get('target_arguments', [])
+    for arg in args:
+        ret.append(arg.replace('$(TEST_ROOT)', test_root))
+    return ret
+
+
 class TestsuiteGenerator(EnvCommand):
     def __init__(self):
         super(TestsuiteGenerator, self).__init__()
         self._cmd_options = {}
+        self._img_templates = None
+        self._images = None
+        self._image_groups = None
+        self._image_descriptors = None
 
-    def _get_image_templates(self):
+    def _initialize_images(self):
         img_build_dir = self.source_path(CONSTANTS['repos']['images']['build'])
-        return get_image_templates(img_build_dir)
+        self._img_templates = get_image_templates(img_build_dir)
+        app_templates = get_app_templates(img_build_dir)
+        self._images, self._image_groups, self._image_descriptors = get_all_images(self._img_templates, app_templates)
+
+    def _select_guestfs(self, img_name):
+        img_dir = os.path.join(self.image_path(), img_name)
+        img_desc = get_image_descriptor(img_dir)
+        return select_guestfs(self.image_path(), img_desc)
+
+    def _get_translated_images(self, image_names):
+        return translate_image_name(self._images, self._image_groups, image_names)
 
     def _generate_run_tests(self, ts_dir, test, script_template, options):
         ctx = {
@@ -155,7 +207,7 @@ class TestsuiteGenerator(EnvCommand):
         return True
 
     # pylint: disable=too-many-locals
-    def _handle_test(self, test_root, test, test_config, img_templates):
+    def _handle_test(self, test_root, test, test_config):
         ts_dir = self.source_path('s2e', 'testsuite')
 
         if os.path.exists(os.path.join(test_root, 'Makefile')):
@@ -163,42 +215,81 @@ class TestsuiteGenerator(EnvCommand):
 
         blacklisted_images = set(test_config.get('blacklisted-images', []))
         target_images = set(test_config.get('target-images', []))
+        target_images = self._get_translated_images(target_images)
 
-        for target_name in test_config['targets']:
-            target_path = os.path.join(test_root, target_name)
-
-            target, proj_class = target_from_file(target_path)
-            target.args = test_config.get('target_arguments', [])
-            project = proj_class()
-
-            images = project.get_usable_images(target, img_templates)
-
-            for image_name in images:
+        # We have a list of target images, use it without guessing from the binary
+        if target_images and _need_target_path_resolution(test_config):
+            for image_name in target_images:
                 if image_name in blacklisted_images:
                     logger.warning('%s is blacklisted, skipping tests for that image', image_name)
                     continue
 
-                if target_images and image_name not in target_images:
-                    logger.debug('%s is not in target-images, skipping', image_name)
-                    continue
+                guestfs_dirs = self._select_guestfs(image_name)
+                for target_name in test_config['targets']:
+                    try:
+                        target_path = _resolve_target_path(test_root, target_name, guestfs_dirs)
+                    except CommandError as e:
+                        logger.warning(e)
+                        continue
 
-                name = 'testsuite/%s_%s_%s' % (test, os.path.basename(target_name), image_name)
-                options = {
-                    'image': image_name,
-                    'name': name,
-                    'target': target,
-                    'force': True,
-                    'project_path': self.projects_path(name),
-                    'testsuite_root': ts_dir
-                }
-                options.update(test_config.get('options', []))
+                    target, proj_class = target_from_file(target_path)
+                    target.args = _parse_target_arguments(test_root, test_config)
+                    project = proj_class()
 
-                call_command(project, *[], **options)
+                    name = _get_test_project_name(test, target_path, image_name)
+                    options = {
+                        'image': image_name,
+                        'name': name,
+                        'target': target,
+                        'force': True,
+                        'project_path': self.projects_path(name),
+                        'testsuite_root': ts_dir
+                    }
+                    options.update(test_config.get('options', []))
 
-                scripts = test_config.get('scripts', {})
-                run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
-                self._generate_run_tests(ts_dir, test, run_tests_template, options)
-                _call_post_project_gen_script(test_root, test_config, options)
+                    call_command(project, *[], **options)
+
+                    scripts = test_config.get('scripts', {})
+                    run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
+                    self._generate_run_tests(ts_dir, test, run_tests_template, options)
+                    _call_post_project_gen_script(test_root, test_config, options)
+        else:
+            for target_name in test_config['targets']:
+                target_path = _resolve_target_path(test_root, target_name, [])
+
+                target, proj_class = target_from_file(target_path)
+                target.args = _parse_target_arguments(test_root, test_config)
+                project = proj_class()
+
+                images = project.get_usable_images(target, self._img_templates)
+                logger.info(images)
+
+                for image_name in images:
+                    if image_name in blacklisted_images:
+                        logger.warning('%s is blacklisted, skipping tests for that image', image_name)
+                        continue
+
+                    if target_images and image_name not in target_images:
+                        logger.debug('%s is not in target-images, skipping', image_name)
+                        continue
+
+                    name = _get_test_project_name(test, target_path, image_name)
+                    options = {
+                        'image': image_name,
+                        'name': name,
+                        'target': target,
+                        'force': True,
+                        'project_path': self.projects_path(name),
+                        'testsuite_root': ts_dir
+                    }
+                    options.update(test_config.get('options', []))
+
+                    call_command(project, *[], **options)
+
+                    scripts = test_config.get('scripts', {})
+                    run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
+                    self._generate_run_tests(ts_dir, test, run_tests_template, options)
+                    _call_post_project_gen_script(test_root, test_config, options)
 
     def _get_tests(self):
         ts_dir = self.source_path('s2e', 'testsuite')
@@ -214,8 +305,8 @@ class TestsuiteGenerator(EnvCommand):
     def handle(self, *args, **options):
         logger.info('Generating testsuite...')
         self._cmd_options = options
+        self._initialize_images()
 
-        img_templates = self._get_image_templates()
         ts_dir = self.source_path('s2e', 'testsuite')
         tests = self._get_tests()
 
@@ -229,7 +320,7 @@ class TestsuiteGenerator(EnvCommand):
             if not self._must_generate_test(test, test_config):
                 continue
 
-            self._handle_test(test_root, test, test_config, img_templates)
+            self._handle_test(test_root, test, test_config)
 
 
 class TestsuiteLister(EnvCommand):
