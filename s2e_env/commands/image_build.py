@@ -46,7 +46,8 @@ from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils import repos
-from s2e_env.utils.images import ImageDownloader, get_image_templates, get_app_templates
+from s2e_env.utils.images import ImageDownloader, get_image_templates, get_app_templates, get_all_images, \
+                                 translate_image_name
 
 
 logger = logging.getLogger('image_build')
@@ -202,64 +203,6 @@ def _get_base_image_and_app(image_name):
     if len(x) == 2:
         return x
     raise CommandError(f'Invalid image name {image_name}')
-
-
-def _get_all_images(templates, app_templates):
-    """
-    Builds the list of all available images and image groups.
-    Returns a tuple (images, groups, image_descriptors).
-    """
-    images = set()
-    groups = {}
-    descriptions = {}
-
-    for base_image, desc in templates.items():
-        images.add(base_image)
-        group = desc['image_group']
-        if group not in groups:
-            groups[group] = set()
-        groups[group].add(base_image)
-        descriptions[base_image] = desc
-
-    for app, desc in app_templates.items():
-        for base_image in desc.get('base_images'):
-            if base_image not in images:
-                raise CommandError(
-                    f'App {app} requires {base_image}, but it does not exist.'
-                    ' Check that images.json and app.json are valid.'
-                )
-            key = f'{base_image}/{app}'
-            images.add(key)
-            descriptions[key] = desc
-
-            for group in desc.get('image_groups'):
-                if group not in groups:
-                    groups[group] = set()
-                groups[group].add(key)
-
-    groups['all'] = images
-
-    return images, groups, descriptions
-
-
-def _translate_image_name(images, image_groups, image_names):
-    """
-    Translates a set of user-friendly image names into a set of actual image
-    names that can be sent to the makefile. For example, "all" will be
-    translated to the set of all images, while "windows" and "linux" will be
-    translated to the appropriate subset of Windows or Linux images.
-    """
-    ret = set()
-
-    for image_name in image_names:
-        if image_name in images:
-            ret.add(image_name)
-        elif image_name in image_groups:
-            ret = ret.union(image_groups[image_name])
-        else:
-            raise CommandError(f'{image_name} does not exist')
-
-    return ret
 
 
 def _has_app_image(image_names):
@@ -450,7 +393,7 @@ class Command(EnvCommand):
         image_names = options['name']
         templates = get_image_templates(img_build_dir)
         app_templates = get_app_templates(img_build_dir)
-        images, image_groups, image_descriptors = _get_all_images(templates, app_templates)
+        images, image_groups, image_descriptors = get_all_images(templates, app_templates)
 
         if not image_names:
             self._print_image_list(images, image_groups, image_descriptors)
@@ -459,7 +402,7 @@ class Command(EnvCommand):
                   'an image')
             return
 
-        image_names = _translate_image_name(images, image_groups, image_names)
+        image_names = translate_image_name(images, image_groups, image_names)
         logger.info('The following images will be built:')
         for image in image_names:
             logger.info(' * %s', image)

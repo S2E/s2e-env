@@ -32,7 +32,7 @@ import shutil
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.images import ImageDownloader, get_image_templates, \
-        get_image_descriptor
+        get_image_descriptor, select_guestfs
 
 from .utils import ConfigEncoder
 
@@ -69,36 +69,6 @@ def symlink_guest_tools(install_path, project_dir, img_desc):
 
         os.symlink(guest_tools_path_32,
                    os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
-
-
-def select_guestfs(image_path, img_desc):
-    """
-    Select the guestfs to use, based on the chosen virtual machine image.
-
-    Args:
-        image_path: Path to S2E images
-        img_desc: An image descriptor read from the image's JSON
-        description.
-
-    Returns:
-        The paths to the guestfs directories, or `None` if a suitable guestfs
-        was not found. This may return up to two guestfs paths if the specified
-        image is an app image. The app guestfs path must come before the guestfs
-        for the base image, s2e-config.lua assumes this.
-    """
-    ret = []
-    image_dir = os.path.dirname(img_desc['path'])
-    guestfs_path = os.path.join(image_path, image_dir, 'guestfs')
-    if os.path.exists(guestfs_path):
-        ret.append(guestfs_path)
-
-    if 'apps' in img_desc:
-        # We have an app image, also try to get the guestfs for the base one
-        guestfs_path = os.path.abspath(os.path.join(image_path, image_dir, '..', 'guestfs'))
-        if os.path.exists(guestfs_path):
-            ret.append(guestfs_path)
-
-    return ret
 
 
 def symlink_guestfs(project_dir, guestfs_paths):
