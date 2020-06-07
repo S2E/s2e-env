@@ -170,6 +170,7 @@ def _check_cow(image_dir):
         dst = f'{image_dir}/.cowcheck1'
         sh.touch(src)
         sh.cp('--reflink=always', src, dst)
+        return True
     except Exception:
         warn_msg = f"""
         Copy-on-write check failed.
@@ -186,6 +187,7 @@ def _check_cow(image_dir):
             4. Create in your S2E environment a symbolic link called "images" to the directory you created in step 2
         """
         logger.warning(re.sub(r'^ {8}', '', warn_msg, flags=re.MULTILINE))
+        return False
     finally:
         sh.rm('-f', src)
         sh.rm('-f', dst)
@@ -341,6 +343,7 @@ class Command(EnvCommand):
         self._headless = True
         self._use_kvm = True
         self._num_cores = 1
+        self._has_cow = False
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -430,7 +433,7 @@ class Command(EnvCommand):
         _check_groups_docker()
         _check_vmlinux()
 
-        _check_cow(self.image_path())
+        self._has_cow = _check_cow(self.image_path())
 
         if self._use_kvm:
             _check_virtualbox()
@@ -460,12 +463,14 @@ class Command(EnvCommand):
         env['OUTDIR'] = self.image_path()
         env['QEMU_FTP_PORT'] = str(ftp_port)
         env['ISODIR'] = iso_dir
+        env['DEBUG_INTERMEDIATE_RULES'] = '1' if self._has_cow else '0'
 
         logger.debug('Invoking makefile with:')
         logger.debug('export S2E_INSTALL_ROOT=%s', env['S2E_INSTALL_ROOT'])
         logger.debug('export S2E_LINUX_KERNELS_ROOT=%s', env['S2E_LINUX_KERNELS_ROOT'])
         logger.debug('export OUTDIR=%s', env['OUTDIR'])
         logger.debug('export ISODIR=%s', env.get('ISODIR', ''))
+        logger.debug('export DEBUG_INTERMEDIATE_RULES=%s', env.get('DEBUG_INTERMEDIATE_RULES', ''))
 
         if self._headless:
             logger.warning('Image creation will run in headless mode. '
