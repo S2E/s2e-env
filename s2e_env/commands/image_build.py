@@ -462,7 +462,7 @@ class Command(EnvCommand):
             self.source_path(CONSTANTS['repos']['images']['linux'])
         env['OUTDIR'] = self.image_path()
         env['QEMU_FTP_PORT'] = str(ftp_port)
-        env['ISODIR'] = iso_dir
+        env['ISODIR'] = iso_dir if iso_dir else ''
         env['DEBUG_INTERMEDIATE_RULES'] = '1' if self._has_cow else '0'
 
         logger.debug('Invoking makefile with:')
