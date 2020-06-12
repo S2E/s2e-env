@@ -83,6 +83,7 @@ dependencies:
         - gcc-multilib
         - g++-multilib
         - libpixman-1-dev
+        - libtinfo5
 
         # Testing dependencies
         - wine-stable
