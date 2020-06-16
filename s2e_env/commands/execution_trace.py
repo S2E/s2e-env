@@ -120,7 +120,6 @@ class Command(ProjectCommand):
             if options['pretty_print']:
                 json.dump(execution_tree_json, f, indent=4, sort_keys=True, cls=TraceEncoder)
             else:
-                print(execution_tree_json)
                 json.dump(execution_tree_json, f, cls=TraceEncoder)
 
         logger.success('Execution trace saved to %s', json_trace_file)

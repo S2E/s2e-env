@@ -66,7 +66,9 @@ pluginsConfig.Vmi = {
     baseDirs = {
         "{{ project_dir }}",
         {% if has_guestfs %}
-        "{{ guestfs_path }}"
+            {% for path in guestfs_paths %}
+            "{{ path }}",
+            {% endfor %}
         {% endif %}
     },
 }
@@ -82,7 +84,7 @@ add_plugin("MemUtils")
 -- server that listens on an address:port configured by the S2E_QMP_SERVER
 -- environment variable.
 --
--- The "s2e run {{ target }}" command sets up such a server in order to display
+-- The "s2e run {{ project_name }}" command sets up such a server in order to display
 -- stats on the dashboard.
 --
 -- You may also want to use this plugin to integrate S2E into a larger
@@ -195,12 +197,18 @@ pluginsConfig.ProcessExecutionDetector = {
 -------------------------------------------------------------------------------
 -- Keeps for each state/process an updated map of all the loaded modules.
 add_plugin("ModuleMap")
+pluginsConfig.ModuleMap = {
+  logLevel = "info"
+}
 
 
 -------------------------------------------------------------------------------
 -- Keeps for each process in ProcessExecutionDetector an updated map
 -- of memory regions.
 add_plugin("MemoryMap")
+pluginsConfig.MemoryMap = {
+  logLevel = "info"
+}
 
 {% if use_cupa == true %}
 

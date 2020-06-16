@@ -66,81 +66,132 @@ function prepare_target {
     chmod +x "$1"
 }
 
-{% if use_symb_input_file %}
-# This prepares the symbolic file inputs.
-# This function takes as input an optional seed file name.
-# If the seed file is present, the commands makes the seed symbolic.
-# Otherwise, it creates an empty file.
-#
-# Symbolic files must be stored in a ram disk, as only memory (and cpu)
-# is capable of holding symbolic data.
-#
-# This function prints the path to the symbolic file on stdout.
-function prepare_inputs {
-    local SEED_FILE
-    local SYMB_FILE
-
-    # This can be empty if there are no seed files
-    SEED_FILE="$1"
-
-    # Check whether the target has custom handling
-    # of seed files.
-    if [ $(make_seeds_symbolic) -eq 0 ]; then
-        echo ${SEED_FILE}
-        return
-    fi
-
-    {% if project_type == 'windows' %}
-    SYMB_FILE="x:\\input"
-    {% else %}
-    SYMB_FILE="/tmp/input"
-    {% endif %}
-
-    if [ "x$SEED_FILE" = "x" ]; then
-        # Create a symbolic file of size 256 bytes.
-        # Note: you can customize this commands according to your needs.
-        # You could, e.g., use non-zero input, different sizes, etc.
-        {% if project_type == 'windows' %}
-        /c/Python27/python.exe -c "fp = open(\"${SYMB_FILE}\", 'wb'); fp.write('x'*256)"
-        {% else %}
-        truncate -s 256 ${SYMB_FILE}
-        {% endif %}
-
-        if [ $? -ne 0 ]; then
-            ${S2ECMD} kill 1 "Failed to create symbolic file"
-            exit 1
-        fi
-    else
-        ${S2EGET} ${SEED_FILE} >/dev/null
-        if [ ! -f ${SEED_FILE} ]; then
-           ${S2ECMD} kill 1 "Could not fetch seed file ${SEED_FILE} from the host"
-        fi
-
-        {% if project_type == 'windows' %}
-        run_cmd "copy ${SEED_FILE} ${SYMB_FILE}"
-        {% else %}
-        cp ${SEED_FILE} ${SYMB_FILE}
-        {% endif %}
-
-        ${S2EGET} ${SEED_FILE}.symranges >/dev/null
-    fi
-
-    # Make the file symbolic
-    if [ -f "${SEED_FILE}.symranges" ]; then
-       export S2E_SYMFILE_RANGES="${SEED_FILE}.symranges"
-    fi
-
-    {% if enable_pov_generation %}
-    # It is important to have one symbolic variable by byte to make PoV generation work.
-    # One-byte variables simplify input mapping in the Recipe plugin.
-    ${S2ECMD} symbfile 1 ${SYMB_FILE} >/dev/null
-    {% else %}
-    # The symbolic file will be split into symbolic variables of up to 4k bytes each.
-    ${S2ECMD} symbfile 4096 ${SYMB_FILE} >/dev/null
-    {% endif %}
-    echo ${SYMB_FILE}
-}
+{% if project_type == 'windows' %}
+  {% set RAMDISK_ROOT='x:\\' %}
+{% else %}
+  {% set RAMDISK_ROOT='/tmp/' %}
 {% endif %}
+
+function get_ramdisk_root {
+  echo '{{RAMDISK_ROOT}}'
+}
+
+function copy_file {
+  SOURCE="$1"
+  DEST="$2"
+  {% if project_type == 'windows' %}
+  run_cmd "copy /Y ${SOURCE} ${DEST}" > /dev/null
+  {% else %}
+  cp ${SOURCE} ${DEST}
+  {% endif %}
+}
+
+# This prepares the symbolic file inputs.
+# This function takes as input a seed file name and makes its content symbolic according to the symranges file.
+# It is up to the host to prepare all the required symbolic files. The bootstrap file does not make files
+# symbolic on its own.
+function download_symbolic_file {
+  SYMBOLIC_FILE="$1"
+  RAMDISK_ROOT="$(get_ramdisk_root)"
+
+  ${S2EGET} "${SYMBOLIC_FILE}"
+  if [ ! -f "${SYMBOLIC_FILE}" ]; then
+    ${S2ECMD} kill 1 "Could not fetch symbolic file ${SYMBOLIC_FILE} from host"
+  fi
+
+  copy_file "${SYMBOLIC_FILE}" "${RAMDISK_ROOT}"
+
+  SYMRANGES_FILE="${SYMBOLIC_FILE}.symranges"
+
+  ${S2EGET} "${SYMRANGES_FILE}" > /dev/null
+
+  # Make the file symbolic
+  if [ -f "${SYMRANGES_FILE}" ]; then
+     export S2E_SYMFILE_RANGES="${SYMRANGES_FILE}"
+  fi
+
+  {% if enable_pov_generation %}
+  # It is important to have one symbolic variable by byte to make PoV generation work.
+  # One-byte variables simplify input mapping in the Recipe plugin.
+  ${S2ECMD} symbfile 1 "${RAMDISK_ROOT}${SYMBOLIC_FILE}" > /dev/null
+  {% else %}
+  # The symbolic file will be split into symbolic variables of up to 4k bytes each.
+  ${S2ECMD} symbfile 4096 "${RAMDISK_ROOT}${SYMBOLIC_FILE}" > /dev/null
+  {% endif %}
+}
+
+function download_symbolic_files {
+  for f in "$@"; do
+    download_symbolic_file "${f}"
+  done
+}
+
+{% if use_seeds %}
+# Our msys distribution doesn't have seq, so this is a quick replacement
+function my_seq {
+  START=$1
+  END=$2
+  while [ $START -le $END ]; do
+    echo $START
+    START=$(expr $START + 1)
+  done
+}
+
+function execute {
+  RAMDISK_ROOT="$(get_ramdisk_root)"
+
+  # In seed mode, state 0 runs in an infinite loop trying to fetch and
+  # schedule new seeds. It works in conjunction with the SeedSearcher plugin.
+  # The plugin schedules state 0 only when seeds are available.
+
+  # Enable seeds and wait until a seed file is available. If you are not
+  # using seeds then this loop will not affect symbolic execution - it will
+  # simply never be scheduled.
+  ${S2ECMD} seedsearcher_enable
+  while true; do
+      SEED_FILE=$(${S2ECMD} get_seed_file)
+
+      if [ $? -eq 1 ]; then
+          # Avoid flooding the log with messages if we are the only runnable
+          # state in the S2E instance
+          sleep 1
+          continue
+      fi
+
+      break
+  done
+
+  if [ -n "${SEED_FILE}" ]; then
+      download_symbolic_file "${SEED_FILE}"
+
+      # Patch the default symbolic file with the path to the seed
+      ARGS=("${@}")
+      SEED_FILE_PATH="${RAMDISK_ROOT}${SEED_FILE}"
+      for i in $(my_seq 0 $(expr ${#ARGS[*]} - 1)); do
+        if [ ${ARGS[$i]} = "${RAMDISK_ROOT}input-0" ]; then
+          ARGS[$i]="${SEED_FILE_PATH}"
+        fi
+      done
+
+      echo "${ARGS[@]}"
+      execute_target "${ARGS[@]}"
+  else
+      # If there are no seeds available, execute the seedless instance.
+      # The SeedSearcher only schedules the seedless instance once.
+      echo "Starting seedless execution"
+
+      {% if project_type == 'cgc' %}
+      execute_target "$1"
+      {% else %}
+      # NOTE: If you do not want to use seedless execution, enable the following line and remove
+      # the state kill command.
+      # execute_target "$1"
+      ${S2ECMD} kill 0 "Target invocation without seed file is disabled. Please edit bootstrap.sh to enable it."
+      {% endif %}
+  fi
+}
+
+{% else %}
 
 # This function executes the target program given in arguments.
 #
@@ -149,56 +200,14 @@ function prepare_inputs {
 #    - with seed support (-s argument when creating projects with s2e_env)
 function execute {
     local TARGET
-    local SEED_FILE
-    local SYMB_FILE
 
-    TARGET=$1
+    TARGET="$1"
+    shift
 
-    prepare_target "${TARGET}"
-
-    {% if use_seeds %}
-    # In seed mode, state 0 runs in an infinite loop trying to fetch and
-    # schedule new seeds. It works in conjunction with the SeedSearcher plugin.
-    # The plugin schedules state 0 only when seeds are available.
-
-    # Enable seeds and wait until a seed file is available. If you are not
-    # using seeds then this loop will not affect symbolic execution - it will
-    # simply never be scheduled.
-    ${S2ECMD} seedsearcher_enable
-    while true; do
-        SEED_FILE=$(${S2ECMD} get_seed_file)
-
-        if [ $? -eq 1 ]; then
-            # Avoid flooding the log with messages if we are the only runnable
-            # state in the S2E instance
-            sleep 1
-            continue
-        fi
-
-        break
-    done
-
-    if [ -n "${SEED_FILE}" ]; then
-        SYMB_FILE="$(prepare_inputs ${SEED_FILE})"
-        execute_target "${TARGET}" "${SYMB_FILE}"
-    else
-        # If there are no seeds available, execute the seedless instance.
-        # The SeedSearcher only schedules the seedless instance once.
-        #
-        echo "Starting seedless execution"
-
-        # NOTE: If you do not want to use seedless execution, comment out
-        # the following line.
-        execute_target "${TARGET}"
-    fi
-
-    {% else %}
-    {% if use_symb_input_file %}
-    SYMB_FILE="$(prepare_inputs)"
-    {% endif %}
-    execute_target "${TARGET}" "${SYMB_FILE}"
-    {% endif %}
+    execute_target "${TARGET}" "$@"
 }
+
+{% endif %}
 
 ###############################################################################
 # This section contains target-specific code
@@ -236,13 +245,35 @@ sudo swapoff -a
 target_init
 
 # Download the target file to analyze
-{% for tf in target_files -%}
+{% for tf in target.names -%}
 ${S2EGET} "{{ tf }}"
 {% endfor %}
 
+{% if not use_seeds %}
+download_symbolic_files {{ ' '.join(target.args.symbolic_file_names) }}
+{% endif %}
+
 {% if target %}
 # Run the analysis
-execute "./{{ target }}"
+
+{% if target.translated_path %}
+  TARGET_PATH='{{ target.translated_path }}'
+{% else %}
+  {% if project_type == 'windows' %}
+    TARGET_PATH='{{ target.name }}'
+  {% else %}
+    TARGET_PATH='./{{ target.name }}'
+  {% endif %}
+{% endif %}
+
+
+prepare_target "${TARGET_PATH}"
+
+{% if use_seeds %}
+# In seed mode, the symbolic file name is a place holder that will be replaced by the actual seed name.
+{%- endif %}
+execute "${TARGET_PATH}" {{ target.args.get_resolved_args(RAMDISK_ROOT) | join(' ') }}
+
 {% else %}
 ##### NO TARGET HAS BEEN SPECIFIED DURING PROJECT CREATION #####
 ##### Please fetch and execute the target files manually   #####

@@ -97,10 +97,10 @@ class ImageDownloader:
         _download(url, dest_file)
         _decompress(dest_file)
 
+
 #
 # Image utility functions
 #
-
 def _validate_version(descriptor, filename):
     version = descriptor.get('version')
     required_version = CONSTANTS['required_versions']['guest_images']
@@ -111,8 +111,8 @@ def _validate_version(descriptor, filename):
                            (filename, required_version, version))
 
 
-def get_image_templates(img_build_dir):
-    images = os.path.join(img_build_dir, 'images.json')
+def _get_templates(img_build_dir, filename, key):
+    images = os.path.join(img_build_dir, filename)
 
     try:
         with open(images, 'r') as f:
@@ -123,7 +123,15 @@ def get_image_templates(img_build_dir):
 
     _validate_version(template_json, images)
 
-    return template_json['images']
+    return template_json[key]
+
+
+def get_image_templates(img_build_dir):
+    return _get_templates(img_build_dir, 'images.json', 'images')
+
+
+def get_app_templates(img_build_dir):
+    return _get_templates(img_build_dir, 'apps.json', 'apps')
 
 
 def get_image_descriptor(image_dir):
@@ -150,3 +158,91 @@ def get_image_descriptor(image_dir):
     except Exception as e:
         raise CommandError('Unable to open image description %s: %s' %
                            (img_json_path, e))
+
+
+def get_all_images(templates, app_templates):
+    """
+    Builds the list of all available images and image groups.
+    Returns a tuple (images, groups, image_descriptors).
+    """
+    images = set()
+    groups = {}
+    descriptions = {}
+
+    for base_image, desc in templates.items():
+        images.add(base_image)
+        group = desc['image_group']
+        if group not in groups:
+            groups[group] = set()
+        groups[group].add(base_image)
+        descriptions[base_image] = desc
+
+    for app, desc in app_templates.items():
+        for base_image in desc.get('base_images'):
+            if base_image not in images:
+                raise CommandError(
+                    f'App {app} requires {base_image}, but it does not exist.'
+                    ' Check that images.json and app.json are valid.'
+                )
+            key = f'{base_image}/{app}'
+            images.add(key)
+            descriptions[key] = desc
+
+            for group in desc.get('image_groups'):
+                if group not in groups:
+                    groups[group] = set()
+                groups[group].add(key)
+
+    groups['all'] = images
+
+    return images, groups, descriptions
+
+
+def translate_image_name(images, image_groups, image_names):
+    """
+    Translates a set of user-friendly image names into a set of actual image
+    names that can be sent to the makefile. For example, "all" will be
+    translated to the set of all images, while "windows" and "linux" will be
+    translated to the appropriate subset of Windows or Linux images.
+    """
+    ret = set()
+
+    for image_name in image_names:
+        if image_name in images:
+            ret.add(image_name)
+        elif image_name in image_groups:
+            ret = ret.union(image_groups[image_name])
+        else:
+            raise CommandError(f'{image_name} does not exist')
+
+    return ret
+
+
+def select_guestfs(image_path, img_desc):
+    """
+    Select the guestfs to use, based on the chosen virtual machine image.
+
+    Args:
+        image_path: Path to S2E images
+        img_desc: An image descriptor read from the image's JSON
+        description.
+
+    Returns:
+        The paths to the guestfs directories, or `None` if a suitable guestfs
+        was not found. This may return up to two guestfs paths if the specified
+        image is an app image. The app guestfs path must come before the guestfs
+        for the base image, s2e-config.lua assumes this.
+    """
+    ret = []
+    image_dir = os.path.dirname(img_desc['path'])
+    guestfs_path = os.path.join(image_path, image_dir, 'guestfs')
+    if os.path.exists(guestfs_path):
+        ret.append(guestfs_path)
+
+    if 'apps' in img_desc:
+        # We have an app image, also try to get the guestfs for the base one
+        guestfs_path = os.path.abspath(os.path.join(image_path, image_dir, '..', 'guestfs'))
+        if os.path.exists(guestfs_path):
+            ret.append(guestfs_path)
+
+    return ret

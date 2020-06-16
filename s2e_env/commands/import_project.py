@@ -26,6 +26,7 @@ import logging
 import os
 import shutil
 import sys
+import tempfile
 
 # pylint: disable=no-name-in-module
 from sh import tar, ErrorReturnCode
@@ -33,6 +34,8 @@ from sh import tar, ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.import_export import S2E_ENV_PLACEHOLDER, rewrite_files
+from s2e_env.commands.project_creation import abstract_project
+from s2e_env.utils.images import get_image_descriptor
 
 
 logger = logging.getLogger('import')
@@ -49,6 +52,23 @@ def _get_project_name(archive):
         return os.path.dirname(str(contents))
     except ErrorReturnCode as e:
         raise CommandError('Failed to list archive - %s' % e)
+
+
+def _decompress_archive(archive_path, dest_path):
+    """
+    Decompress the given archive into the S2E environment's projects directory.
+    """
+    try:
+        with tempfile.TemporaryDirectory() as directory:
+            logger.info('Decompressing archive %s to %s', archive_path, directory)
+            tar(extract=True, xz=True, verbose=True, file=archive_path,
+                directory=directory, _out=sys.stdout,
+                _err=sys.stderr)
+
+            old_path = os.path.join(directory, _get_project_name(archive_path))
+            shutil.move(old_path, dest_path)
+    except ErrorReturnCode as e:
+        raise CommandError('Failed to decompress project archive - %s' % e)
 
 
 class Command(EnvCommand):
@@ -76,6 +96,8 @@ class Command(EnvCommand):
                                  'imported project already exists, replace it')
         parser.add_argument('-i', '--image', required=False,
                             help='Override the guest image')
+        parser.add_argument('-n', '--project-name', required=False,
+                            help='Override the project name')
 
     def handle(self, *args, **options):
         # Check the archive
@@ -84,7 +106,10 @@ class Command(EnvCommand):
             raise CommandError('%s is not a valid project archive' % archive)
 
         # Get the name of the project that we are importing
-        project_name = _get_project_name(archive)
+        project_name = options.get('project_name')
+        if not project_name:
+            project_name = _get_project_name(archive)
+
         logger.info('Importing project \'%s\' from %s', project_name, archive)
 
         # Check if a project with that name already exists
@@ -97,8 +122,7 @@ class Command(EnvCommand):
                 raise CommandError('\'%s\' already exists. Either remove this '
                                    'project or use the force option' % project_name)
 
-        # Decompress the archive
-        self._decompress_archive(archive)
+        _decompress_archive(archive, project_path)
 
         # Rewrite all of the exported files to fix their S2E environment paths
         logger.info('Rewriting project files')
@@ -122,58 +146,26 @@ class Command(EnvCommand):
                 rewrite_files(project_path, CONSTANTS['import_export']['project_files'],
                               old_image, override_image)
 
-            image_path = os.path.join(proj_desc['image'], 'image.json')
-
-            if not os.path.exists(image_path):
-                logger.error('%s does not exist, please check that the guest image is built properly', image_path)
-                return
-
-            with open(image_path, 'r') as fp:
-                image = json.load(fp)
+            image = get_image_descriptor(proj_desc['image'])
 
             # Create a symlink to the guest tools directory
             self._symlink_guest_tools(project_path, image)
 
             # Create a symlink to guestfs (if it exists)
             if proj_desc.get('has_guestfs'):
-                self._symlink_guestfs(project_path, proj_desc['image'])
+                self._symlink_guestfs(project_path, image)
 
-        logger.success('Project successfully imported from %s', archive)
-
-    def _decompress_archive(self, archive_path):
-        """
-        Decompress the given archive into the S2E environment's projects
-        directory.
-        """
-        try:
-            logger.info('Decompressing archive %s', archive_path)
-            tar(extract=True, xz=True, verbose=True, file=archive_path,
-                directory=self.projects_path(), _out=sys.stdout,
-                _err=sys.stderr)
-        except ErrorReturnCode as e:
-            raise CommandError('Failed to decompress project archive - %s' % e)
+        logger.success('Project successfully imported from %s to %s', archive, project_path)
 
     def _symlink_guest_tools(self, project_path, image):
         """
         Create a symlink to the guest tools directory.
         """
-        qemu_arch = image['qemu_build']
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][qemu_arch])
+        abstract_project.symlink_guest_tools(self.install_path(), project_path, image)
 
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path, os.path.join(project_path, 'guest-tools'))
-
-    def _symlink_guestfs(self, project_path, image_name):
+    def _symlink_guestfs(self, project_path, image):
         """
         Create a symlink to the image's guestfs directory.
         """
-        guestfs_path = self.image_path(image_name, 'guestfs')
-        if not os.path.exists(guestfs_path):
-            logger.warning('%s does not exist, despite the original project '
-                           'using the guestfs. The VMI plugin may not run '
-                           'optimally', guestfs_path)
-            return
-
-        logger.info('Creating a symlink to %s', guestfs_path)
-        os.symlink(guestfs_path, os.path.join(project_path, 'guestfs'))
+        guestfs_paths = abstract_project.select_guestfs(self.image_path(), image)
+        abstract_project.symlink_guestfs(project_path, guestfs_paths)

@@ -32,14 +32,57 @@ import shutil
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.images import ImageDownloader, get_image_templates, \
-        get_image_descriptor
+        get_image_descriptor, select_guestfs
 
+from .utils import ConfigEncoder
 
 logger = logging.getLogger('new_project')
 
 # Paths
 FILE_DIR = os.path.dirname(__file__)
 LIBRARY_LUA_PATH = os.path.join(FILE_DIR, '..', '..', 'dat', 'library.lua')
+
+
+def symlink_guest_tools(install_path, project_dir, img_desc):
+    """
+    Create a symlink to the guest tools directory.
+
+    Args:
+        install_path: path to S2E installation
+        project_dir: The project directory.
+        img_desc: A dictionary that describes the image that will be used,
+                  from `$S2EDIR/source/guest-images/images.json`.
+    """
+    img_arch = img_desc['qemu_build']
+    guest_tools_path = \
+        os.path.join(install_path, 'bin', CONSTANTS['guest_tools'][img_arch])
+
+    logger.info('Creating a symlink to %s', guest_tools_path)
+    os.symlink(guest_tools_path,
+               os.path.join(project_dir, CONSTANTS['guest_tools'][img_arch]))
+
+    # Also link 32-bit guest tools for 64-bit guests.
+    # This is required on Linux to have 32-bit s2e.so when loading 32-bit binaries
+    if img_arch == 'x86_64':
+        guest_tools_path_32 = \
+            os.path.join(install_path, 'bin', CONSTANTS['guest_tools']['i386'])
+
+        os.symlink(guest_tools_path_32,
+                   os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
+
+
+def symlink_guestfs(project_dir, guestfs_paths):
+    """
+    Create a symlink to the guestfs directory.
+    """
+    if len(guestfs_paths) > 1:
+        for idx, path in enumerate(guestfs_paths):
+            logger.info('Creating a symlink to %s', path)
+            os.symlink(path, os.path.join(project_dir, f'guestfs{idx}'))
+    else:
+        path = guestfs_paths[0]
+        logger.info('Creating a symlink to %s', path)
+        os.symlink(path, os.path.join(project_dir, 'guestfs'))
 
 
 class AbstractProject(EnvCommand):
@@ -225,7 +268,7 @@ class AbstractProject(EnvCommand):
 
         project_desc_path = os.path.join(project_dir, 'project.json')
         with open(project_desc_path, 'w') as f:
-            s = json.dumps(config_copy, sort_keys=True, indent=4)
+            s = json.dumps(config_copy, sort_keys=True, indent=4, cls=ConfigEncoder)
             f.write(s)
 
     # pylint: disable=no-self-use
@@ -244,58 +287,57 @@ class AbstractProject(EnvCommand):
         Create symlinks to the files that compose the project.
         """
         for f in files:
-            logger.info('Creating a symlink to %s', f)
             target_file = os.path.basename(f)
-            os.symlink(os.path.abspath(f), os.path.join(project_dir, target_file))
+
+            source_path = os.path.abspath(f)
+            symlink_path = os.path.join(project_dir, target_file)
+            if os.path.realpath(source_path) != os.path.realpath(symlink_path):
+                logger.info('Creating a symlink to %s', f)
+                os.symlink(source_path, symlink_path)
+            else:
+                logger.info('Not creating a symlink to %s, source and destination files are the same', f)
 
     def _symlink_guest_tools(self, project_dir, img_desc):
-        """
-        Create a symlink to the guest tools directory.
-
-        Args:
-            project_dir: The project directory.
-            img_desc: A dictionary that describes the image that will be used,
-                      from `$S2EDIR/source/guest-images/images.json`.
-        """
-        img_arch = img_desc['qemu_build']
-        guest_tools_path = \
-            self.install_path('bin', CONSTANTS['guest_tools'][img_arch])
-
-        logger.info('Creating a symlink to %s', guest_tools_path)
-        os.symlink(guest_tools_path,
-                   os.path.join(project_dir, CONSTANTS['guest_tools'][img_arch]))
-
-        # Also link 32-bit guest tools for 64-bit guests.
-        # This is required on Linux to have 32-bit s2e.so when loading 32-bit binaries
-        if img_arch == 'x86_64':
-            guest_tools_path_32 = \
-                self.install_path('bin', CONSTANTS['guest_tools']['i386'])
-
-            os.symlink(guest_tools_path_32,
-                       os.path.join(project_dir, CONSTANTS['guest_tools']['i386']))
-
+        return symlink_guest_tools(self.install_path(), project_dir, img_desc)
 
     def _select_guestfs(self, img_desc):
-        """
-        Select the guestfs to use, based on the chosen virtual machine image.
-
-        Args:
-            img_desc: An image descriptor read from the image's JSON
-            description.
-
-        Returns:
-            The path to the guestfs directory, or `None` if a suitable guestfs
-            was not found.
-        """
-        image_dir = os.path.dirname(img_desc['path'])
-        guestfs_path = self.image_path(image_dir, 'guestfs')
-
-        return guestfs_path if os.path.exists(guestfs_path) else None
+        return select_guestfs(self.image_path(), img_desc)
 
     # pylint: disable=no-self-use
-    def _symlink_guestfs(self, project_dir, guestfs_path):
+    def _symlink_guestfs(self, project_dir, guestfs_paths):
+        return symlink_guestfs(project_dir, guestfs_paths)
+
+    # pylint: disable=no-self-use
+    def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
         """
-        Create a symlink to the guestfs directory.
+        This function converts a target path that is located in a guestfs folder to an absolute
+        guest path.
+
+        :param target_path: The target path to convert
+        :param guestfs_paths: The list if guestfs paths to inspect.
+        :return:
         """
-        logger.info('Creating a symlink to %s', guestfs_path)
-        os.symlink(guestfs_path, os.path.join(project_dir, 'guestfs'))
+        if not target_path:
+            return None
+
+        real_target_path = os.path.realpath(target_path)
+
+        for guestfs_path in guestfs_paths:
+            # target and guestfs may be symlinks, need to compare actual path
+            real_guestfs_path = os.path.realpath(guestfs_path)
+            paths = [real_target_path, real_guestfs_path]
+            common = os.path.commonpath(paths)
+            if real_guestfs_path in common:
+                return f'/{os.path.relpath(real_target_path, real_guestfs_path)}'
+
+        # Check if that target_path is in the correct guestfs
+        if real_target_path.startswith(os.path.realpath(self.image_path())):
+            logger.error('%s seems to be located in a guestfs directory.', target_path)
+            logger.error('However, the selected image uses the following directories:')
+            for path in guestfs_paths:
+                logger.error('  * %s', path)
+
+            raise CommandError('Please check that you selected the proper guest image (-i option) '
+                               'and/or the binary in the right guestfs directory.')
+
+        return None

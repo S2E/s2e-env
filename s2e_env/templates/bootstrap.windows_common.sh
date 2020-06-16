@@ -5,6 +5,7 @@ function run_cmd {
     local PREFIX
     local CMD
     CMD="$1"
+    shift
 
     {% if image_arch=='x86_64' %}
     # The driver must be installed by a 64-bit process, otherwise
@@ -15,7 +16,7 @@ function run_cmd {
     PREFIX=
     {% endif %}
 
-    ${PREFIX}cmd.exe '\/c' "${CMD}"
+    ${PREFIX}cmd.exe '\/c' "${CMD}" $*
 }
 
 function install_driver {
@@ -56,4 +57,7 @@ function win_path {
 S2ECMD=./s2ecmd.exe
 S2EGET=./s2eget.exe
 S2EPUT=./s2eput.exe
-COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe s2e.sys s2e.inf drvctl.exe"
+COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe s2e.sys s2e.inf drvctl.exe libs2e32.dll"
+{% if image_arch=='x86_64' %}
+COMMON_TOOLS="${COMMON_TOOLS} libs2e64.dll"
+{% endif %}

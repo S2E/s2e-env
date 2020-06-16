@@ -38,6 +38,13 @@ class WindowsProject(BaseProject):
         super(WindowsProject, self).__init__(bootstrap_template,
                                              's2e-config.windows.lua')
 
+    def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
+        translated_path = super(WindowsProject, self)._translate_target_path_to_guestfs(target_path, guestfs_paths)
+        if translated_path:
+            translated_path = translated_path.replace('/', '\\')
+            return f'c:{translated_path}'
+        return None
+
     def _is_valid_image(self, target, os_desc):
         return is_valid_arch(target.arch, os_desc) and 'pe' in os_desc['binary_formats']
 
@@ -69,9 +76,10 @@ class WindowsDLLProject(WindowsProject):
                            'This flag will be ignored')
             config['use_seeds'] = False
 
-        if not config.get('target_args', []):
+        target = config.get('target')
+        if not target.args:
             logger.warning('No DLL entry point provided - defaulting to ``DllEntryPoint``')
-            config['target_args'] = ['DllEntryPoint']
+            target.args = ['DllEntryPoint']
 
     def _analyze_target(self, target, config):
         with PEAnalysis(target.path) as pe:
@@ -94,7 +102,7 @@ class WindowsDriverProject(WindowsProject):
         # valid module.
         #
         # Instead, find all the *.sys files and add them to the module list.
-        sys_files = [os.path.basename(tf) for tf in config['target_files']
+        sys_files = [os.path.basename(tf) for tf in config['target'].files
                      if tf.endswith('.sys')]
         config['modules'] = [(sys_file, True) for sys_file in sys_files]
 

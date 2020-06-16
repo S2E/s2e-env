@@ -24,107 +24,113 @@ SOFTWARE.
 
 import logging
 import os
-import re
 
-from magic import Magic
-
-from s2e_env.infparser.driver import Driver
-
-from .abstract_project import AbstractProject
-from .cgc_project import CGCProject
-from .linux_project import LinuxProject
-from .windows_project import WindowsProject, WindowsDLLProject, WindowsDriverProject
+logger = logging.getLogger('target')
 
 
-logger = logging.getLogger('new_project')
+class TargetArguments:
+    def __init__(self, args):
+        self._args = args if args else []
+        # These are seed files that we'll generate automatically when encountering an '@@' argument
+        self._blank_seed_files = []
 
-# Paths
-FILE_DIR = os.path.dirname(__file__)
-CGC_MAGIC = os.path.join(FILE_DIR, '..', '..', 'dat', 'cgc.magic')
+        # These are actual seed files specified by the user on the target's command line
+        self._seed_files = []
 
-# Magic regexs
-CGC_REGEX = re.compile(r'^CGC 32-bit')
-ELF32_REGEX = re.compile(r'^ELF 32-bit')
-ELF64_REGEX = re.compile(r'^ELF 64-bit')
-DLL32_REGEX = re.compile(r'^PE32 executable \(DLL\)')
-DLL64_REGEX = re.compile(r'^PE32\+ executable \(DLL\)')
-WIN32_DRIVER_REGEX = re.compile(r'^PE32 executable \(native\)')
-WIN64_DRIVER_REGEX = re.compile(r'^PE32\+ executable \(native\)')
-PE32_REGEX = re.compile(r'^PE32 executable')
-PE64_REGEX = re.compile(r'^PE32\+ executable')
-MSDOS_REGEX = re.compile(r'^MS-DOS executable')
+        # Maps a basename on the command line to a full path of the corresponding symbolic file
+        self._name_to_path = {}
+        self._translate_args()
 
+    def _translate_args(self):
+        """
+        It is possible to pass file paths as command line arguments to a target.
+        This function guesses which arguments are file paths and ensures that these files are uploaded into the guest.
+        It also patches the argument so that it is valid in the guest.
+        """
+        new_args = []
+        input_idx = 0
 
-def _determine_arch_and_proj(target_path):
-    """
-    Check that the given target is supported by S2E.
+        for arg in self._args:
+            if arg.startswith('@@'):
+                suffix = arg[2:]
+                if suffix:
+                    name = f'input-{input_idx}-{suffix}'
+                else:
+                    name = f'input-{input_idx}'
+                new_args.append(name)
+                self._blank_seed_files.append(name)
+                input_idx += 1
+            elif os.path.exists(arg):
+                self._seed_files.append(arg)
+                na = os.path.basename(arg)
+                new_args.append(na)
+            else:
+                new_args.append(arg)
+        self._args = new_args
 
-    The target's magic is checked to see if it is a supported file type (e.g.
-    ELF, PE, etc.). The architecture and operating system that the target was
-    compiled for (e.g., i386 Windows, x64 Linux, etc.) is also checked.
+    def generate_symbolic_files(self, root, use_seeds):
+        blank_seed_file_paths = []
+        for file in self._blank_seed_files:
+            path = os.path.join(root, file)
+            blank_seed_file_paths.append(path)
+            self._name_to_path[file] = path
 
-    Returns:
-        A tuple containing the target's architecture, operating system and a
-        project class. A tuple containing three ``None``s is returned on
-        failure.
-    """
-    default_magic = Magic()
-    magic_checks = (
-        (Magic(magic_file=CGC_MAGIC), CGC_REGEX, CGCProject, 'i386', 'decree'),
-        (default_magic, ELF32_REGEX, LinuxProject, 'i386', 'linux'),
-        (default_magic, ELF64_REGEX, LinuxProject, 'x86_64', 'linux'),
-        (default_magic, DLL32_REGEX, WindowsDLLProject, 'i386', 'windows'),
-        (default_magic, DLL64_REGEX, WindowsDLLProject, 'x86_64', 'windows'),
-        (default_magic, WIN32_DRIVER_REGEX, WindowsDriverProject, 'i386', 'windows'),
-        (default_magic, WIN64_DRIVER_REGEX, WindowsDriverProject, 'x86_64', 'windows'),
-        (default_magic, PE32_REGEX, WindowsProject, 'i386', 'windows'),
-        (default_magic, PE64_REGEX, WindowsProject, 'x86_64', 'windows'),
-        (default_magic, MSDOS_REGEX, WindowsProject, 'i386', 'windows'),
-    )
+            if not use_seeds:
+                with open(path, 'w') as fp:
+                    fp.write('x' * 256)
+                with open(path + '.symranges', 'w') as fp:
+                    fp.write('# This file specifies offset-size pairs to make symbolic\n')
+                    fp.write('0-256')
 
-    # Need to resolve symbolic links, otherwise magic will report the file type
-    # as being a symbolic link
-    target_path = os.path.realpath(target_path)
+        self._blank_seed_files = blank_seed_file_paths
 
-    # Check the target program against the valid file types
-    for magic_check, regex, proj_class, arch, operating_sys in magic_checks:
-        magic = magic_check.from_file(target_path)
+        for file in self._seed_files:
+            name = os.path.basename(file)
+            path = os.path.join(root, name)
+            self._name_to_path[name] = file
+            with open(path + '.symranges', 'w') as fp:
+                fp.write('# This file specifies offset-size pairs to make symbolic\n')
+                fp.write('# 0-0')
 
-        # If we find a match, create that project
-        if regex.match(magic):
-            return arch, operating_sys, proj_class
+    @property
+    def raw_args(self):
+        return self._args
 
-    return None, None, None
+    @property
+    def blank_seed_files(self):
+        return self._blank_seed_files
 
+    @property
+    def symbolic_files(self):
+        return self._blank_seed_files + self._seed_files
 
-def _extract_inf_files(target_path):
-    """Extract Windows driver files from an INF file."""
-    driver = Driver(target_path)
-    driver.analyze()
-    driver_files = driver.get_files()
-    if not driver_files:
-        raise TargetError('Driver has no files')
+    @property
+    def symbolic_file_names(self):
+        ret = []
+        for f in self.symbolic_files:
+            ret.append(os.path.basename(f))
+        return ret
 
-    base_dir = os.path.dirname(target_path)
+    def get_resolved_args(self, symfile_dir):
+        """The processed program arguments."""
 
-    logger.info('  Driver files:')
-    file_paths = []
-    for f in driver_files:
-        full_path = os.path.join(base_dir, f)
-        if not os.path.exists(full_path):
-            if full_path.endswith('.cat'):
-                logger.warning('Catalog file %s is missing', full_path)
-                continue
-            raise TargetError('%s does not exist' % full_path)
+        # The target arguments are specified using a format similar to the
+        # American Fuzzy Lop fuzzer. Options are specified as normal, however
+        # for programs that take input from a file, '@@' is used to mark the
+        # location in the target's command line where the input file should be
+        # placed. This will automatically be substituted with a symbolic file
+        # in the S2E bootstrap script.
+        parsed_args = []
+        for arg in self._args:
+            if arg in self._name_to_path:
+                parsed_args.append(f'{symfile_dir}{arg}')
+            else:
+                parsed_args.append(arg)
 
-        logger.info('    %s', full_path)
-        file_paths.append(full_path)
+        # Quote arguments that have spaces or backslashes in them
+        parsed_args = [f"'{arg}'" if ' ' in arg or '\\' in arg else arg for arg in parsed_args]
 
-    return list(set(file_paths))
-
-
-class TargetError(Exception):
-    """An error occurred when creating a new S2E analysis target."""
+        return parsed_args
 
 
 class Target:
@@ -134,63 +140,17 @@ class Target:
     """
 
     @staticmethod
-    def from_file(path, project_class=None):
-        # Check that the target is a valid file
-        if not os.path.isfile(path):
-            raise TargetError('Target %s does not exist' % path)
-
-        if path.endswith('.inf'):
-            logger.info('Detected Windows INF file, attempting to create a '
-                        'driver project...')
-            driver_files = _extract_inf_files(path)
-
-            first_sys_file = None
-            for f in driver_files:
-                if f.endswith('.sys'):
-                    first_sys_file = f
-
-            # TODO: prompt the user to select the right driver
-            if not first_sys_file:
-                raise TargetError('Could not find a *.sys file in the INF '
-                                  'file. Make sure that the INF file is valid '
-                                  'and belongs to a Windows driver')
-
-            path_to_analyze = first_sys_file
-            aux_files = driver_files
-        else:
-            path_to_analyze = path
-            aux_files = []
-
-        arch, operating_sys, proj_class = _determine_arch_and_proj(path_to_analyze)
-        if not arch:
-            raise TargetError('Could not determine architecture for %s' %
-                              path_to_analyze)
-
-        # Overwrite the automatically-derived project class if one is provided
-        if project_class:
-            if not issubclass(project_class, AbstractProject):
-                raise TargetError('Custom projects must be a subclass of '
-                                  '`AbstractProject`')
-            proj_class = project_class
-
-        return Target(path, arch, operating_sys, proj_class, aux_files)
-
-    @staticmethod
-    def empty(project_class):
+    def empty():
         """Create an empty target."""
-        return Target(None, None, None, project_class)
+        return Target(None, None, None, None)
 
     # pylint: disable=too-many-arguments
-    def __init__(self, path, arch, operating_sys, project_class, aux_files=None):
-        """
-        This constructor should not be called directly. Rather, the
-        ``from_file`` or ``empty`` static methods should be used to create a
-        ``Target``.
-        """
+    def __init__(self, path, args, arch, _os, aux_files=None):
         self._path = path
         self._arch = arch
-        self._os = operating_sys
-        self._proj_class = project_class
+        self._os = _os
+        self._args = TargetArguments(args)
+        self._translated_path = None
 
         if not aux_files:
             aux_files = []
@@ -203,11 +163,44 @@ class Target:
         return self._path
 
     @property
+    def translated_path(self):
+        r"""
+        If the target executable is already present in the base image, this returns
+        the path inside the image. E.g., if a user specify the following binary:
+        ./images/windows-xpsp3pro-i386/office2010/guestfs/program files/microsoft office/office14/winword.exe
+        the translated path will be c:\program files\microsoft office\office14\winword.exe.
+        """
+        return self._translated_path
+
+    @translated_path.setter
+    def translated_path(self, value):
+        self._translated_path = value
+
+    @property
+    def args(self):
+        """The program arguments."""
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        self._args = TargetArguments(value)
+
+    @property
+    def name(self):
+        """The basename of the target path"""
+        return os.path.basename(self.path) if self.path else None
+
+    @property
+    def names(self):
+        """The basename of the files"""
+        ret = []
+        for file in self.files:
+            ret += [os.path.basename(file)]
+        return ret
+
+    @property
     def arch(self):
-        """
-        The architecture (e.g., i386, x86-64, etc.) of the program under
-        analysis.
-        """
+        """The architecture (e.g., i386, x86-64, etc.) of the program under analysis."""
         return self._arch
 
     @property
@@ -217,15 +210,13 @@ class Target:
 
     @property
     def aux_files(self):
-        """
-        A list of any auxillary files required by S2E to analysis the target
-        program.
-        """
+        """A list of any auxiliary files required by S2E to analysis the target program."""
         return self._aux_files
 
-    def initialize_project(self):
-        """Initialize an s2e-env analysis project for this target."""
-        return self._proj_class()
+    @property
+    def files(self):
+        """This contains paths to all the files that must be downloaded into the guest."""
+        return ([self.path] if self.path and not self.translated_path else []) + self.aux_files
 
     def is_empty(self):
         """Returns ``True`` if the target is an empty one."""
@@ -233,3 +224,13 @@ class Target:
 
     def __str__(self):
         return 'Target(path=%s,arch=%s)' % (self._path, self._arch)
+
+    def toJSON(self):
+        return {
+            'path': self.path,
+            'files': self.files,
+            'name': self.name,
+            'arch': self.arch,
+            'os': self.operating_system,
+            'aux_files': self.aux_files
+        }

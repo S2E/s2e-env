@@ -7,7 +7,7 @@ DLL Analysis
 ============
 
 The chosen target is a Windows DLL. The DLL will be loaded with the entry point
-set to {{ target_args[0] }}.
+set to {{ target.args[0] }}.
 
 If required, you can change the entry point in bootstrap.sh. For example, some
 of the exported symbols provided by this DLL (out of {{ dll_exports | length}})
@@ -23,7 +23,7 @@ include:
 s2e.so
 ======
 
-{{ target_path }} is dynamically linked - you can use s2e.so to
+{{ target.path }} is dynamically linked - you can use s2e.so to
 generate symbolic command line arguments.
 
 {% endif %}
@@ -34,7 +34,7 @@ generate symbolic command line arguments.
 Function Models
 ===============
 
-{{ target_path }} is dynamically linked and imports the following
+{{ target.path }} is dynamically linked and imports the following
 functions:
 
 {% for modelled_function in modelled_functions %}    * {{ modelled_function }}

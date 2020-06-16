@@ -10,11 +10,11 @@ function execute_target {
     local SYMB_FILE
 
     TARGET="$1"
-    SYMB_FILE="$2"
+    shift
 
     # The DLL entry point (i.e. the argument directly following the comma) and
     # its arguments can be modified here
-    rundll32.exe ${TARGET},{{ target_args | join(' ') }}
+    rundll32.exe ${TARGET},$*
 }
 
 {% include 'bootstrap.windows_common.sh' %}

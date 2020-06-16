@@ -13,10 +13,7 @@ function make_seeds_symbolic {
 #
 function execute_target {
     local TARGET
-    local SYMB_FILE
-
     TARGET="$1"
-    SYMB_FILE="$2"
 
     # Activate fault injection right before loading the driver
     ./drvctl.exe set_config FaultInjectionActive 1

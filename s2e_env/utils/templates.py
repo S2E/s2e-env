@@ -53,6 +53,9 @@ def _init_template_env(templates_dir=None):
                       autoescape=False, undefined=StrictUndefined)
     env.filters['datetimefilter'] = _datetimefilter
 
+    # Avoid problems with bash syntax ${#...}
+    env.comment_start_string = '{##'
+
     return env
 
 

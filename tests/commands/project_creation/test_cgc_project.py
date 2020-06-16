@@ -25,8 +25,8 @@ import os
 from tempfile import gettempdir
 from unittest import TestCase
 
-from s2e_env.commands.project_creation import CGCProject
-from s2e_env.commands.project_creation import Target
+from s2e_env.commands.project_creation import CGCProject, Target
+from s2e_env.commands.new_project import target_from_file
 
 from . import DATA_DIR, monkey_patch_project
 
@@ -60,9 +60,8 @@ CADET_00001_PATH = os.path.join(DATA_DIR, CADET_00001)
 class CGCProjectTestCase(TestCase):
     def test_empty_project_config(self):
         """Test empty CGC project creation."""
-        target = Target.empty(CGCProject)
-        project = monkey_patch_project(target.initialize_project(),
-                                       CGC_IMAGE_DESC)
+        target = Target.empty()
+        project = monkey_patch_project(CGCProject(), CGC_IMAGE_DESC)
         options = {
             'image': 'cgc_debian-9.2.1-i386',
             'name': 'test',
@@ -74,18 +73,18 @@ class CGCProjectTestCase(TestCase):
         self.assertEqual(config['project_type'], 'cgc')
 
         # Assert that the projet has no target
-        self.assertIsNone(config['target_path'])
-        self.assertIsNone(config['target_arch'])
-        self.assertFalse(config['target_files'])
+        self.assertIsNone(config['target'].path)
+        self.assertIsNone(config['target'].arch)
+        self.assertFalse(config['target'].files)
 
         # Should be empty when no target is specified
         self.assertFalse(config['processes'])
         self.assertFalse(config['modules'])
 
         # CGC binaries have no input files
-        self.assertFalse(config['target_args'])
+        self.assertFalse(target.args.raw_args)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['warn_input_file'])
         self.assertFalse(config['warn_seeds'])
 
@@ -103,9 +102,8 @@ class CGCProjectTestCase(TestCase):
         Test CGC project creation given a CGC binary and nothing else. No
         image, project name, etc. is provided.
         """
-        target = Target.from_file(CADET_00001_PATH)
-        project = monkey_patch_project(target.initialize_project(),
-                                       CGC_IMAGE_DESC)
+        target, cls = target_from_file(CADET_00001_PATH)
+        project = monkey_patch_project(cls(), CGC_IMAGE_DESC)
 
         config = project._configure(target)
 
@@ -113,9 +111,9 @@ class CGCProjectTestCase(TestCase):
         self.assertEqual(config['project_type'], 'cgc')
 
         # Assert that the target is the one given (CADET_00001)
-        self.assertEqual(config['target_path'], CADET_00001_PATH)
-        self.assertEqual(config['target_arch'], 'i386')
-        self.assertListEqual(config['target_files'], [CADET_00001_PATH])
+        self.assertEqual(config['target'].path, CADET_00001_PATH)
+        self.assertEqual(config['target'].arch, 'i386')
+        self.assertListEqual(config['target'].files, [CADET_00001_PATH])
         self.assertListEqual(config['processes'], [CADET_00001])
         self.assertListEqual(config['modules'], [(CADET_00001, False)])
 
@@ -123,9 +121,9 @@ class CGCProjectTestCase(TestCase):
         self.assertDictEqual(config['image'], CGC_IMAGE_DESC)
 
         # CGC binaries have no input files
-        self.assertFalse(config['target_args'])
+        self.assertFalse(config['target'].args.raw_args)
+        self.assertFalse(config['target'].args.symbolic_files)
         self.assertFalse(config['sym_args'])
-        self.assertFalse(config['use_symb_input_file'])
         self.assertFalse(config['warn_input_file'])
         self.assertFalse(config['warn_seeds'])
 

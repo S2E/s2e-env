@@ -39,6 +39,7 @@ import sys
 
 import yaml
 
+
 class CommandError(Exception):
     """
     Exception class indicating a problem while executing a command.
@@ -300,6 +301,14 @@ class ProjectCommand(EnvCommand):
         Adds the project directory as a class member.
         """
         super(ProjectCommand, self).handle_common_args(**options)
+
+        project = options['project']
+        if os.path.isabs(project):
+            projects_dir = self.env_path('projects')
+            if projects_dir not in os.path.commonpath([projects_dir, project]):
+                raise CommandError(f'Specified project path is not a subdirectory of {projects_dir}')
+            project = os.path.relpath(project, projects_dir)
+        options['project'] = project
 
         # Construct the project directory
         self._project_dir = self.env_path('projects', options['project'])

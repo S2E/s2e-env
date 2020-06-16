@@ -83,6 +83,7 @@ dependencies:
         - gcc-multilib
         - g++-multilib
         - libpixman-1-dev
+        - libtinfo5
 
         # Testing dependencies
         - wine-stable
@@ -180,7 +181,7 @@ import_export:
         - s2e-config.lua
     # Files/directories that are **not** exported
     blacklist:
-        - guestfs
+        - guestfs*
         - guest-tools
         - guest-tools32
         - guest-tools64

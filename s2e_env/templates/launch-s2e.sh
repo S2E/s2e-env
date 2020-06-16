@@ -83,13 +83,15 @@ if [ "x$DEBUG" != "x" ]; then
         -loadvm $QEMU_SNAPSHOT $*
 
 else
-
     QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
     LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-$S2E_MODE.so"
 
     LD_PRELOAD=$LIBS2E $QEMU $QEMU_DRIVE \
         -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
         -serial file:serial.txt $QEMU_EXTRA_FLAGS \
-        -loadvm $QEMU_SNAPSHOT $*
+        -loadvm $QEMU_SNAPSHOT $* &
 
+    CHILD_PID=$!
+    trap "kill $CHILD_PID" SIGINT
+    wait $CHILD_PID
 fi
