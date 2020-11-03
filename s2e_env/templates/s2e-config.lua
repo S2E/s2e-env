@@ -413,7 +413,7 @@ add_plugin("LuaCoreEvents")
 
 -- This configuration shows an example that kills states if they fork in
 -- a specific module.
--- [[
+--[[
 pluginsConfig.LuaCoreEvents = {
     -- This annotation is called in case of a fork. It should return true
     -- to allow the fork and false to prevent it.
@@ -435,4 +435,4 @@ function onStateForkDecide(state)
    end
    return true
 end
--- ]]
+--]]
