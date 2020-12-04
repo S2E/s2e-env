@@ -76,7 +76,11 @@ setup(
         'patool==1.12',
         'pyunpack==0.1.2',
 
-        'pyftpdlib'
+        # FTP server used by image creation
+        'pyftpdlib',
+
+        # Used by plugin creation script
+        'pygit2'
     ],
     tests_require=[
         'mock',

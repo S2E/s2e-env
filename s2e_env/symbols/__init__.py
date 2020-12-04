@@ -173,7 +173,7 @@ class DebugInfo(metaclass=ABCMeta):
 
 class DwarfDebugInfo(DebugInfo):
     def __init__(self, path, search_paths=None, cls=ELFFile):
-        super(DwarfDebugInfo, self).__init__(path, search_paths)
+        super().__init__(path, search_paths)
 
         # This tracks the compilation units that have already been parsed
         self._cus = set()
@@ -322,7 +322,7 @@ class DwarfDebugInfo(DebugInfo):
 
 class Addrs2LinesDebugInfo(DebugInfo):
     def __init__(self, path, search_paths=None, s2e_prefix=''):
-        super(Addrs2LinesDebugInfo, self).__init__(path, search_paths)
+        super().__init__(path, search_paths)
         self._s2e_prefix = s2e_prefix
 
     def parse(self):

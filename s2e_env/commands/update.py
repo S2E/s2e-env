@@ -67,7 +67,7 @@ class Command(EnvCommand):
             logger.info('Updating S2E')
             repo.sync(_out=sys.stdout, _err=sys.stderr)
         except ErrorReturnCode as e:
-            raise CommandError(e)
+            raise CommandError(e) from e
         finally:
             # Change back to the original directory
             os.chdir(orig_dir)

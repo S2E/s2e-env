@@ -182,8 +182,8 @@ def _parse_sym_args(sym_args_str):
     for i in sym_args_str.split(' '):
         try:
             sym_args.append(int(i))
-        except ValueError:
-            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i)
+        except ValueError as e:
+            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i) from e
 
     return sym_args
 
@@ -248,7 +248,7 @@ class Command(EnvCommand):
     help = 'Initialize a new analysis project.'
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('target', nargs='?',
                             help='Path to the target file to analyze')

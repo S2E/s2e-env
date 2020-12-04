@@ -118,7 +118,7 @@ def _wait_for_termination(timeout):
 class S2EThread(Thread):
     # pylint: disable=too-many-arguments
     def __init__(self, args, env, cwd, stdout, stderr):
-        super(S2EThread, self).__init__()
+        super().__init__()
         self._args = args
         self._env = env
         self._cwd = cwd
@@ -185,12 +185,12 @@ class Command(ProjectCommand):
     ]
 
     def __init__(self):
-        super(Command, self).__init__()
+        super().__init__()
         self._start_time = None
         self._cgc = False
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('project_args', nargs=argparse.REMAINDER,
                             help='Optional arguments to the S2E launcher script')

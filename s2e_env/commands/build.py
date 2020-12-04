@@ -46,12 +46,12 @@ class Command(EnvCommand):
     help = 'Build S2E.'
 
     def __init__(self):
-        super(Command, self).__init__()
+        super().__init__()
 
         self._make = None
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('-g', '--debug', action='store_true',
                             help='Build S2E in debug mode')
@@ -93,7 +93,7 @@ class Command(EnvCommand):
                 logger.info('Building S2E (release) in %s', build_dir)
                 self._make('install', _out=sys.stdout, _err=sys.stderr)
         except ErrorReturnCode as e:
-            raise CommandError(e)
+            raise CommandError(e) from e
 
         logger.success('S2E built')
 

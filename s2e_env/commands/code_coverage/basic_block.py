@@ -79,7 +79,7 @@ class BasicBlockEncoder(json.JSONEncoder):
                 'function': o.function,
             }
 
-        return super(BasicBlockEncoder, self).default(o)
+        return super().default(o)
 
 
 class BasicBlockDecoder(json.JSONDecoder):
@@ -88,7 +88,7 @@ class BasicBlockDecoder(json.JSONDecoder):
     """
 
     def __init__(self, *args, **kwargs):
-        super(BasicBlockDecoder, self).__init__(object_hook=self.object_hook,
+        super().__init__(object_hook=self.object_hook,
                                                 *args, **kwargs)
 
     # pylint: disable=method-hidden

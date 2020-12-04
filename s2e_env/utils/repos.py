@@ -39,7 +39,7 @@ def git_clone(git_repo_url, git_repo_dir):
         git.clone(git_repo_url, git_repo_dir, _out=sys.stdout,
                   _err=sys.stderr)
     except ErrorReturnCode as e:
-        raise CommandError(e)
+        raise CommandError(e) from e
 
 
 def git_clone_to_source(env_path, git_repo):

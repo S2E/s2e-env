@@ -90,8 +90,7 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def __init__(self, use_color=True):
-        super(ColoredFormatter, self).__init__(\
-            fmt='%(levelname)s: [%(name)s] %(message)s')
+        super().__init__(fmt='%(levelname)s: [%(name)s] %(message)s')
 
         self._use_color = use_color
 
@@ -104,4 +103,4 @@ class ColoredFormatter(logging.Formatter):
                 record.name = termcolor.colored(record.name, color)
                 record.msg = termcolor.colored(record.msg, color)
 
-        return super(ColoredFormatter, self).format(record)
+        return super().format(record)

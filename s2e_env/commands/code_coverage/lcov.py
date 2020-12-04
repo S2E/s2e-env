@@ -143,7 +143,7 @@ def _gen_html(lcov_info_path, lcov_html_dir):
         genhtml(lcov_info_path, output_directory=lcov_html_dir,
                 _out=sys.stdout, _err=sys.stderr)
     except ErrorReturnCode as e:
-        raise CommandError(e)
+        raise CommandError(e) from e
 
 
 class LineCoverage(ProjectCommand):

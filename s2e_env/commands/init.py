@@ -111,7 +111,7 @@ def _install_dependencies(interactive):
         apt_get.update()
         apt_get.install(install_opts + install_packages)
     except ErrorReturnCode as e:
-        raise CommandError(e)
+        raise CommandError(e) from e
 
     # Install deb files at the end
     for url in deb_package_urls:
@@ -174,7 +174,7 @@ def _get_s2e_sources(env_path, manifest_branch):
     except ErrorReturnCode as e:
         # Clean up - remove the half-created S2E environment
         shutil.rmtree(env_path)
-        raise CommandError(e)
+        raise CommandError(e) from e
     finally:
         # Change back to the original directory
         os.chdir(orig_dir)
