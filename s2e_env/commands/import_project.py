@@ -87,7 +87,7 @@ class Command(EnvCommand):
     help = 'Import an S2E project from an archive'
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('archive', nargs=1,
                             help='The path to the exported project archive')

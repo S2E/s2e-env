@@ -73,7 +73,7 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
     """
 
     def __init__(self):
-        super(R2BasicBlockCoverage, self).__init__()
+        super().__init__()
 
         self._r2pipe_mod = None
 

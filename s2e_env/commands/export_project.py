@@ -62,7 +62,7 @@ class Command(ProjectCommand):
     help = 'Export an S2E project as an archive'
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('output_path', nargs='?',
                             help='The path to the exported project archive. '

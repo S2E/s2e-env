@@ -149,7 +149,7 @@ def _parse_target_arguments(test_root, test_config):
 
 class TestsuiteGenerator(EnvCommand):
     def __init__(self):
-        super(TestsuiteGenerator, self).__init__()
+        super().__init__()
         self._cmd_options = {}
         self._img_templates = None
         self._images = None
@@ -480,7 +480,7 @@ class Command(EnvCommand):
         subparsers.add_parser('list', cmd=TestsuiteLister(),
                               help='Display available tests')
 
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
     def handle(self, *args, **options):
         command = options.pop('command', ())

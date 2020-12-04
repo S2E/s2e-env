@@ -154,7 +154,7 @@ class Form:
 
 class Label(Form):
     def __init__(self, parent, x, y, text):
-        super(Label, self).__init__(parent, x, y, len(text) + 2, 1)
+        super().__init__(parent, x, y, len(text) + 2, 1)
         self._text = ' %s' % text
 
     def do_draw(self, ax, ay):
@@ -171,7 +171,7 @@ class Table(Form):
         self._layout = layout
         self.set_data(data, legend, layout)
         w, h = self._get_dimensions()
-        super(Table, self).__init__(parent, x, y, w, h)
+        super().__init__(parent, x, y, w, h)
 
     def _get_dimensions(self):
         lw, dw, h = self._compute_data_size()

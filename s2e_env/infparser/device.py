@@ -62,7 +62,7 @@ class Device:
 
 class PCIDevice(Device):
     def __init__(self, name, install_section, hardware_id):
-        super(PCIDevice, self).__init__(name, install_section, hardware_id)
+        super().__init__(name, install_section, hardware_id)
 
         if hardware_id.startswith('"') and hardware_id.endswith('"'):
             hardware_id = hardware_id[1:-1]
@@ -104,7 +104,7 @@ class PCIDevice(Device):
 
 class USBDevice(Device):
     def __init__(self, name, install_section, hardware_id):
-        super(USBDevice, self).__init__(name, install_section, hardware_id)
+        super().__init__(name, install_section, hardware_id)
         enumerator = hardware_id.split('\\')
         desc = enumerator[1].split('&')
         self.vendorId = 0

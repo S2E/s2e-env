@@ -338,7 +338,7 @@ class Command(EnvCommand):
     help = 'Build an image.'
 
     def __init__(self):
-        super(Command, self).__init__()
+        super().__init__()
 
         self._headless = True
         self._use_kvm = True
@@ -346,7 +346,7 @@ class Command(EnvCommand):
         self._has_cow = False
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('name',
                             help='The name of the image to build. If empty,'

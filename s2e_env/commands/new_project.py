@@ -248,7 +248,7 @@ class Command(EnvCommand):
     help = 'Initialize a new analysis project.'
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('target', nargs='?',
                             help='Path to the target file to analyze')

@@ -41,7 +41,7 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
     """
 
     def __init__(self):
-        super(BinaryNinjaBasicBlockCoverage, self).__init__()
+        super().__init__()
 
         self._bv = None
         self._binaryninja_mod = None

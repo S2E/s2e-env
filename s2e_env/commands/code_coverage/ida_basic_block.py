@@ -83,7 +83,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
     """
 
     def __init__(self):
-        super(IDABasicBlockCoverage, self).__init__()
+        super().__init__()
 
         self._ida_path = None
 

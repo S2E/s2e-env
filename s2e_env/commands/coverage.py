@@ -68,7 +68,7 @@ class Command(ProjectCommand):
         bb_parser.add_argument('-r', '--drcov', action='store_true',
                                help='Generate drcov-compatible output')
 
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
     def handle(self, *args, **options):
         command = options.pop('command', ())

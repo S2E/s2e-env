@@ -80,7 +80,7 @@ class TraceEncoder(json.JSONEncoder):
             for b in o:
                 chars.append(b)
             return chars
-        return super(TraceEncoder, self).default(o)
+        return super().default(o)
 
 
 class Command(ProjectCommand):
@@ -91,7 +91,7 @@ class Command(ProjectCommand):
     help = 'Parse an S2E execution trace into JSON.'
 
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('-p', '--path-id', action='append', type=int,
                             dest='path_ids',

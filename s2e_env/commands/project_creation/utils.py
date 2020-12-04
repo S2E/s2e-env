@@ -30,4 +30,4 @@ class ConfigEncoder(JSONEncoder):
     def default(self, o):
         if isinstance(o, Target):
             return o.toJSON()
-        return super(ConfigEncoder, self).default(o)
+        return super().default(o)

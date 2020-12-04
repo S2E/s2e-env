@@ -28,7 +28,7 @@ from .base_project import is_valid_arch, BaseProject
 
 class LinuxProject(BaseProject):
     def __init__(self):
-        super(LinuxProject, self).__init__('bootstrap.linux.sh',
+        super().__init__('bootstrap.linux.sh',
                                            's2e-config.linux.lua')
 
     def _is_valid_image(self, target, os_desc):

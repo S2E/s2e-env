@@ -60,11 +60,11 @@ class CommandParser(ArgumentParser):
     """
     def __init__(self, cmd, **kwargs):
         self._cmd = cmd
-        super(CommandParser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def error(self, message):
         if self._cmd.called_from_command_line:
-            super(CommandParser, self).error(message)
+            super().error(message)
         else:
             raise CommandError(message)
 
@@ -197,7 +197,7 @@ class EnvCommand(BaseCommand):
     """
 
     def __init__(self):
-        super(EnvCommand, self).__init__()
+        super().__init__()
 
         self._env_dir = None
         self._config = None
@@ -227,7 +227,7 @@ class EnvCommand(BaseCommand):
                                'environment' % (path, self.env_path('s2e_activate')))
 
     def add_arguments(self, parser):
-        super(EnvCommand, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('-e', '--env', required=False, default=os.getcwd(),
                             help='The S2E environment. Only used if the '
@@ -288,7 +288,7 @@ class ProjectCommand(EnvCommand):
     """
 
     def __init__(self):
-        super(ProjectCommand, self).__init__()
+        super().__init__()
 
         self._project_dir = None
         self._project_desc = None
@@ -300,7 +300,7 @@ class ProjectCommand(EnvCommand):
         """
         Adds the project directory as a class member.
         """
-        super(ProjectCommand, self).handle_common_args(**options)
+        super().handle_common_args(**options)
 
         project = options['project']
         if os.path.isabs(project):
@@ -329,7 +329,7 @@ class ProjectCommand(EnvCommand):
         self._sym_paths = options.pop('sympath')
 
     def add_arguments(self, parser):
-        super(ProjectCommand, self).add_arguments(parser)
+        super().add_arguments(parser)
 
         parser.add_argument('project', help='The name of the project')
         parser.add_argument('--sympath', action='append', required=False,

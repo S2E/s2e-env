@@ -33,7 +33,7 @@ logger = logging.getLogger('new_project')
 
 class CGCProject(BaseProject):
     def __init__(self):
-        super(CGCProject, self).__init__('bootstrap.cgc.sh',
+        super().__init__('bootstrap.cgc.sh',
                                          's2e-config.cgc.lua')
 
     def _is_valid_image(self, target, os_desc):

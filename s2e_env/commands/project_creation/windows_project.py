@@ -35,11 +35,11 @@ logger = logging.getLogger('new_project')
 
 class WindowsProject(BaseProject):
     def __init__(self, bootstrap_template='bootstrap.windows.sh'):
-        super(WindowsProject, self).__init__(bootstrap_template,
+        super().__init__(bootstrap_template,
                                              's2e-config.windows.lua')
 
     def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
-        translated_path = super(WindowsProject, self)._translate_target_path_to_guestfs(target_path, guestfs_paths)
+        translated_path = super()._translate_target_path_to_guestfs(target_path, guestfs_paths)
         if translated_path:
             translated_path = translated_path.replace('/', '\\')
             return f'c:{translated_path}'
@@ -57,16 +57,16 @@ class WindowsProject(BaseProject):
 
 class WindowsDLLProject(WindowsProject):
     def __init__(self):
-        super(WindowsDLLProject, self).__init__('bootstrap.windows_dll.sh')
+        super().__init__('bootstrap.windows_dll.sh')
 
     def _is_valid_image(self, target, os_desc):
         if not target.path.endswith('.dll'):
             raise CommandError('Invalid DLL name - requires .dll extension')
 
-        return super(WindowsDLLProject, self)._is_valid_image(target, os_desc)
+        return super()._is_valid_image(target, os_desc)
 
     def _finalize_config(self, config):
-        super(WindowsDLLProject, self)._finalize_config(config)
+        super()._finalize_config(config)
 
         # Not supported for DLLs
         config['processes'] = []
@@ -88,14 +88,14 @@ class WindowsDLLProject(WindowsProject):
 
 class WindowsDriverProject(WindowsProject):
     def __init__(self):
-        super(WindowsDriverProject, self).__init__('bootstrap.windows_driver.sh')
+        super().__init__('bootstrap.windows_driver.sh')
 
     def _is_valid_image(self, target, os_desc):
         # Windows drivers must match the OS's bit-ness
         return os_desc['name'] == 'windows' and os_desc['arch'] == target.arch
 
     def _finalize_config(self, config):
-        super(WindowsDriverProject, self)._finalize_config(config)
+        super()._finalize_config(config)
 
         # By default, the list of modules will only include the target program.
         # However, for a Windows driver this may be an INF file, which is not a

@@ -80,7 +80,7 @@ class BaseProject(AbstractProject):
     """
 
     def __init__(self, bootstrap_template, lua_template):
-        super(BaseProject, self).__init__()
+        super().__init__()
 
         self._bootstrap_template = bootstrap_template
         self._lua_template = lua_template
