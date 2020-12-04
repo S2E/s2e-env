@@ -224,7 +224,7 @@ class EnvCommand(BaseCommand):
             raise CommandError('This does not look like an S2E environment - '
                                'it does not contain an s2e.yaml configuration '
                                'file (%s does not exist). Source %s in your '
-                               'environment' % (path, self.env_path('s2e_activate')))
+                               'environment' % (path, self.env_path('s2e_activate'))) from None
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -323,7 +323,7 @@ class ProjectCommand(EnvCommand):
             raise CommandError('%s does not look like an S2E analysis '
                                'project - it does not contain a project.json '
                                'project description. Please check the project '
-                               'name' % self._project_name)
+                               'name' % self._project_name) from None
 
         # Load the additional symbol paths
         self._sym_paths = options.pop('sympath')

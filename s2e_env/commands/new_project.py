@@ -182,8 +182,8 @@ def _parse_sym_args(sym_args_str):
     for i in sym_args_str.split(' '):
         try:
             sym_args.append(int(i))
-        except ValueError:
-            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i)
+        except ValueError as e:
+            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i) from e
 
     return sym_args
 

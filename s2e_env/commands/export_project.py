@@ -153,4 +153,4 @@ class Command(ProjectCommand):
                                       _err=sys.stderr)
             create_archive(self._project_name)
         except ErrorReturnCode as e:
-            raise CommandError('Failed to archive project - %s' % e)
+            raise CommandError('Failed to archive project - %s' % e) from e

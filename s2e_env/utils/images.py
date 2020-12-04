@@ -62,7 +62,7 @@ def _decompress(path):
             directory=os.path.dirname(path), _out=sys.stdout,
             _err=sys.stderr)
     except ErrorReturnCode as e:
-        raise CommandError(e)
+        raise CommandError(e) from e
 
 
 class ImageDownloader:
@@ -119,7 +119,7 @@ def _get_templates(img_build_dir, filename, key):
             template_json = json.load(f)
     except:
         raise CommandError('Could not parse %s. Something is wrong with the '
-                           'environment' % images)
+                           'environment' % images) from None
 
     _validate_version(template_json, images)
 
@@ -157,7 +157,7 @@ def get_image_descriptor(image_dir):
         raise
     except Exception as e:
         raise CommandError('Unable to open image description %s: %s' %
-                           (img_json_path, e))
+                           (img_json_path, e)) from e
 
 
 def get_all_images(templates, app_templates):

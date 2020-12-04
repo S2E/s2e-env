@@ -157,7 +157,7 @@ def _check_vmlinux():
         raise CommandError('Make sure that the kernels in /boot are readable. '
                            'This is required for guestfish. Please run the '
                            'following command:\n\n'
-                           'sudo chmod ugo+r /boot/vmlinu*')
+                           'sudo chmod ugo+r /boot/vmlinu*') from None
 
 
 # pylint: disable=no-member
@@ -491,7 +491,7 @@ class Command(EnvCommand):
             make_image = make.bake(j=self._num_cores, r=True, warn_undefined_variables=True)
             make_image(sorted(rule_names))
         except ErrorReturnCode as e:
-            raise CommandError(e)
+            raise CommandError(e) from e
 
     def _clone_kernel(self):
         kernels_root = self.source_path(CONSTANTS['repos']['images']['linux'])

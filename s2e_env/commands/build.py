@@ -93,7 +93,7 @@ class Command(EnvCommand):
                 logger.info('Building S2E (release) in %s', build_dir)
                 self._make('install', _out=sys.stdout, _err=sys.stderr)
         except ErrorReturnCode as e:
-            raise CommandError(e)
+            raise CommandError(e) from e
 
         logger.success('S2E built')
 

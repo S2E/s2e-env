@@ -84,9 +84,9 @@ class R2BasicBlockCoverage(BasicBlockCoverage):
         """
         try:
             self._r2pipe_mod = importlib.import_module('r2pipe')
-        except ImportError:
+        except ImportError as e:
             raise CommandError('Unable to load r2pipe. Is Radare2/r2pipe '
-                               'installed?')
+                               'installed?') from e
 
     def _get_disassembly_info(self, module_path):
         """

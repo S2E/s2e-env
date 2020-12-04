@@ -51,7 +51,7 @@ def _get_project_name(archive):
         contents = tar(exclude='*/*', list=True, file=archive)
         return os.path.dirname(str(contents))
     except ErrorReturnCode as e:
-        raise CommandError('Failed to list archive - %s' % e)
+        raise CommandError('Failed to list archive - %s' % e) from e
 
 
 def _decompress_archive(archive_path, dest_path):
@@ -68,7 +68,7 @@ def _decompress_archive(archive_path, dest_path):
             old_path = os.path.join(directory, _get_project_name(archive_path))
             shutil.move(old_path, dest_path)
     except ErrorReturnCode as e:
-        raise CommandError('Failed to decompress project archive - %s' % e)
+        raise CommandError('Failed to decompress project archive - %s' % e) from e
 
 
 class Command(EnvCommand):

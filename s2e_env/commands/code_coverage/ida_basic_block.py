@@ -152,4 +152,4 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                 with open(disas_file, 'r') as f:
                     return json.load(f, cls=BasicBlockDecoder)
         except ErrorReturnCode as e:
-            raise CommandError(e)
+            raise CommandError(e) from e
