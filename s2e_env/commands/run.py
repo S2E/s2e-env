@@ -106,7 +106,9 @@ def _sigterm_handler(signum=None, _=None):
 
 
 def _wait_for_termination(timeout):
-    cnt = timeout * 60
+    if timeout:
+        cnt = timeout * 60
+
     while not terminating():
         if timeout:
             if not cnt:
