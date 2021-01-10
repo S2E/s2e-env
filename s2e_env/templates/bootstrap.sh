@@ -38,6 +38,7 @@ function update_common_tools {
     local OUR_S2EGET
 
     OUR_S2EGET=${S2EGET}
+    OUR_S2ECMD=${S2ECMD}
 
     # First, download the common tools
     {% if project_type == 'windows' %}
@@ -46,10 +47,18 @@ function update_common_tools {
       OUR_S2EGET=${S2EGET}_old.exe
       mv ${S2EGET} ${OUR_S2EGET}
     fi
+    if echo ${COMMON_TOOLS} | grep -q s2ecmd; then
+      OUR_S2ECMD=${S2ECMD}_old.exe
+      mv ${S2ECMD} ${OUR_S2ECMD}
+    fi
     {% endif %}
 
     for TOOL in ${COMMON_TOOLS}; do
         ${OUR_S2EGET} ${TARGET_TOOLS_ROOT}/${TOOL}
+        if [ ! -f ${TOOL} ]; then
+          ${OUR_S2ECMD} kill 0 "Could not get ${TOOL} from the host. Make sure that guest tools are installed properly."
+          exit 1
+        fi
         chmod +x ${TOOL}
     done
 }
