@@ -27,9 +27,10 @@ from .base_project import is_valid_arch, BaseProject
 
 
 class LinuxProject(BaseProject):
+    supported_tools = ['pov']
+
     def __init__(self):
-        super().__init__('bootstrap.linux.sh',
-                                           's2e-config.linux.lua')
+        super().__init__('bootstrap.linux.sh', 's2e-config.linux.lua')
 
     def _is_valid_image(self, target, os_desc):
         return is_valid_arch(target.arch, os_desc) and 'elf' in os_desc['binary_formats']

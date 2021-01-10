@@ -38,6 +38,7 @@ from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.manage import call_command
 from s2e_env.commands.new_project import target_from_file
+from s2e_env.commands.project_creation.abstract_project import validate_arguments
 from s2e_env.commands.run import send_signal_to_children_on_exit
 from s2e_env.utils.images import get_image_templates, get_app_templates, get_all_images, get_image_descriptor, \
                                  select_guestfs, translate_image_name
@@ -206,7 +207,7 @@ class TestsuiteGenerator(EnvCommand):
 
         return True
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def _handle_test(self, test_root, test, test_config):
         ts_dir = self.source_path('s2e', 'testsuite')
 
@@ -247,6 +248,9 @@ class TestsuiteGenerator(EnvCommand):
                     }
                     options.update(test_config.get('options', []))
 
+                    if not validate_arguments(options):
+                        raise CommandError('Please check test case arguments')
+
                     call_command(project, *[], **options)
 
                     scripts = test_config.get('scripts', {})
@@ -283,6 +287,9 @@ class TestsuiteGenerator(EnvCommand):
                         'testsuite_root': ts_dir
                     }
                     options.update(test_config.get('options', []))
+
+                    if not validate_arguments(options):
+                        raise CommandError('Please check test case arguments')
 
                     call_command(project, *[], **options)
 

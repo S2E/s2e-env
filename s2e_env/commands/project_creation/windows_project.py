@@ -35,8 +35,7 @@ logger = logging.getLogger('new_project')
 
 class WindowsProject(BaseProject):
     def __init__(self, bootstrap_template='bootstrap.windows.sh'):
-        super().__init__(bootstrap_template,
-                                             's2e-config.windows.lua')
+        super().__init__(bootstrap_template, 's2e-config.windows.lua')
 
     def _translate_target_path_to_guestfs(self, target_path, guestfs_paths):
         translated_path = super()._translate_target_path_to_guestfs(target_path, guestfs_paths)
@@ -53,6 +52,10 @@ class WindowsProject(BaseProject):
 
         # Make all module names lower-case (in line with the WindowsMonitor plugin)
         config['modules'] = [(mod.lower(), kernel_mode) for mod, kernel_mode in config.get('modules', [])]
+
+
+class WindowsExeProject(WindowsProject):
+    supported_tools = ['pov', 'cfi', 'tickler']
 
 
 class WindowsDLLProject(WindowsProject):

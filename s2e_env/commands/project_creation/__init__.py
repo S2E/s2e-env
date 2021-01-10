@@ -26,5 +26,5 @@ from .abstract_project import AbstractProject
 from .cgc_project import CGCProject
 from .linux_project import LinuxProject
 from .target import Target
-from .windows_project import WindowsProject, WindowsDLLProject, \
+from .windows_project import WindowsExeProject, WindowsDLLProject, \
         WindowsDriverProject
