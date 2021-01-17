@@ -62,13 +62,18 @@ def _get_tests(testsuite_root):
 def _get_run_test_scripts(testsuite_root):
     tests = []
 
-    for fn in os.listdir(testsuite_root):
-        path = os.path.join(testsuite_root, fn)
-        run_tests_path = os.path.join(testsuite_root, path, 'run-tests')
-        if not os.path.exists(run_tests_path):
-            logger.warning('%s does not exist, skipping test project %s', run_tests_path, fn)
+    for test_name in os.listdir(testsuite_root):
+        for test_project in os.listdir(os.path.join(testsuite_root, test_name)):
+            path = os.path.join(testsuite_root, test_name, test_project)
+            if not os.path.isdir(path):
+                continue
 
-        tests.append(run_tests_path)
+            run_tests_path = os.path.join(testsuite_root, path, 'run-tests')
+            if not os.path.exists(run_tests_path):
+                logger.warning('%s does not exist, skipping test project %s/%s',
+                               run_tests_path, test_name, test_project)
+
+            tests.append(run_tests_path)
 
     return tests
 
@@ -137,7 +142,7 @@ def _get_test_project_name(test, target_path, image_name):
 
     # We can have app images, which contain a slash
     image_name = image_name.replace('/', '_')
-    return 'testsuite/%s_%s_%s' % (test, target_name, image_name)
+    return 'testsuite/%s/%s_%s' % (test, target_name, image_name)
 
 
 def _parse_target_arguments(test_root, test_config):
