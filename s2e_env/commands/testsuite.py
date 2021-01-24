@@ -29,6 +29,8 @@ import subprocess
 import os
 import stat
 import sys
+import threading
+import time
 import yaml
 
 import psutil
@@ -366,14 +368,42 @@ def _get_max_instances(**options):
         # Determine optimal number of cores based on available memory
         cpus = psutil.cpu_count()
         mem = psutil.virtual_memory().available
-        logger.info('The system has %d CPUs and %d GB of available RAM', cpus, mem / (1 << 30))
 
-        logger.info('Average memory usage per S2E instance: %d GB',
-                    TestsuiteRunner.AVERAGE_S2E_MEM_USAGE / (1 << 30))
+        if options.get('log', True):
+            logger.info('The system has %d CPUs and %d GB of available RAM', cpus, mem / (1 << 30))
+            logger.info('Average memory usage per S2E instance: %d GB',
+                        TestsuiteRunner.AVERAGE_S2E_MEM_USAGE / (1 << 30))
         max_instances = int(mem / TestsuiteRunner.AVERAGE_S2E_MEM_USAGE)
         return min(cpus, max_instances)
 
     return options.get('instances')
+
+
+def _get_mem_free_percentage():
+    vm = psutil.virtual_memory()
+    return vm.available / vm.total * 100
+
+
+class TestCancelledException(Exception):
+    pass
+
+
+def _throttle(state):
+    # We don't enforce memory limits, best effort to avoid crashing the machine.
+    while _get_mem_free_percentage() < 10 and not state.get('terminating'):
+        logger.info('Not enough memory to start a new instance. Waiting.')
+        time.sleep(10)
+
+    # Prevent all instances from starting at the same time
+    lock = state.get('start_lock')
+
+    while not lock.acquire(timeout=1):
+        if state.get('terminating', False):
+            return False
+
+    time.sleep(0.5)
+    lock.release()
+    return True
 
 
 class TestsuiteRunner(EnvCommand):
@@ -384,6 +414,9 @@ class TestsuiteRunner(EnvCommand):
     AVERAGE_S2E_MEM_USAGE = 3 * 1024 * 1024 * 1024
 
     def call_script(self, state, script):
+        if not _throttle(state):
+            return
+
         logger.info('Starting %s', script)
         env = os.environ.copy()
         env['S2EDIR'] = self.env_path()
@@ -397,20 +430,43 @@ class TestsuiteRunner(EnvCommand):
             with open(stderr, 'w') as se:
                 status = None
                 try:
-                    subprocess.check_call([script], env=env, stdout=so, stderr=se)
+                    p = subprocess.Popen([script], env=env, stdout=so, stderr=se)
+                    while True:
+                        if state.get('terminating', False):
+                            p.terminate()
+                            p.wait()
+                            raise TestCancelledException()
+                        try:
+                            p.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            pass
+
+                        if p.returncode is None:
+                            continue
+
+                        if not p.returncode:
+                            break
+
+                        if p.returncode:
+                            raise Exception(f'Error while running {script}')
+
                     status = 'SUCCESS'
-                except Exception:
+                except TestCancelledException:
+                    status = 'CANCELLED'
+                except Exception as e:
+                    logger.error(e)
                     status = 'FAILURE'
                 finally:
                     end_time = datetime.datetime.now()
                     diff_time = end_time - start_time
                     ms = divmod(diff_time.total_seconds(), 60)
-                    state['completed'] += 1
-                    logger.info('[%d/%d %02d:%02d] %s: %s',
-                                state['completed'], state['num_tests'], ms[0], ms[1], status, script)
-                    if status == 'FAILURE':
-                        logger.error('   Check %s for details', stdout)
-                        logger.error('   Check %s for details', stderr)
+                    with state.get('print_lock'):
+                        state['completed'] += 1
+                        logger.info('[%d/%d %02d:%02d] %s: %s',
+                                    state['completed'], state['num_tests'], ms[0], ms[1], status, script)
+                        if status == 'FAILURE':
+                            logger.error('   Check %s for details', stdout)
+                            logger.error('   Check %s for details', stderr)
 
     def handle(self, *args, **options):
         logger.info('Running testsuite')
@@ -444,12 +500,15 @@ class TestsuiteRunner(EnvCommand):
 
         pool = multiprocessing.dummy.Pool(actual_instances)
 
-        try:
-            state = {
-                'completed': 0,
-                'num_tests': len(scripts_to_run)
-            }
+        state = {
+            'completed': 0,
+            'num_tests': len(scripts_to_run),
+            'start_lock': threading.Lock(),
+            'print_lock': threading.Lock(),
+            'terminating': False,
+        }
 
+        try:
             r = [pool.apply_async(self.call_script, (state, script,)) for script in scripts_to_run]
             pool.close()
 
@@ -460,6 +519,7 @@ class TestsuiteRunner(EnvCommand):
 
         except KeyboardInterrupt:
             logger.warning('Terminating testsuite (CTRL+C)')
+            state['terminating'] = True
             pool.terminate()
         finally:
             pool.join()
