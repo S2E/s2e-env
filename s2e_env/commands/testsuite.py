@@ -146,11 +146,18 @@ def _get_test_project_name(test, target_path, image_name):
 
 
 def _parse_target_arguments(test_root, test_config):
-    ret = []
-    args = test_config.get('target_arguments', [])
-    for arg in args:
-        ret.append(arg.replace('$(TEST_ROOT)', test_root))
-    return ret
+    processed_batches = []
+    arg_batches = test_config.get('target_arguments', [])
+    for arg_batch in arg_batches:
+        ret = []
+        for arg in arg_batch:
+            ret.append(arg.replace('$(TEST_ROOT)', test_root))
+        processed_batches.append(ret)
+
+    if not processed_batches:
+        processed_batches = [[]]
+
+    return processed_batches
 
 
 class TestsuiteGenerator(EnvCommand):
@@ -238,70 +245,66 @@ class TestsuiteGenerator(EnvCommand):
                         logger.warning(e)
                         continue
 
-                    target, proj_class = target_from_file(target_path)
-                    target.args = _parse_target_arguments(test_root, test_config)
-                    project = proj_class()
+                    arg_batches = _parse_target_arguments(test_root, test_config)
+                    for arg_idx, arg_batch in enumerate(arg_batches):
+                        target, proj_class = target_from_file(target_path)
+                        target.args = arg_batch
+                        project = proj_class()
 
-                    name = _get_test_project_name(test, target_path, image_name)
-                    options = {
-                        'image': image_name,
-                        'name': name,
-                        'target': target,
-                        'force': True,
-                        'project_path': self.projects_path(name),
-                        'testsuite_root': ts_dir
-                    }
-                    options.update(test_config.get('options', []))
-
-                    if not validate_arguments(options):
-                        raise CommandError('Please check test case arguments')
-
-                    call_command(project, *[], **options)
-
-                    scripts = test_config.get('scripts', {})
-                    run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
-                    self._generate_run_tests(ts_dir, test, run_tests_template, options)
-                    _call_post_project_gen_script(test_root, test_config, options)
+                        self._gen_project(
+                            ts_dir, test_config, test_root, test, target,
+                            target_path, image_name, project, arg_idx
+                        )
         else:
             for target_name in test_config['targets']:
                 target_path = _resolve_target_path(test_root, target_name, [])
+                arg_batches = _parse_target_arguments(test_root, test_config)
 
-                target, proj_class = target_from_file(target_path)
-                target.args = _parse_target_arguments(test_root, test_config)
-                project = proj_class()
+                for arg_idx, args in enumerate(arg_batches):
+                    target, proj_class = target_from_file(target_path)
+                    target.args = args
+                    project = proj_class()
 
-                images = project.get_usable_images(target, self._img_templates)
-                logger.info(images)
+                    images = project.get_usable_images(target, self._img_templates)
+                    logger.info(images)
 
-                for image_name in images:
-                    if image_name in blacklisted_images:
-                        logger.warning('%s is blacklisted, skipping tests for that image', image_name)
-                        continue
+                    for image_name in images:
+                        if image_name in blacklisted_images:
+                            logger.warning('%s is blacklisted, skipping tests for that image', image_name)
+                            continue
 
-                    if target_images and image_name not in target_images:
-                        logger.debug('%s is not in target-images, skipping', image_name)
-                        continue
+                        if target_images and image_name not in target_images:
+                            logger.debug('%s is not in target-images, skipping', image_name)
+                            continue
 
-                    name = _get_test_project_name(test, target_path, image_name)
-                    options = {
-                        'image': image_name,
-                        'name': name,
-                        'target': target,
-                        'force': True,
-                        'project_path': self.projects_path(name),
-                        'testsuite_root': ts_dir
-                    }
-                    options.update(test_config.get('options', []))
+                        self._gen_project(
+                            ts_dir, test_config, test_root, test, target,
+                            target_path, image_name, project, arg_idx
+                        )
 
-                    if not validate_arguments(options):
-                        raise CommandError('Please check test case arguments')
+    # pylint: disable=too-many-arguments
+    def _gen_project(self, ts_dir, test_config, test_root, test, target, target_path, image_name, project, arg_idx):
+        name = _get_test_project_name(test, target_path, image_name)
+        name = f'{name}_{arg_idx}'
+        options = {
+            'image': image_name,
+            'name': name,
+            'target': target,
+            'force': True,
+            'project_path': self.projects_path(name),
+            'testsuite_root': ts_dir
+        }
+        options.update(test_config.get('options', []))
 
-                    call_command(project, *[], **options)
+        if not validate_arguments(options):
+            raise CommandError('Please check test case arguments')
 
-                    scripts = test_config.get('scripts', {})
-                    run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
-                    self._generate_run_tests(ts_dir, test, run_tests_template, options)
-                    _call_post_project_gen_script(test_root, test_config, options)
+        call_command(project, *[], **options)
+
+        scripts = test_config.get('scripts', {})
+        run_tests_template = scripts.get('run_tests', 'run-tests.tpl')
+        self._generate_run_tests(ts_dir, test, run_tests_template, options)
+        _call_post_project_gen_script(test_root, test_config, options)
 
     def _get_tests(self):
         ts_dir = self.source_path('s2e', 'testsuite')
