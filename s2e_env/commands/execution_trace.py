@@ -29,20 +29,22 @@ from protobuf_to_dict import protobuf_to_dict
 from s2e_env.command import ProjectCommand, CommandError
 from s2e_env.execution_trace import parse as parse_execution_tree
 from s2e_env.execution_trace import TraceEntries_pb2, TraceEntryFork
+from s2e_env.execution_trace.analyzer import AnalyzerState
+from s2e_env.execution_trace.modules import Module
 
 
 logger = logging.getLogger('execution_trace')
 
 
-def _make_json_trace(execution_trace):
+def _make_json_trace(execution_trace, state):
     """
     Make an execution trace (consisting of ``TraceEntry`` objects)
     JSON-serializable.
     """
-    return [_make_json_entry(header, item) for header, item in execution_trace]
+    return [_make_json_entry(header, item, state) for header, item in execution_trace]
 
 
-def _make_json_entry(header, item):
+def _make_json_entry(header, item, state):
     """
     Combine a trace entry header and item into a single JSON-serializable
     entry. Return this entry as a ``dict``.
@@ -57,8 +59,20 @@ def _make_json_entry(header, item):
     # If the entry is a fork, then we have to make the child traces
     # JSON-serializable as well
     if header.type == TraceEntries_pb2.TRACE_FORK:
-        children = {state_id: _make_json_trace(trace) for state_id, trace in item.children.items()}
+        children = {}
+        for state_id, trace in item.children.items():
+            new_state = state.clone()
+            children[state_id] = _make_json_trace(trace, new_state)
         item = TraceEntryFork(children)
+    elif header.type == TraceEntries_pb2.TRACE_OSINFO:
+        state.modules.kernel_start = item.kernel_start
+    elif header.type == TraceEntries_pb2.TRACE_MOD_LOAD:
+        state.modules.add(Module(item))
+    elif header.type == TraceEntries_pb2.TRACE_MOD_UNLOAD:
+        try:
+            state.modules.remove(Module(item))
+        except Exception:
+            pass
 
     header_dict = protobuf_to_dict(header, use_enum_labels=True)
 
@@ -68,6 +82,16 @@ def _make_json_entry(header, item):
         entry.update({'children': item.children})
     else:
         entry.update(protobuf_to_dict(item, use_enum_labels=True))
+
+    try:
+        mod = state.modules.get(header.pid, header.pc)
+        rel_pc = mod.to_native(header.pc)
+        if rel_pc:
+            entry.update({'module': {
+                'name': mod.path, 'pc': rel_pc
+            }})
+    except Exception as e:
+        logger.debug('Error while computing module: %s', e)
 
     return entry
 
@@ -112,7 +136,8 @@ class Command(ProjectCommand):
             raise CommandError('The execution trace is empty')
 
         # Convert the tree into a JSON representation
-        execution_tree_json = _make_json_trace(execution_tree)
+        state = AnalyzerState()
+        execution_tree_json = _make_json_trace(execution_tree, state)
 
         # Write the execution tree to a JSON file
         json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
