@@ -483,3 +483,5 @@ function onStateForkDecide(state)
    return true
 end
 --]]
+
+{{ custom_lua_string }}

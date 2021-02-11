@@ -173,7 +173,8 @@ class BaseProject(AbstractProject):
             'enable_cfi': options.get('enable_cfi', False),
             'enable_tickler': options.get('enable_tickler', False),
 
-            'single_path': options.get('single_path', False)
+            'single_path': options.get('single_path', False),
+            'custom_lua_string': options.get('custom_lua_string', '')
         }
 
         # Do some basic analysis on the target (if it exists)
