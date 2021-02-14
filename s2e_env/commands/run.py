@@ -26,6 +26,7 @@ SOFTWARE.
 import argparse
 import ctypes.util
 import datetime
+import json
 import logging
 import os
 import shlex
@@ -106,7 +107,9 @@ def _sigterm_handler(signum=None, _=None):
 
 
 def _wait_for_termination(timeout):
-    cnt = timeout * 60
+    if timeout:
+        cnt = timeout * 60
+
     while not terminating():
         if timeout:
             if not cnt:
@@ -272,14 +275,24 @@ class Command(ProjectCommand):
         if s2e_main_process.returncode:
             raise CommandError('S2E terminated with error %d' % s2e_main_process.returncode)
 
+    def _get_libs2e(self):
+        with open(self.project_path('project.json')) as fp:
+            project_desc = json.loads(fp.read())
+
+        qemu_build = self.image['qemu_build']
+        qemu = self.install_path('bin', 'qemu-system-%s' % qemu_build)
+
+        s2e_build = 's2e'
+        if project_desc.get('single_path', False):
+            s2e_build = 's2e_sp'
+
+        return qemu, self.install_path('share', 'libs2e', f'libs2e-{qemu_build}-{s2e_build}.so')
+
     def _setup_env(self, project_args, cores, qmp_server):
         sn = qmp_server.socket.getsockname()
         server, port = sn[0], sn[1]
 
-        qemu_build = self.image['qemu_build']
-        qemu = self.install_path('bin',
-                                 'qemu-system-%s' % qemu_build)
-        libs2e = self.install_path('share', 'libs2e', 'libs2e-%s-s2e.so' % qemu_build)
+        qemu, libs2e = self._get_libs2e()
 
         env = os.environ.copy()
         env_s2e = {

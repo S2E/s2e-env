@@ -79,6 +79,8 @@ class BaseProject(AbstractProject):
     analysis on the target.
     """
 
+    supported_tools = []
+
     def __init__(self, bootstrap_template, lua_template):
         super().__init__()
 
@@ -166,9 +168,13 @@ class BaseProject(AbstractProject):
 
             # This will add analysis overhead, so disable unless requested by
             # the user. Also enabled by default for Decree targets.
+            # TODO: pass these directly from the command line args
             'enable_pov_generation': options.get('enable_pov_generation', False),
+            'enable_cfi': options.get('enable_cfi', False),
+            'enable_tickler': options.get('enable_tickler', False),
 
-            'single_path': options.get('single_path', False)
+            'single_path': options.get('single_path', False),
+            'custom_lua_string': options.get('custom_lua_string', '')
         }
 
         # Do some basic analysis on the target (if it exists)
@@ -180,6 +186,10 @@ class BaseProject(AbstractProject):
 
         # After this point the config dictionary should NOT be modified
         self._finalize_config(config)
+
+        for tool in options.get('tools', []):
+            if tool not in self.supported_tools:
+                raise CommandError(f'This target does not support the {tool} tool')
 
         return config
 
@@ -309,24 +319,9 @@ class BaseProject(AbstractProject):
 
         self._copy_lua_library(project_dir)
 
-        context = {
-            'creation_time': config['creation_time'],
-            'target': config['target'],
-            'target_lua_template': self._lua_template,
-            'project_dir': project_dir,
-            'project_name': config['project_name'],
-            'use_seeds': config['use_seeds'],
-            'use_cupa': config['use_cupa'],
-            'use_test_case_generator': config['use_test_case_generator'],
-            'enable_pov_generation': config['enable_pov_generation'],
-            'seeds_dir': config['seeds_dir'],
-            'single_path': config['single_path'],
-            'has_guestfs': config['has_guestfs'],
-            'guestfs_paths': config['guestfs_paths'],
-            'recipes_dir': config['recipes_dir'],
-            'modules': config['modules'],
-            'processes': config['processes'],
-        }
+        context = config.copy()
+        context['target_lua_template'] = self._lua_template
+        context['project_dir'] = project_dir
 
         for template in ('s2e-config.lua', 'models.lua'):
             output_path = os.path.join(project_dir, template)
@@ -338,22 +333,9 @@ class BaseProject(AbstractProject):
         """
         logger.info('Creating S2E bootstrap script')
 
-        context = {
-            'project_name': config['project_name'],
-            'creation_time': config['creation_time'],
-            'target': config['target'],
-            'sym_args': config['sym_args'],
-            'target_bootstrap_template': self._bootstrap_template,
-            'image_arch': config['image']['os']['arch'],
-            'use_seeds': config['use_seeds'],
-            'use_fault_injection': config['use_fault_injection'],
-            'enable_pov_generation': config['enable_pov_generation'],
-            'single_path': config['single_path'],
-            'dynamically_linked': config['dynamically_linked'],
-            'project_type': config['project_type'],
-            'modules': config['modules'],
-            'processes': config['processes'],
-        }
+        context = config.copy()
+        context['target_bootstrap_template'] = self._bootstrap_template
+        context['image_arch'] = config['image']['os']['arch']
 
         template = 'bootstrap.sh'
         output_path = os.path.join(project_dir, template)

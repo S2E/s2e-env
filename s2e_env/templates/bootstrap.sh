@@ -38,6 +38,7 @@ function update_common_tools {
     local OUR_S2EGET
 
     OUR_S2EGET=${S2EGET}
+    OUR_S2ECMD=${S2ECMD}
 
     # First, download the common tools
     {% if project_type == 'windows' %}
@@ -46,10 +47,18 @@ function update_common_tools {
       OUR_S2EGET=${S2EGET}_old.exe
       mv ${S2EGET} ${OUR_S2EGET}
     fi
+    if echo ${COMMON_TOOLS} | grep -q s2ecmd; then
+      OUR_S2ECMD=${S2ECMD}_old.exe
+      mv ${S2ECMD} ${OUR_S2ECMD}
+    fi
     {% endif %}
 
     for TOOL in ${COMMON_TOOLS}; do
         ${OUR_S2EGET} ${TARGET_TOOLS_ROOT}/${TOOL}
+        if [ ! -f ${TOOL} ]; then
+          ${OUR_S2ECMD} kill 0 "Could not get ${TOOL} from the host. Make sure that guest tools are installed properly."
+          exit 1
+        fi
         chmod +x ${TOOL}
     done
 }
@@ -272,6 +281,19 @@ prepare_target "${TARGET_PATH}"
 {% if use_seeds %}
 # In seed mode, the symbolic file name is a place holder that will be replaced by the actual seed name.
 {%- endif %}
+
+{% if enable_tickler %}
+TARGET_PATH_WITH_SLASHES="$(echo ${TARGET_PATH} | sed 's:\\:/:g')"
+BINARY_NAME="$(basename "${TARGET_PATH_WITH_SLASHES}")"
+if [ "x${BINARY_NAME}" = "xwinword.exe" ]; then
+  execute tickler.exe MsWord
+elif [ "x${BINARY_NAME}" = "xexcel.exe" ]; then
+  execute tickler.exe MsExcel
+elif [ "x${BINARY_NAME}" = "xpowerpnt.exe" ]; then
+  execute tickler.exe MsPowerPoint
+fi
+{% endif %}
+
 execute "${TARGET_PATH}" {{ target.args.get_resolved_args(RAMDISK_ROOT) | join(' ') }}
 
 {% else %}

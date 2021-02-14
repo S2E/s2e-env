@@ -1,0 +1,72 @@
+///
+/// Copyright (C) {{ author.year }}, {{ author.name }}
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+///
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+///
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
+///
+
+#ifndef S2E_PLUGINS_{{ plugin.name | upper }}_H
+#define S2E_PLUGINS_{{ plugin.name | upper }}_H
+
+#include <s2e/Plugin.h>
+{% if use_guest_interface %}
+#include <s2e/Plugins/Core/BaseInstructions.h>
+{% endif %}
+
+namespace s2e {
+namespace plugins {
+
+{% if use_guest_interface %}
+enum S2E_{{ plugin.name | upper }}_COMMANDS {
+    // TODO: customize list of commands here
+    COMMAND_1
+};
+
+struct S2E_{{ plugin.name | upper }}_COMMAND {
+    S2E_{{ plugin.name | upper }}_COMMANDS Command;
+    union {
+        // Command parameters go here
+        uint64_t param;
+    };
+};
+{% endif %}
+
+{% if use_guest_interface %}
+class {{ plugin.name }} : public Plugin, IPluginInvoker {
+{% else %}
+class {{ plugin.name }} : public Plugin {
+{% endif %}
+    S2E_PLUGIN
+public:
+    {{ plugin.name }}(S2E *s2e) : Plugin(s2e) {
+    }
+
+    void initialize();
+
+private:
+
+    {% if use_guest_interface %}
+    // Allow the guest to communicate with this plugin using s2e_invoke_plugin
+    virtual void handleOpcodeInvocation(S2EExecutionState *state, uint64_t guestDataPtr, uint64_t guestDataSize);
+    {% endif %}
+};
+
+} // namespace plugins
+} // namespace s2e
+
+#endif // S2E_PLUGINS_{{ plugin.name | upper }}_H

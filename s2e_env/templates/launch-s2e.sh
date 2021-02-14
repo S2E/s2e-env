@@ -14,8 +14,9 @@ BUILD=debug
 # Either s2e for symbolic execution support or s2e_sp for single-path mode
 S2E_MODE={% if single_path %}s2e_sp{% else %}s2e{% endif %}
 
-# Comment this out to enable QEMU GUI
-GRAPHICS=-nographic
+if [ "x$GUI" != "x1" ]; then
+  GRAPHICS=-nographic
+fi
 
 if [ "x$1" = "xdebug" ]; then
   DEBUG=1

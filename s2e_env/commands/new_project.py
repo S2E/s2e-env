@@ -29,9 +29,10 @@ from magic import Magic
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.commands.project_creation import CGCProject, LinuxProject, AbstractProject
-from s2e_env.commands.project_creation import WindowsProject, \
+from s2e_env.commands.project_creation import WindowsExeProject, \
         WindowsDLLProject, WindowsDriverProject
 from s2e_env.commands.project_creation import Target
+from s2e_env.commands.project_creation.abstract_project import validate_arguments, SUPPORTED_TOOLS
 from s2e_env.infparser.driver import Driver
 from s2e_env.manage import call_command
 
@@ -41,7 +42,7 @@ logger = logging.getLogger('new_project')
 PROJECT_TYPES = {
     'cgc': CGCProject,
     'linux': LinuxProject,
-    'windows': WindowsProject,
+    'windows': WindowsExeProject,
     'windows_dll': WindowsDLLProject,
     'windows_driver': WindowsDriverProject,
 }
@@ -85,9 +86,9 @@ def _determine_arch_and_proj(target_path):
         (default_magic, DLL64_REGEX, WindowsDLLProject, 'x86_64', 'windows'),
         (default_magic, WIN32_DRIVER_REGEX, WindowsDriverProject, 'i386', 'windows'),
         (default_magic, WIN64_DRIVER_REGEX, WindowsDriverProject, 'x86_64', 'windows'),
-        (default_magic, PE32_REGEX, WindowsProject, 'i386', 'windows'),
-        (default_magic, PE64_REGEX, WindowsProject, 'x86_64', 'windows'),
-        (default_magic, MSDOS_REGEX, WindowsProject, 'i386', 'windows'),
+        (default_magic, PE32_REGEX, WindowsExeProject, 'i386', 'windows'),
+        (default_magic, PE64_REGEX, WindowsExeProject, 'x86_64', 'windows'),
+        (default_magic, MSDOS_REGEX, WindowsExeProject, 'i386', 'windows'),
     )
 
     # Need to resolve symbolic links, otherwise magic will report the file type
@@ -286,8 +287,10 @@ class Command(EnvCommand):
                                  'seeds themselves and place them in the '
                                  'project\'s ``seeds`` directory')
 
-        parser.add_argument('--enable-pov-generation', action='store_true',
-                            help='Enables PoV generation')
+        parser.add_argument('--tools', type=lambda s: s.split(','),
+                            default=[],
+                            help='Comma-separated list of tools to enable '
+                                 f'(supported tools: {",".join(SUPPORTED_TOOLS)})')
 
         parser.add_argument('--single-path', action='store_true', default=False,
                             help='Enables single-path mode, no symbolic execution possible')
@@ -301,22 +304,7 @@ class Command(EnvCommand):
                                  'exists, replace it')
 
     def handle(self, *args, **options):
-        # Check argument consistency
-        has_errors = False
-        if options['single_path']:
-            if options['use_seeds']:
-                logger.error('Cannot use seeds in single-path mode')
-                has_errors = True
-
-            if options['enable_pov_generation']:
-                logger.error('Cannot use POV generation in single-path mode')
-                has_errors = True
-
-            if '@@' in options['target_args']:
-                logger.error('Cannot use symbolic input in single-path mode')
-                has_errors = True
-
-        if has_errors:
+        if not validate_arguments(options):
             return
 
         # The 'project_class' option is not exposed as a command-line argument:

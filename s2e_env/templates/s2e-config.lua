@@ -38,6 +38,14 @@ dofile('library.lua')
 -- You always want to have this plugin included.
 
 add_plugin("BaseInstructions")
+pluginsConfig.BaseInstructions = {
+    {% if enable_tickler %}
+    -- When doing malware analysis, we do not want malware to be able to (easily) run S2E commands.
+    -- We therefore use this option to restrict access to these instructions to the first
+    -- process that called an S2E instruction. Kernel is not restricted.
+    restrict = true
+    {% endif %}
+}
 
 -------------------------------------------------------------------------------
 -- This plugin implements "shared folders" between the host and the guest.
@@ -386,6 +394,45 @@ pluginsConfig.CallSiteMonitor = {
 
 {% endif %}
 
+-------------------------------------------------------------------------------
+-- The screenshot plugin records a screenshot of the guest into screenshotX.png,
+-- where XX is the path number. You can configure the interval here:
+add_plugin("Screenshot")
+pluginsConfig.Screenshot = {
+    period = 5
+}
+
+{% if enable_cfi %}
+-------------------------------------------------------------------------------
+-- This plugin keeps a set of valid code targets, e.g, for call and jump
+-- instructions. It is used by CFIChecker to verify the validity of call targets.
+add_plugin("AddressTracker")
+
+-------------------------------------------------------------------------------
+-- This plugins implements control flow integrity checking. It verifies that
+-- return instructions go to the return address set by the corresponding call.
+add_plugin("CFIChecker")
+{% endif %}
+
+{% if enable_tickler %}
+-------------------------------------------------------------------------------
+-- The tickler works in conjunction with the guest tool tickler{32|64}.exe.
+-- It is a program that monitors the execution for Microsoft Office, Adobe
+-- Acrobat, or FoxitReader. The tickler attempts to interact with the UI,
+-- e.g., scrolling documents, closing pop ups, etc. It terminates the analysis
+-- when nothing of interest happens in the target application after a while.
+add_plugin("Tickler")
+
+pluginsConfig.Tickler = {
+  monitorIdleAfterAutoscroll = true,
+  {% if enable_cfi %}
+  -- A non-zero value will cause the tickler to terminate the analysis when
+  -- that number of violations is reached.
+  maxCfiViolations = 0,
+  {% endif %}
+}
+{% endif %}
+
 -- ========================================================================= --
 -- ============== Target-specific configuration begins here. =============== --
 -- ========================================================================= --
@@ -436,3 +483,5 @@ function onStateForkDecide(state)
    return true
 end
 --]]
+
+{{ custom_lua_string }}

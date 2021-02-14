@@ -42,6 +42,8 @@ logger = logging.getLogger('new_project')
 FILE_DIR = os.path.dirname(__file__)
 LIBRARY_LUA_PATH = os.path.join(FILE_DIR, '..', '..', 'dat', 'library.lua')
 
+SUPPORTED_TOOLS = ['pov', 'cfi', 'tickler']
+
 
 def symlink_guest_tools(install_path, project_dir, img_desc):
     """
@@ -83,6 +85,40 @@ def symlink_guestfs(project_dir, guestfs_paths):
         path = guestfs_paths[0]
         logger.info('Creating a symlink to %s', path)
         os.symlink(path, os.path.join(project_dir, 'guestfs'))
+
+
+def validate_arguments(options):
+    """
+    Check that arguments are consistent.
+    """
+
+    tools = options.get('tools', [])
+    for tool in tools:
+        if tool not in SUPPORTED_TOOLS:
+            raise CommandError(f'The specified tool "{tool}" is not supported')
+
+    options['enable_pov_generation'] = 'pov' in tools
+    options['enable_cfi'] = 'cfi' in tools
+    options['enable_tickler'] = 'tickler' in tools
+
+    has_errors = False
+    if options.get('single_path'):
+        if options.get('use_seeds'):
+            logger.error('Cannot use seeds in single-path mode')
+            has_errors = True
+
+        if options.get('enable_pov_generation'):
+            logger.error('Cannot use POV generation in single-path mode')
+            has_errors = True
+
+        if '@@' in options.get('target_args', []):
+            logger.error('Cannot use symbolic input in single-path mode')
+            has_errors = True
+
+    if has_errors:
+        return False
+
+    return True
 
 
 class AbstractProject(EnvCommand):

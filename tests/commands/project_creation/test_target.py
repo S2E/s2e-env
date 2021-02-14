@@ -26,7 +26,7 @@ from unittest import TestCase
 
 from s2e_env.commands.project_creation import CGCProject
 from s2e_env.commands.project_creation import LinuxProject
-from s2e_env.commands.project_creation import WindowsProject, \
+from s2e_env.commands.project_creation import WindowsExeProject, \
         WindowsDLLProject, WindowsDriverProject
 from s2e_env.commands.project_creation import Target
 from s2e_env.commands.new_project import target_from_file
@@ -78,7 +78,7 @@ class TargetTestCase(TestCase):
         self.assertEqual(target.arch, 'x86_64')
         self.assertEqual(target.operating_system, 'windows')
         self.assertFalse(target.aux_files)
-        self.assertIsInstance(cls(), WindowsProject)
+        self.assertIsInstance(cls(), WindowsExeProject)
         self.assertFalse(target.is_empty())
 
     def test_windows_x86_64_dll_target(self):

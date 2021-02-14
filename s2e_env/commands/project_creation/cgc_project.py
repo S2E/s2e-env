@@ -32,9 +32,10 @@ logger = logging.getLogger('new_project')
 
 
 class CGCProject(BaseProject):
+    supported_tools = ['pov']
+
     def __init__(self):
-        super().__init__('bootstrap.cgc.sh',
-                                         's2e-config.cgc.lua')
+        super().__init__('bootstrap.cgc.sh', 's2e-config.cgc.lua')
 
     def _is_valid_image(self, target, os_desc):
         return is_valid_arch(target.arch, os_desc) and 'decree' in os_desc['binary_formats']

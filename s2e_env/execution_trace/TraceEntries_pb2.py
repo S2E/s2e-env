@@ -8,7 +8,6 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -20,9 +19,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='TraceEntries.proto',
   package='s2e_trace',
   syntax='proto2',
-  serialized_pb=_b('\n\x12TraceEntries.proto\x12\ts2e_trace\"\x98\x01\n\x11PbTraceItemHeader\x12\x10\n\x08state_id\x18\x01 \x02(\r\x12\x11\n\ttimestamp\x18\x02 \x02(\x04\x12\x15\n\raddress_space\x18\x03 \x02(\x04\x12\x0b\n\x03pid\x18\x04 \x02(\x04\x12\n\n\x02pc\x18\x05 \x02(\x04\x12.\n\x04type\x18\x06 \x02(\x0e\x32 .s2e_trace.PbTraceItemHeaderType\"#\n\x0fPbTraceItemFork\x12\x10\n\x08\x63hildren\x18\x01 \x03(\r\"\xac\x02\n\x17PbTraceModuleLoadUnload\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x02(\t\x12\x0b\n\x03pid\x18\x03 \x02(\x04\x12\x15\n\raddress_space\x18\x04 \x02(\x04\x12<\n\x08sections\x18\x05 \x03(\x0b\x32*.s2e_trace.PbTraceModuleLoadUnload.Section\x1a\x92\x01\n\x07Section\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x19\n\x11runtime_load_base\x18\x02 \x02(\x04\x12\x18\n\x10native_load_base\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x10\n\x08readable\x18\x05 \x02(\x08\x12\x10\n\x08writable\x18\x06 \x02(\x08\x12\x12\n\nexecutable\x18\x07 \x02(\x08\"+\n\x14PbTraceProcessUnload\x12\x13\n\x0breturn_code\x18\x01 \x02(\x04\"8\n\x13PbTraceRegisterData\x12\x11\n\tsymb_mask\x18\x01 \x02(\r\x12\x0e\n\x06values\x18\x02 \x03(\x04\"k\n\rPbTraceTbData\x12)\n\x07tb_type\x18\x01 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\x12\x10\n\x08\x66irst_pc\x18\x02 \x02(\x04\x12\x0f\n\x07last_pc\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\"t\n\x1cPbTraceTranslationBlockStart\x12&\n\x04\x64\x61ta\x18\x01 \x02(\x0b\x32\x18.s2e_trace.PbTraceTbData\x12,\n\x04regs\x18\x02 \x02(\x0b\x32\x1e.s2e_trace.PbTraceRegisterData\"r\n\x1aPbTraceTranslationBlockEnd\x12&\n\x04\x64\x61ta\x18\x01 \x02(\x0b\x32\x18.s2e_trace.PbTraceTbData\x12,\n\x04regs\x18\x02 \x02(\x0b\x32\x1e.s2e_trace.PbTraceRegisterData\"o\n\x17PbTraceTranslationBlock\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07last_pc\x18\x02 \x02(\x04\x12\x0c\n\x04size\x18\x03 \x02(\r\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\"%\n\rPbTraceOsInfo\x12\x14\n\x0ckernel_start\x18\x01 \x02(\x04\".\n\x10PbTraceException\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0e\n\x06vector\x18\x02 \x02(\r\"m\n\x0fPbTraceTestCase\x12\x32\n\x05items\x18\x01 \x03(\x0b\x32#.s2e_trace.PbTraceTestCase.KeyValue\x1a&\n\x08KeyValue\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\x0c\"\xf6\x02\n\x13PbTraceMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\r\n\x05value\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\r\n\x05\x66lags\x18\x05 \x02(\r\x12\x14\n\x0chost_address\x18\x06 \x02(\x04\x12\x17\n\x0f\x63oncrete_buffer\x18\x07 \x02(\x04\"\xe6\x01\n\x05\x46lags\x12\x19\n\x15\x45XECTRACE_MEM_INVALID\x10\x00\x12\x17\n\x13\x45XECTRACE_MEM_WRITE\x10\x01\x12\x14\n\x10\x45XECTRACE_MEM_IO\x10\x02\x12\x19\n\x15\x45XECTRACE_MEM_SYMBVAL\x10\x04\x12\x1a\n\x16\x45XECTRACE_MEM_SYMBADDR\x10\x08\x12\x1d\n\x19\x45XECTRACE_MEM_HASHOSTADDR\x10\x10\x12\x1e\n\x1a\x45XECTRACE_MEM_SYMBHOSTADDR\x10 \x12\x1d\n\x19\x45XECTRACE_MEM_OBJECTSTATE\x10@\"J\n\x19PbTraceSimpleMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\x10\n\x08is_write\x18\x03 \x02(\x08\"(\n\x17PbTraceInstructionCount\x12\r\n\x05\x63ount\x18\x01 \x02(\x04\"\'\n\x12PbTraceStateSwitch\x12\x11\n\tnew_state\x18\x01 \x02(\r\"\x87\x01\n\x15PbTraceCacheSimParams\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\tline_size\x18\x03 \x02(\r\x12\x15\n\rassociativity\x18\x04 \x02(\r\x12\x16\n\x0eupper_cache_id\x18\x05 \x02(\r\x12\x0c\n\x04name\x18\x06 \x02(\t\"\x8a\x01\n\x14PbTraceCacheSimEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\n\n\x02pc\x18\x02 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x12\n\nmiss_count\x18\x05 \x02(\r\x12\x10\n\x08is_write\x18\x06 \x02(\x08\x12\x0f\n\x07is_code\x18\x07 \x02(\x08*\xf5\x02\n\x15PbTraceItemHeaderType\x12\x0e\n\nTRACE_FORK\x10\x00\x12\x12\n\x0eTRACE_MOD_LOAD\x10\x01\x12\x14\n\x10TRACE_MOD_UNLOAD\x10\x02\x12\x15\n\x11TRACE_PROC_UNLOAD\x10\x03\x12\x12\n\x0eTRACE_TB_START\x10\x04\x12\x10\n\x0cTRACE_TB_END\x10\x05\x12\x10\n\x0cTRACE_OSINFO\x10\x08\x12\x13\n\x0fTRACE_EXCEPTION\x10\t\x12\x12\n\x0eTRACE_TESTCASE\x10\n\x12\x10\n\x0cTRACE_MEMORY\x10\x0b\x12\x13\n\x0fTRACE_PAGEFAULT\x10\x0c\x12\x11\n\rTRACE_TLBMISS\x10\r\x12\x10\n\x0cTRACE_ICOUNT\x10\x0e\x12\x16\n\x12TRACE_STATE_SWITCH\x10\x0f\x12\x0f\n\x0bTRACE_BLOCK\x10\x10\x12\x1a\n\x16TRACE_CACHE_SIM_PARAMS\x10\x11\x12\x19\n\x15TRACE_CACHE_SIM_ENTRY\x10\x12*\xc2\x01\n\rPbTraceTbType\x12\x0e\n\nTB_DEFAULT\x10\x00\x12\n\n\x06TB_JMP\x10\x01\x12\x0e\n\nTB_JMP_IND\x10\x02\x12\x0f\n\x0bTB_COND_JMP\x10\x03\x12\x13\n\x0fTB_COND_JMP_IND\x10\x04\x12\x0b\n\x07TB_CALL\x10\x05\x12\x0f\n\x0bTB_CALL_IND\x10\x06\x12\n\n\x06TB_REP\x10\x07\x12\n\n\x06TB_RET\x10\x08\x12\x0b\n\x07TB_IRET\x10\t\x12\x0b\n\x07TB_EXCP\x10\n\x12\x0f\n\x0bTB_SYSENTER\x10\x0b')
+  serialized_options=None,
+  serialized_pb=_b('\n\x12TraceEntries.proto\x12\ts2e_trace\"\xa5\x01\n\x11PbTraceItemHeader\x12\x10\n\x08state_id\x18\x01 \x02(\r\x12\x11\n\ttimestamp\x18\x02 \x02(\x04\x12\x15\n\raddress_space\x18\x03 \x02(\x04\x12\x0b\n\x03pid\x18\x04 \x02(\r\x12\x0b\n\x03tid\x18\x05 \x02(\r\x12\n\n\x02pc\x18\x06 \x02(\x04\x12.\n\x04type\x18\x07 \x02(\x0e\x32 .s2e_trace.PbTraceItemHeaderType\"#\n\x0fPbTraceItemFork\x12\x10\n\x08\x63hildren\x18\x01 \x03(\r\"\xac\x02\n\x17PbTraceModuleLoadUnload\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x02(\t\x12\x0b\n\x03pid\x18\x03 \x02(\x04\x12\x15\n\raddress_space\x18\x04 \x02(\x04\x12<\n\x08sections\x18\x05 \x03(\x0b\x32*.s2e_trace.PbTraceModuleLoadUnload.Section\x1a\x92\x01\n\x07Section\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x19\n\x11runtime_load_base\x18\x02 \x02(\x04\x12\x18\n\x10native_load_base\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x10\n\x08readable\x18\x05 \x02(\x08\x12\x10\n\x08writable\x18\x06 \x02(\x08\x12\x12\n\nexecutable\x18\x07 \x02(\x08\"+\n\x14PbTraceProcessUnload\x12\x13\n\x0breturn_code\x18\x01 \x02(\x04\"8\n\x13PbTraceRegisterData\x12\x11\n\tsymb_mask\x18\x01 \x02(\r\x12\x0e\n\x06values\x18\x02 \x03(\x04\"k\n\rPbTraceTbData\x12)\n\x07tb_type\x18\x01 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\x12\x10\n\x08\x66irst_pc\x18\x02 \x02(\x04\x12\x0f\n\x07last_pc\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\"t\n\x1cPbTraceTranslationBlockStart\x12&\n\x04\x64\x61ta\x18\x01 \x02(\x0b\x32\x18.s2e_trace.PbTraceTbData\x12,\n\x04regs\x18\x02 \x02(\x0b\x32\x1e.s2e_trace.PbTraceRegisterData\"r\n\x1aPbTraceTranslationBlockEnd\x12&\n\x04\x64\x61ta\x18\x01 \x02(\x0b\x32\x18.s2e_trace.PbTraceTbData\x12,\n\x04regs\x18\x02 \x02(\x0b\x32\x1e.s2e_trace.PbTraceRegisterData\"o\n\x17PbTraceTranslationBlock\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07last_pc\x18\x02 \x02(\x04\x12\x0c\n\x04size\x18\x03 \x02(\r\x12)\n\x07tb_type\x18\x04 \x02(\x0e\x32\x18.s2e_trace.PbTraceTbType\"%\n\rPbTraceOsInfo\x12\x14\n\x0ckernel_start\x18\x01 \x02(\x04\".\n\x10PbTraceException\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0e\n\x06vector\x18\x02 \x02(\r\"m\n\x0fPbTraceTestCase\x12\x32\n\x05items\x18\x01 \x03(\x0b\x32#.s2e_trace.PbTraceTestCase.KeyValue\x1a&\n\x08KeyValue\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\x0c\"\xf6\x02\n\x13PbTraceMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\r\n\x05value\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\r\n\x05\x66lags\x18\x05 \x02(\r\x12\x14\n\x0chost_address\x18\x06 \x02(\x04\x12\x17\n\x0f\x63oncrete_buffer\x18\x07 \x02(\x04\"\xe6\x01\n\x05\x46lags\x12\x19\n\x15\x45XECTRACE_MEM_INVALID\x10\x00\x12\x17\n\x13\x45XECTRACE_MEM_WRITE\x10\x01\x12\x14\n\x10\x45XECTRACE_MEM_IO\x10\x02\x12\x19\n\x15\x45XECTRACE_MEM_SYMBVAL\x10\x04\x12\x1a\n\x16\x45XECTRACE_MEM_SYMBADDR\x10\x08\x12\x1d\n\x19\x45XECTRACE_MEM_HASHOSTADDR\x10\x10\x12\x1e\n\x1a\x45XECTRACE_MEM_SYMBHOSTADDR\x10 \x12\x1d\n\x19\x45XECTRACE_MEM_OBJECTSTATE\x10@\"J\n\x19PbTraceSimpleMemoryAccess\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x02(\x04\x12\x10\n\x08is_write\x18\x03 \x02(\x08\"(\n\x17PbTraceInstructionCount\x12\r\n\x05\x63ount\x18\x01 \x02(\x04\"\'\n\x12PbTraceStateSwitch\x12\x11\n\tnew_state\x18\x01 \x02(\r\"\x87\x01\n\x15PbTraceCacheSimParams\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\x0c\n\x04size\x18\x02 \x02(\r\x12\x11\n\tline_size\x18\x03 \x02(\r\x12\x15\n\rassociativity\x18\x04 \x02(\r\x12\x16\n\x0eupper_cache_id\x18\x05 \x02(\r\x12\x0c\n\x04name\x18\x06 \x02(\t\"\x8a\x01\n\x14PbTraceCacheSimEntry\x12\x10\n\x08\x63\x61\x63he_id\x18\x01 \x02(\r\x12\n\n\x02pc\x18\x02 \x02(\x04\x12\x0f\n\x07\x61\x64\x64ress\x18\x03 \x02(\x04\x12\x0c\n\x04size\x18\x04 \x02(\r\x12\x12\n\nmiss_count\x18\x05 \x02(\r\x12\x10\n\x08is_write\x18\x06 \x02(\x08\x12\x0f\n\x07is_code\x18\x07 \x02(\x08\"\x98\x04\n\x0fPbTraceCfiStats\x12\x19\n\x11\x64irect_call_count\x18\x01 \x02(\x04\x12\x1b\n\x13indirect_call_count\x18\x02 \x02(\x04\x12\x11\n\tret_count\x18\x03 \x02(\x04\x12\x1c\n\x14\x63\x61ll_violation_count\x18\x04 \x02(\x04\x12\x1b\n\x13ret_violation_count\x18\x06 \x02(\x04\x12*\n\"ret_from_unknown_exec_region_count\x18\t \x02(\x04\x12(\n ret_to_unknown_exec_region_count\x18\n \x02(\x04\x12$\n\x1cmissing_return_address_count\x18\x0b \x02(\x04\x12#\n\x1b\x63\x61ll_and_return_match_count\x18\x0c \x02(\x04\x12 \n\x18whitelisted_return_count\x18\r \x02(\x04\x12 \n\x18pending_violations_count\x18\x0e \x02(\x04\x12&\n\x1ewhitelisted_call_pattern_count\x18\x0f \x02(\x04\x12-\n%ret_to_parent_with_displacement_count\x18\x10 \x02(\x04\x12)\n!call_to_unknown_exec_region_count\x18\x11 \x02(\x04\x12\x18\n\x10ret_to_call_site\x18\x12 \x02(\x04\"a\n\x16PbTraceViolationPcInfo\x12\n\n\x02pc\x18\x01 \x02(\x04\x12\x13\n\x0bmodule_path\x18\x02 \x01(\t\x12\x11\n\tmodule_pc\x18\x03 \x01(\x04\x12\x13\n\x0b\x64isassembly\x18\x04 \x01(\t\"\xf3\x01\n\x13PbTraceCfiViolation\x12\x30\n\x04type\x18\x01 \x02(\x0e\x32\".s2e_trace.PbTraceCfiViolationType\x12\x31\n\x06source\x18\x02 \x02(\x0b\x32!.s2e_trace.PbTraceViolationPcInfo\x12\x36\n\x0b\x64\x65stination\x18\x03 \x02(\x0b\x32!.s2e_trace.PbTraceViolationPcInfo\x12?\n\x14\x65xpected_destination\x18\x04 \x01(\x0b\x32!.s2e_trace.PbTraceViolationPcInfo*\xa3\x03\n\x15PbTraceItemHeaderType\x12\x0e\n\nTRACE_FORK\x10\x00\x12\x12\n\x0eTRACE_MOD_LOAD\x10\x01\x12\x14\n\x10TRACE_MOD_UNLOAD\x10\x02\x12\x15\n\x11TRACE_PROC_UNLOAD\x10\x03\x12\x12\n\x0eTRACE_TB_START\x10\x04\x12\x10\n\x0cTRACE_TB_END\x10\x05\x12\x10\n\x0cTRACE_OSINFO\x10\x08\x12\x13\n\x0fTRACE_EXCEPTION\x10\t\x12\x12\n\x0eTRACE_TESTCASE\x10\n\x12\x10\n\x0cTRACE_MEMORY\x10\x0b\x12\x13\n\x0fTRACE_PAGEFAULT\x10\x0c\x12\x11\n\rTRACE_TLBMISS\x10\r\x12\x10\n\x0cTRACE_ICOUNT\x10\x0e\x12\x16\n\x12TRACE_STATE_SWITCH\x10\x0f\x12\x0f\n\x0bTRACE_BLOCK\x10\x10\x12\x1a\n\x16TRACE_CACHE_SIM_PARAMS\x10\x11\x12\x19\n\x15TRACE_CACHE_SIM_ENTRY\x10\x12\x12\x13\n\x0fTRACE_CFI_STATS\x10\x13\x12\x17\n\x13TRACE_CFI_VIOLATION\x10\x14*\xc2\x01\n\rPbTraceTbType\x12\x0e\n\nTB_DEFAULT\x10\x00\x12\n\n\x06TB_JMP\x10\x01\x12\x0e\n\nTB_JMP_IND\x10\x02\x12\x0f\n\x0bTB_COND_JMP\x10\x03\x12\x13\n\x0fTB_COND_JMP_IND\x10\x04\x12\x0b\n\x07TB_CALL\x10\x05\x12\x0f\n\x0bTB_CALL_IND\x10\x06\x12\n\n\x06TB_REP\x10\x07\x12\n\n\x06TB_RET\x10\x08\x12\x0b\n\x07TB_IRET\x10\t\x12\x0b\n\x07TB_EXCP\x10\n\x12\x0f\n\x0bTB_SYSENTER\x10\x0b*C\n\x17PbTraceCfiViolationType\x12\x12\n\x0e\x43\x41LL_VIOLATION\x10\x00\x12\x14\n\x10RETURN_VIOLATION\x10\x01')
 )
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _PBTRACEITEMHEADERTYPE = _descriptor.EnumDescriptor(
   name='PbTraceItemHeaderType',
@@ -32,77 +31,85 @@ _PBTRACEITEMHEADERTYPE = _descriptor.EnumDescriptor(
   values=[
     _descriptor.EnumValueDescriptor(
       name='TRACE_FORK', index=0, number=0,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_MOD_LOAD', index=1, number=1,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_MOD_UNLOAD', index=2, number=2,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_PROC_UNLOAD', index=3, number=3,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_TB_START', index=4, number=4,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_TB_END', index=5, number=5,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_OSINFO', index=6, number=8,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_EXCEPTION', index=7, number=9,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_TESTCASE', index=8, number=10,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_MEMORY', index=9, number=11,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_PAGEFAULT', index=10, number=12,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_TLBMISS', index=11, number=13,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_ICOUNT', index=12, number=14,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_STATE_SWITCH', index=13, number=15,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_BLOCK', index=14, number=16,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_CACHE_SIM_PARAMS', index=15, number=17,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TRACE_CACHE_SIM_ENTRY', index=16, number=18,
-      options=None,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TRACE_CFI_STATS', index=17, number=19,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TRACE_CFI_VIOLATION', index=18, number=20,
+      serialized_options=None,
       type=None),
   ],
   containing_type=None,
-  options=None,
-  serialized_start=2101,
-  serialized_end=2474,
+  serialized_options=None,
+  serialized_start=2998,
+  serialized_end=3417,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACEITEMHEADERTYPE)
 
@@ -115,61 +122,84 @@ _PBTRACETBTYPE = _descriptor.EnumDescriptor(
   values=[
     _descriptor.EnumValueDescriptor(
       name='TB_DEFAULT', index=0, number=0,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_JMP', index=1, number=1,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_JMP_IND', index=2, number=2,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_COND_JMP', index=3, number=3,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_COND_JMP_IND', index=4, number=4,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_CALL', index=5, number=5,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_CALL_IND', index=6, number=6,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_REP', index=7, number=7,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_RET', index=8, number=8,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_IRET', index=9, number=9,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_EXCP', index=10, number=10,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='TB_SYSENTER', index=11, number=11,
-      options=None,
+      serialized_options=None,
       type=None),
   ],
   containing_type=None,
-  options=None,
-  serialized_start=2477,
-  serialized_end=2671,
+  serialized_options=None,
+  serialized_start=3420,
+  serialized_end=3614,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACETBTYPE)
 
 PbTraceTbType = enum_type_wrapper.EnumTypeWrapper(_PBTRACETBTYPE)
+_PBTRACECFIVIOLATIONTYPE = _descriptor.EnumDescriptor(
+  name='PbTraceCfiViolationType',
+  full_name='s2e_trace.PbTraceCfiViolationType',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='CALL_VIOLATION', index=0, number=0,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='RETURN_VIOLATION', index=1, number=1,
+      serialized_options=None,
+      type=None),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=3616,
+  serialized_end=3683,
+)
+_sym_db.RegisterEnumDescriptor(_PBTRACECFIVIOLATIONTYPE)
+
+PbTraceCfiViolationType = enum_type_wrapper.EnumTypeWrapper(_PBTRACECFIVIOLATIONTYPE)
 TRACE_FORK = 0
 TRACE_MOD_LOAD = 1
 TRACE_MOD_UNLOAD = 2
@@ -187,6 +217,8 @@ TRACE_STATE_SWITCH = 15
 TRACE_BLOCK = 16
 TRACE_CACHE_SIM_PARAMS = 17
 TRACE_CACHE_SIM_ENTRY = 18
+TRACE_CFI_STATS = 19
+TRACE_CFI_VIOLATION = 20
 TB_DEFAULT = 0
 TB_JMP = 1
 TB_JMP_IND = 2
@@ -199,6 +231,8 @@ TB_RET = 8
 TB_IRET = 9
 TB_EXCP = 10
 TB_SYSENTER = 11
+CALL_VIOLATION = 0
+RETURN_VIOLATION = 1
 
 
 _PBTRACEMEMORYACCESS_FLAGS = _descriptor.EnumDescriptor(
@@ -209,41 +243,41 @@ _PBTRACEMEMORYACCESS_FLAGS = _descriptor.EnumDescriptor(
   values=[
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_INVALID', index=0, number=0,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_WRITE', index=1, number=1,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_IO', index=2, number=2,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_SYMBVAL', index=3, number=4,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_SYMBADDR', index=4, number=8,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_HASHOSTADDR', index=5, number=16,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_SYMBHOSTADDR', index=6, number=32,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='EXECTRACE_MEM_OBJECTSTATE', index=7, number=64,
-      options=None,
+      serialized_options=None,
       type=None),
   ],
   containing_type=None,
-  options=None,
-  serialized_start=1430,
-  serialized_end=1660,
+  serialized_options=None,
+  serialized_start=1443,
+  serialized_end=1673,
 )
 _sym_db.RegisterEnumDescriptor(_PBTRACEMEMORYACCESS_FLAGS)
 
@@ -261,56 +295,63 @@ _PBTRACEITEMHEADER = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='timestamp', full_name='s2e_trace.PbTraceItemHeader.timestamp', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='address_space', full_name='s2e_trace.PbTraceItemHeader.address_space', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pid', full_name='s2e_trace.PbTraceItemHeader.pid', index=3,
-      number=4, type=4, cpp_type=4, label=2,
+      number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='pc', full_name='s2e_trace.PbTraceItemHeader.pc', index=4,
-      number=5, type=4, cpp_type=4, label=2,
+      name='tid', full_name='s2e_trace.PbTraceItemHeader.tid', index=4,
+      number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='type', full_name='s2e_trace.PbTraceItemHeader.type', index=5,
-      number=6, type=14, cpp_type=8, label=2,
+      name='pc', full_name='s2e_trace.PbTraceItemHeader.pc', index=5,
+      number=6, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='s2e_trace.PbTraceItemHeader.type', index=6,
+      number=7, type=14, cpp_type=8, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
   serialized_start=34,
-  serialized_end=186,
+  serialized_end=199,
 )
 
 
@@ -327,21 +368,21 @@ _PBTRACEITEMFORK = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=188,
-  serialized_end=223,
+  serialized_start=201,
+  serialized_end=236,
 )
 
 
@@ -358,63 +399,63 @@ _PBTRACEMODULELOADUNLOAD_SECTION = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='runtime_load_base', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.runtime_load_base', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='native_load_base', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.native_load_base', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.size', index=3,
       number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='readable', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.readable', index=4,
       number=5, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='writable', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.writable', index=5,
       number=6, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='executable', full_name='s2e_trace.PbTraceModuleLoadUnload.Section.executable', index=6,
       number=7, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=380,
-  serialized_end=526,
+  serialized_start=393,
+  serialized_end=539,
 )
 
 _PBTRACEMODULELOADUNLOAD = _descriptor.Descriptor(
@@ -430,49 +471,49 @@ _PBTRACEMODULELOADUNLOAD = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='path', full_name='s2e_trace.PbTraceModuleLoadUnload.path', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pid', full_name='s2e_trace.PbTraceModuleLoadUnload.pid', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='address_space', full_name='s2e_trace.PbTraceModuleLoadUnload.address_space', index=3,
       number=4, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='sections', full_name='s2e_trace.PbTraceModuleLoadUnload.sections', index=4,
       number=5, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[_PBTRACEMODULELOADUNLOAD_SECTION, ],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=226,
-  serialized_end=526,
+  serialized_start=239,
+  serialized_end=539,
 )
 
 
@@ -489,21 +530,21 @@ _PBTRACEPROCESSUNLOAD = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=528,
-  serialized_end=571,
+  serialized_start=541,
+  serialized_end=584,
 )
 
 
@@ -520,28 +561,28 @@ _PBTRACEREGISTERDATA = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='values', full_name='s2e_trace.PbTraceRegisterData.values', index=1,
       number=2, type=4, cpp_type=4, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=573,
-  serialized_end=629,
+  serialized_start=586,
+  serialized_end=642,
 )
 
 
@@ -558,42 +599,42 @@ _PBTRACETBDATA = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='first_pc', full_name='s2e_trace.PbTraceTbData.first_pc', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='last_pc', full_name='s2e_trace.PbTraceTbData.last_pc', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceTbData.size', index=3,
       number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=631,
-  serialized_end=738,
+  serialized_start=644,
+  serialized_end=751,
 )
 
 
@@ -610,28 +651,28 @@ _PBTRACETRANSLATIONBLOCKSTART = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='regs', full_name='s2e_trace.PbTraceTranslationBlockStart.regs', index=1,
       number=2, type=11, cpp_type=10, label=2,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=740,
-  serialized_end=856,
+  serialized_start=753,
+  serialized_end=869,
 )
 
 
@@ -648,28 +689,28 @@ _PBTRACETRANSLATIONBLOCKEND = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='regs', full_name='s2e_trace.PbTraceTranslationBlockEnd.regs', index=1,
       number=2, type=11, cpp_type=10, label=2,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=858,
-  serialized_end=972,
+  serialized_start=871,
+  serialized_end=985,
 )
 
 
@@ -686,42 +727,42 @@ _PBTRACETRANSLATIONBLOCK = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='last_pc', full_name='s2e_trace.PbTraceTranslationBlock.last_pc', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceTranslationBlock.size', index=2,
       number=3, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='tb_type', full_name='s2e_trace.PbTraceTranslationBlock.tb_type', index=3,
       number=4, type=14, cpp_type=8, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=974,
-  serialized_end=1085,
+  serialized_start=987,
+  serialized_end=1098,
 )
 
 
@@ -738,21 +779,21 @@ _PBTRACEOSINFO = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1087,
-  serialized_end=1124,
+  serialized_start=1100,
+  serialized_end=1137,
 )
 
 
@@ -769,28 +810,28 @@ _PBTRACEEXCEPTION = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='vector', full_name='s2e_trace.PbTraceException.vector', index=1,
       number=2, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1126,
-  serialized_end=1172,
+  serialized_start=1139,
+  serialized_end=1185,
 )
 
 
@@ -807,28 +848,28 @@ _PBTRACETESTCASE_KEYVALUE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='s2e_trace.PbTraceTestCase.KeyValue.value', index=1,
       number=2, type=12, cpp_type=9, label=2,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1245,
-  serialized_end=1283,
+  serialized_start=1258,
+  serialized_end=1296,
 )
 
 _PBTRACETESTCASE = _descriptor.Descriptor(
@@ -844,21 +885,21 @@ _PBTRACETESTCASE = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[_PBTRACETESTCASE_KEYVALUE, ],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1174,
-  serialized_end=1283,
+  serialized_start=1187,
+  serialized_end=1296,
 )
 
 
@@ -875,49 +916,49 @@ _PBTRACEMEMORYACCESS = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='address', full_name='s2e_trace.PbTraceMemoryAccess.address', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='s2e_trace.PbTraceMemoryAccess.value', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceMemoryAccess.size', index=3,
       number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='flags', full_name='s2e_trace.PbTraceMemoryAccess.flags', index=4,
       number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='host_address', full_name='s2e_trace.PbTraceMemoryAccess.host_address', index=5,
       number=6, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='concrete_buffer', full_name='s2e_trace.PbTraceMemoryAccess.concrete_buffer', index=6,
       number=7, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -925,14 +966,14 @@ _PBTRACEMEMORYACCESS = _descriptor.Descriptor(
   enum_types=[
     _PBTRACEMEMORYACCESS_FLAGS,
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1286,
-  serialized_end=1660,
+  serialized_start=1299,
+  serialized_end=1673,
 )
 
 
@@ -949,35 +990,35 @@ _PBTRACESIMPLEMEMORYACCESS = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='address', full_name='s2e_trace.PbTraceSimpleMemoryAccess.address', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='is_write', full_name='s2e_trace.PbTraceSimpleMemoryAccess.is_write', index=2,
       number=3, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1662,
-  serialized_end=1736,
+  serialized_start=1675,
+  serialized_end=1749,
 )
 
 
@@ -994,21 +1035,21 @@ _PBTRACEINSTRUCTIONCOUNT = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1738,
-  serialized_end=1778,
+  serialized_start=1751,
+  serialized_end=1791,
 )
 
 
@@ -1025,21 +1066,21 @@ _PBTRACESTATESWITCH = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1780,
-  serialized_end=1819,
+  serialized_start=1793,
+  serialized_end=1832,
 )
 
 
@@ -1056,56 +1097,56 @@ _PBTRACECACHESIMPARAMS = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceCacheSimParams.size', index=1,
       number=2, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='line_size', full_name='s2e_trace.PbTraceCacheSimParams.line_size', index=2,
       number=3, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='associativity', full_name='s2e_trace.PbTraceCacheSimParams.associativity', index=3,
       number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='upper_cache_id', full_name='s2e_trace.PbTraceCacheSimParams.upper_cache_id', index=4,
       number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='name', full_name='s2e_trace.PbTraceCacheSimParams.name', index=5,
       number=6, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1822,
-  serialized_end=1957,
+  serialized_start=1835,
+  serialized_end=1970,
 )
 
 
@@ -1122,63 +1163,296 @@ _PBTRACECACHESIMENTRY = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pc', full_name='s2e_trace.PbTraceCacheSimEntry.pc', index=1,
       number=2, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='address', full_name='s2e_trace.PbTraceCacheSimEntry.address', index=2,
       number=3, type=4, cpp_type=4, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='size', full_name='s2e_trace.PbTraceCacheSimEntry.size', index=3,
       number=4, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='miss_count', full_name='s2e_trace.PbTraceCacheSimEntry.miss_count', index=4,
       number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='is_write', full_name='s2e_trace.PbTraceCacheSimEntry.is_write', index=5,
       number=6, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='is_code', full_name='s2e_trace.PbTraceCacheSimEntry.is_code', index=6,
       number=7, type=8, cpp_type=7, label=2,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1960,
-  serialized_end=2098,
+  serialized_start=1973,
+  serialized_end=2111,
+)
+
+
+_PBTRACECFISTATS = _descriptor.Descriptor(
+  name='PbTraceCfiStats',
+  full_name='s2e_trace.PbTraceCfiStats',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='direct_call_count', full_name='s2e_trace.PbTraceCfiStats.direct_call_count', index=0,
+      number=1, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='indirect_call_count', full_name='s2e_trace.PbTraceCfiStats.indirect_call_count', index=1,
+      number=2, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_count', full_name='s2e_trace.PbTraceCfiStats.ret_count', index=2,
+      number=3, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='call_violation_count', full_name='s2e_trace.PbTraceCfiStats.call_violation_count', index=3,
+      number=4, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_violation_count', full_name='s2e_trace.PbTraceCfiStats.ret_violation_count', index=4,
+      number=6, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_from_unknown_exec_region_count', full_name='s2e_trace.PbTraceCfiStats.ret_from_unknown_exec_region_count', index=5,
+      number=9, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_to_unknown_exec_region_count', full_name='s2e_trace.PbTraceCfiStats.ret_to_unknown_exec_region_count', index=6,
+      number=10, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='missing_return_address_count', full_name='s2e_trace.PbTraceCfiStats.missing_return_address_count', index=7,
+      number=11, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='call_and_return_match_count', full_name='s2e_trace.PbTraceCfiStats.call_and_return_match_count', index=8,
+      number=12, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='whitelisted_return_count', full_name='s2e_trace.PbTraceCfiStats.whitelisted_return_count', index=9,
+      number=13, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='pending_violations_count', full_name='s2e_trace.PbTraceCfiStats.pending_violations_count', index=10,
+      number=14, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='whitelisted_call_pattern_count', full_name='s2e_trace.PbTraceCfiStats.whitelisted_call_pattern_count', index=11,
+      number=15, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_to_parent_with_displacement_count', full_name='s2e_trace.PbTraceCfiStats.ret_to_parent_with_displacement_count', index=12,
+      number=16, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='call_to_unknown_exec_region_count', full_name='s2e_trace.PbTraceCfiStats.call_to_unknown_exec_region_count', index=13,
+      number=17, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ret_to_call_site', full_name='s2e_trace.PbTraceCfiStats.ret_to_call_site', index=14,
+      number=18, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2114,
+  serialized_end=2650,
+)
+
+
+_PBTRACEVIOLATIONPCINFO = _descriptor.Descriptor(
+  name='PbTraceViolationPcInfo',
+  full_name='s2e_trace.PbTraceViolationPcInfo',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='pc', full_name='s2e_trace.PbTraceViolationPcInfo.pc', index=0,
+      number=1, type=4, cpp_type=4, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='module_path', full_name='s2e_trace.PbTraceViolationPcInfo.module_path', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='module_pc', full_name='s2e_trace.PbTraceViolationPcInfo.module_pc', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='disassembly', full_name='s2e_trace.PbTraceViolationPcInfo.disassembly', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2652,
+  serialized_end=2749,
+)
+
+
+_PBTRACECFIVIOLATION = _descriptor.Descriptor(
+  name='PbTraceCfiViolation',
+  full_name='s2e_trace.PbTraceCfiViolation',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='type', full_name='s2e_trace.PbTraceCfiViolation.type', index=0,
+      number=1, type=14, cpp_type=8, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='source', full_name='s2e_trace.PbTraceCfiViolation.source', index=1,
+      number=2, type=11, cpp_type=10, label=2,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='destination', full_name='s2e_trace.PbTraceCfiViolation.destination', index=2,
+      number=3, type=11, cpp_type=10, label=2,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='expected_destination', full_name='s2e_trace.PbTraceCfiViolation.expected_destination', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2752,
+  serialized_end=2995,
 )
 
 _PBTRACEITEMHEADER.fields_by_name['type'].enum_type = _PBTRACEITEMHEADERTYPE
@@ -1193,6 +1467,10 @@ _PBTRACETRANSLATIONBLOCK.fields_by_name['tb_type'].enum_type = _PBTRACETBTYPE
 _PBTRACETESTCASE_KEYVALUE.containing_type = _PBTRACETESTCASE
 _PBTRACETESTCASE.fields_by_name['items'].message_type = _PBTRACETESTCASE_KEYVALUE
 _PBTRACEMEMORYACCESS_FLAGS.containing_type = _PBTRACEMEMORYACCESS
+_PBTRACECFIVIOLATION.fields_by_name['type'].enum_type = _PBTRACECFIVIOLATIONTYPE
+_PBTRACECFIVIOLATION.fields_by_name['source'].message_type = _PBTRACEVIOLATIONPCINFO
+_PBTRACECFIVIOLATION.fields_by_name['destination'].message_type = _PBTRACEVIOLATIONPCINFO
+_PBTRACECFIVIOLATION.fields_by_name['expected_destination'].message_type = _PBTRACEVIOLATIONPCINFO
 DESCRIPTOR.message_types_by_name['PbTraceItemHeader'] = _PBTRACEITEMHEADER
 DESCRIPTOR.message_types_by_name['PbTraceItemFork'] = _PBTRACEITEMFORK
 DESCRIPTOR.message_types_by_name['PbTraceModuleLoadUnload'] = _PBTRACEMODULELOADUNLOAD
@@ -1211,8 +1489,13 @@ DESCRIPTOR.message_types_by_name['PbTraceInstructionCount'] = _PBTRACEINSTRUCTIO
 DESCRIPTOR.message_types_by_name['PbTraceStateSwitch'] = _PBTRACESTATESWITCH
 DESCRIPTOR.message_types_by_name['PbTraceCacheSimParams'] = _PBTRACECACHESIMPARAMS
 DESCRIPTOR.message_types_by_name['PbTraceCacheSimEntry'] = _PBTRACECACHESIMENTRY
+DESCRIPTOR.message_types_by_name['PbTraceCfiStats'] = _PBTRACECFISTATS
+DESCRIPTOR.message_types_by_name['PbTraceViolationPcInfo'] = _PBTRACEVIOLATIONPCINFO
+DESCRIPTOR.message_types_by_name['PbTraceCfiViolation'] = _PBTRACECFIVIOLATION
 DESCRIPTOR.enum_types_by_name['PbTraceItemHeaderType'] = _PBTRACEITEMHEADERTYPE
 DESCRIPTOR.enum_types_by_name['PbTraceTbType'] = _PBTRACETBTYPE
+DESCRIPTOR.enum_types_by_name['PbTraceCfiViolationType'] = _PBTRACECFIVIOLATIONTYPE
+_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 PbTraceItemHeader = _reflection.GeneratedProtocolMessageType('PbTraceItemHeader', (_message.Message,), dict(
   DESCRIPTOR = _PBTRACEITEMHEADER,
@@ -1355,6 +1638,27 @@ PbTraceCacheSimEntry = _reflection.GeneratedProtocolMessageType('PbTraceCacheSim
   # @@protoc_insertion_point(class_scope:s2e_trace.PbTraceCacheSimEntry)
   ))
 _sym_db.RegisterMessage(PbTraceCacheSimEntry)
+
+PbTraceCfiStats = _reflection.GeneratedProtocolMessageType('PbTraceCfiStats', (_message.Message,), dict(
+  DESCRIPTOR = _PBTRACECFISTATS,
+  __module__ = 'TraceEntries_pb2'
+  # @@protoc_insertion_point(class_scope:s2e_trace.PbTraceCfiStats)
+  ))
+_sym_db.RegisterMessage(PbTraceCfiStats)
+
+PbTraceViolationPcInfo = _reflection.GeneratedProtocolMessageType('PbTraceViolationPcInfo', (_message.Message,), dict(
+  DESCRIPTOR = _PBTRACEVIOLATIONPCINFO,
+  __module__ = 'TraceEntries_pb2'
+  # @@protoc_insertion_point(class_scope:s2e_trace.PbTraceViolationPcInfo)
+  ))
+_sym_db.RegisterMessage(PbTraceViolationPcInfo)
+
+PbTraceCfiViolation = _reflection.GeneratedProtocolMessageType('PbTraceCfiViolation', (_message.Message,), dict(
+  DESCRIPTOR = _PBTRACECFIVIOLATION,
+  __module__ = 'TraceEntries_pb2'
+  # @@protoc_insertion_point(class_scope:s2e_trace.PbTraceCfiViolation)
+  ))
+_sym_db.RegisterMessage(PbTraceCfiViolation)
 
 
 # @@protoc_insertion_point(module_scope)

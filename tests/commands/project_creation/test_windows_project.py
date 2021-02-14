@@ -26,7 +26,7 @@ from tempfile import gettempdir
 from unittest import TestCase
 
 from s2e_env.commands.project_creation import Target
-from s2e_env.commands.project_creation import WindowsProject
+from s2e_env.commands.project_creation import WindowsExeProject
 from s2e_env.commands.new_project import target_from_file
 
 from . import DATA_DIR, monkey_patch_project
@@ -97,7 +97,7 @@ class WindowsProjectTestCase(TestCase):
     def test_empty_xpsp3pro_project_config(self):
         """Test empty Windows XP SP3 project creation."""
         target = Target.empty()
-        project = monkey_patch_project(WindowsProject(),
+        project = monkey_patch_project(WindowsExeProject(),
                                        WINDOWS_XPSP3_X86_IMAGE_DESC)
         options = {
             'image': 'windows-xpsp3pro-i386',
