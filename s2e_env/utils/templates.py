@@ -49,6 +49,9 @@ def _init_template_env(templates_dir=None):
     if not templates_dir:
         templates_dir = DEFAULT_TEMPLATES_DIR
 
+    if not os.path.exists(templates_dir):
+        raise Exception(f'Directory {templates_dir} does not exist')
+
     env = Environment(loader=FileSystemLoader(templates_dir),
                       autoescape=False, undefined=StrictUndefined)
     env.filters['datetimefilter'] = _datetimefilter
