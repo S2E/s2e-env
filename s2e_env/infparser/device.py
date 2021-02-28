@@ -57,7 +57,7 @@ class Device:
         return 'DEVICE %s %s [%s]' % (self.install_section, self.hardware_id, self.name)
 
     def __str__(self):
-        return str(self).encode('utf-8')
+        return str(self)
 
 
 class PCIDevice(Device):
