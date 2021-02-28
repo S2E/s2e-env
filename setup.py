@@ -93,6 +93,7 @@ setup(
     package_data={
         's2e_env': [
             'templates/*',
+            'templates/plugin_creation/*',
             'dat/*',
         ],
     },

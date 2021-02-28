@@ -27,7 +27,7 @@ import os
 import pygit2
 
 from s2e_env.command import EnvCommand, CommandError
-from s2e_env.utils.templates import render_template
+from s2e_env.utils.templates import render_template, DEFAULT_TEMPLATES_DIR
 
 logger = logging.getLogger('new_plugin')
 
@@ -80,7 +80,7 @@ class Command(EnvCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
 
-        parser.add_argument('plugin_name', nargs='?',
+        parser.add_argument('plugin_name', nargs=1,
                             help='The name of the plugin. Can be of the form Dir1/Dir2/PluginName.')
 
         parser.add_argument('--use-guest-interface',
@@ -96,8 +96,8 @@ class Command(EnvCommand):
         s2e_src_dir = self.env_path('source', 's2e', 'libs2eplugins', 'src')
         s2e_plugins_dir = self.env_path(s2e_src_dir, 's2e', 'Plugins')
 
-        plugin_name = os.path.basename(options['plugin_name'])
-        plugin_rel_dir = os.path.dirname(options['plugin_name'])
+        plugin_name = os.path.basename(options['plugin_name'][0])
+        plugin_rel_dir = os.path.dirname(options['plugin_name'][0])
 
         if not os.path.exists(s2e_src_dir):
             raise CommandError(f'{s2e_src_dir} does not exist. Make sure the source code is initialized properly.')
@@ -131,10 +131,9 @@ class Command(EnvCommand):
             'use_guest_interface': options['use_guest_interface']
         }
 
-        source_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(source_dir, 'plugin_creation')
-        render_template(context, 'plugin.cpp.template', cpp_plugin_path, templates_dir)
-        render_template(context, 'plugin.h.template', header_plugin_path, templates_dir)
+        template_dir = os.path.join(DEFAULT_TEMPLATES_DIR, 'plugin_creation')
+        render_template(context, 'plugin.cpp.template', cpp_plugin_path, template_dir)
+        render_template(context, 'plugin.h.template', header_plugin_path, template_dir)
 
         # Update CMakeLists.txt
         rel_plugin_path = os.path.relpath(cpp_plugin_path, s2e_src_dir)
