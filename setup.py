@@ -64,7 +64,7 @@ setup(
         'sh',
         'termcolor',
         'pytrie',
-        'pwntools==4.0.1',
+        'pwntools==4.3.1',
         'psutil',
         'protobuf3-to-dict',
         'immutables',
