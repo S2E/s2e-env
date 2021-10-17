@@ -24,10 +24,10 @@ import datetime
 import logging
 import multiprocessing
 import multiprocessing.dummy
-import signal
-import subprocess
 import os
+import signal
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -508,9 +508,11 @@ class TestsuiteRunner(EnvCommand):
             'terminating': False,
         }
 
+        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, original_sigint_handler)
+
         try:
             r = [pool.apply_async(self.call_script, (state, script,)) for script in scripts_to_run]
-            pool.close()
 
             # This works around a bug in Python 2.7, which prevents pool.join() from
             # being interrupted by ctrl + c.
@@ -522,6 +524,7 @@ class TestsuiteRunner(EnvCommand):
             state['terminating'] = True
             pool.terminate()
         finally:
+            pool.close()
             pool.join()
 
 
