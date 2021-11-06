@@ -131,6 +131,8 @@ class S2EThread(Thread):
         # Launch s2e
         # pylint: disable=subprocess-popen-preexec-fn
         global s2e_main_process
+
+        # pylint: disable=consider-using-with
         s2e_main_process = subprocess.Popen(
             self._args, preexec_fn=_s2e_preexec, env=self._env, cwd=self._cwd,
             stdout=self._stdout,
@@ -230,7 +232,10 @@ class Command(ProjectCommand):
                 signal.signal(s, _sigterm_handler)
 
             if not no_tui:
+                # pylint: disable=consider-using-with
                 stdout = open(self.project_path('stdout.txt'), 'w', encoding='utf-8')
+
+                # pylint: disable=consider-using-with
                 stderr = open(self.project_path('stderr.txt'), 'w', encoding='utf-8')
             else:
                 stdout = sys.stdout
