@@ -177,7 +177,7 @@ class BaseCommand(metaclass=ABCMeta):
 
     @property
     def name(self):
-        return self.__module__.split('.')[-1]
+        return self.__module__.rsplit('.', maxsplit=1)[-1]
 
     @abstractmethod
     def handle(self, *args, **options):

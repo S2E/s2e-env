@@ -46,17 +46,17 @@ class Driver:
 
         manufacturers = inf_file.get_manufacturers()
 
-        for k in manufacturers.keys():
-            logger.info('  %s = %s', k, manufacturers[k])
-            for version in manufacturers[k]:
+        for k, mfg in manufacturers.items():
+            logger.info('  %s = %s', k, mfg)
+            for version in mfg:
                 logger.info('  version: %s', version)
                 devices = inf_file.get_models(version[0], version[1])
                 drv_files = set()
-                for dk in devices.keys():
-                    for ver in devices[dk].installInfo.keys():
-                        drv_files |= devices[dk].installInfo[ver].copyFiles
+                for _, dv in devices.items():
+                    for _, ver_val in dv.installInfo.items():
+                        drv_files |= ver_val.copyFiles
 
-                        logger.info('    %s %s', devices[dk], drv_files)
+                        logger.info('    %s %s', dv, drv_files)
                     self._all_files |= drv_files
 
         for m in inf_file.get_manufacturers().keys():

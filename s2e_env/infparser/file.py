@@ -199,7 +199,7 @@ class InfFile:
     # [install-section-name.ntia64.Services] |  (Windows XP and later versions of Windows)
     # [install-section-name.ntamd64.Services]  (Windows XP and later versions of Windows)
     def get_install_info(self, install_section_key):
-        ret = dict()
+        ret = {}
 
         if not self._sections.prefixed_keys(install_section_key):
             logger.warning('Section %s does not exist', install_section_key)

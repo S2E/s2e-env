@@ -106,7 +106,7 @@ class LineRequestHandler(socketserver.BaseRequestHandler):
         while not self.server.stopped:
             try:
                 data = self.request.recv(1024)
-            except socket.timeout as exception:
+            except socket.timeout:
                 if self.server.stopped:
                     break
                 continue
