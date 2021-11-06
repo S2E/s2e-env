@@ -230,8 +230,8 @@ class Command(ProjectCommand):
                 signal.signal(s, _sigterm_handler)
 
             if not no_tui:
-                stdout = open(self.project_path('stdout.txt'), 'w')
-                stderr = open(self.project_path('stderr.txt'), 'w')
+                stdout = open(self.project_path('stdout.txt'), 'w', encoding='utf-8')
+                stderr = open(self.project_path('stderr.txt'), 'w', encoding='utf-8')
             else:
                 stdout = sys.stdout
                 stderr = sys.stderr
@@ -275,7 +275,7 @@ class Command(ProjectCommand):
             raise CommandError(f'S2E terminated with error {s2e_main_process.returncode}')
 
     def _get_libs2e(self):
-        with open(self.project_path('project.json')) as fp:
+        with open(self.project_path('project.json'), 'r', encoding='utf-8') as fp:
             project_desc = json.loads(fp.read())
 
         qemu_build = self.image['qemu_build']

@@ -148,7 +148,7 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
 
                 logger.info('Disassembly successful')
                 # Parse the basic block list file
-                with open(disas_file, 'r') as f:
+                with open(disas_file, 'r', encoding='utf-8') as f:
                     return json.load(f, cls=BasicBlockDecoder)
         except ErrorReturnCode as e:
             raise CommandError(e) from e

@@ -218,7 +218,7 @@ class EnvCommand(BaseCommand):
 
         try:
             path = self.env_path('s2e.yaml')
-            with open(path, 'r') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 self._config = yaml.safe_load(f)
         except IOError:
             raise CommandError(f'This does not look like an S2E environment - '
@@ -317,7 +317,7 @@ class ProjectCommand(EnvCommand):
         # Load the project description
         try:
             proj_desc_path = os.path.join(self._project_dir, 'project.json')
-            with open(proj_desc_path, 'r') as f:
+            with open(proj_desc_path, 'r', encoding='utf-8') as f:
                 self._project_desc = json.load(f)
         except IOError:
             raise CommandError(f'{self._project_name} does not look like an S2E analysis '

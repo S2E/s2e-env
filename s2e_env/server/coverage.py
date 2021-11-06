@@ -109,7 +109,7 @@ class Coverage(QueueProcessor):
         return bb in bbs or bb in tbs
 
     def process_coverage(self, _, coverage_file, coverage_type):
-        with open(coverage_file) as fp:
+        with open(coverage_file, encoding='utf-8') as fp:
             data = json.load(fp)
 
         os.remove(coverage_file)

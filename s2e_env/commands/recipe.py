@@ -313,7 +313,7 @@ class Command(ProjectCommand):
 
                 for flavor, handler in type1_handlers:
                     path = self.get_recipe_path(1, arch, platform, flavor, gp_reg)
-                    with open(path, 'w') as fp:
+                    with open(path, 'w', encoding='utf-8') as fp:
                         logger.info('Writing recipe to %s', path)
                         handler(fp, arch, platform, gp_reg)
 
@@ -324,6 +324,6 @@ class Command(ProjectCommand):
             for i, handler in type2_handlers:
                 path = self.get_recipe_path(2, 'i386', 'decree', f'shellcode_{i}', None)
 
-                with open(path, 'w') as fp:
+                with open(path, 'w', encoding='utf-8') as fp:
                     logger.info('Writing recipe to %s', path)
                     handler(fp)

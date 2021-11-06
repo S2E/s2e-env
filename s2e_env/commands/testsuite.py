@@ -196,7 +196,7 @@ class TestsuiteGenerator(EnvCommand):
         run_tests = render_template(ctx, run_tests_template, templates_dir=ts_dir)
 
         run_tests_path = os.path.join(self.projects_path(options['name']), 'run-tests')
-        with open(run_tests_path, 'w') as fp:
+        with open(run_tests_path, 'w', encoding='utf-8') as fp:
             fp.write(run_tests)
 
         st = os.stat(run_tests_path)
@@ -357,7 +357,7 @@ class TestsuiteLister(EnvCommand):
             test_root = os.path.join(ts_dir, test)
 
             cfg_file = os.path.join(test_root, 'config.yml')
-            with open(cfg_file, 'r') as fp:
+            with open(cfg_file, 'r', encoding='utf-8') as fp:
                 config = yaml.safe_load(fp)['test']
 
             logger.info('%-25s: %s', test, config['description'])
@@ -426,8 +426,8 @@ class TestsuiteRunner(EnvCommand):
 
         start_time = datetime.datetime.now()
 
-        with open(stdout, 'w') as so:
-            with open(stderr, 'w') as se:
+        with open(stdout, 'w', encoding='utf-8') as so:
+            with open(stderr, 'w', encoding='utf-8') as se:
                 status = None
                 try:
                     p = subprocess.Popen([script], env=env, stdout=so, stderr=se)

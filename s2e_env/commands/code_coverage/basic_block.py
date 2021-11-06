@@ -320,7 +320,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         logger.info('%s found. Returning cached basic blocks', disas_path)
 
-        with open(disas_path, 'r') as disas_file:
+        with open(disas_path, 'r', encoding='utf-8') as disas_file:
             return json.load(disas_file, cls=BasicBlockDecoder)
 
     def _save_disassembly_info(self, module, disas_info):
@@ -339,7 +339,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         logger.info('Saving disassembly information to %s', disas_path)
 
-        with open(disas_path, 'w') as disas_file:
+        with open(disas_path, 'w', encoding='utf-8') as disas_file:
             json.dump(disas_info, disas_file, cls=BasicBlockEncoder)
 
     def _save_basic_block_coverage(self, module, basic_blocks, total_bbs, num_covered_bbs):
@@ -373,7 +373,7 @@ class BasicBlockCoverage(ProjectCommand):
             'coverage': [to_dict(bb) for bbs in basic_blocks.values() for bb in bbs],
         }
 
-        with open(bb_coverage_file, 'w') as f:
+        with open(bb_coverage_file, 'w', encoding='utf-8') as f:
             json.dump(bbs_json, f)
 
         return bb_coverage_file
@@ -440,7 +440,7 @@ class BasicBlockCoverage(ProjectCommand):
             drcov_filename = f'{module}_coverage_{state}.drcov'
             drcov_file = os.path.join(drcov_dir, drcov_filename)
 
-            with open(drcov_file, 'wb') as f:
+            with open(drcov_file, 'wb', encoding='utf-8') as f:
                 f.write(self.DRCOV_HEADER)
 
                 # Each drcov module entry is formatted as follows:

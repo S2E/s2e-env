@@ -109,7 +109,7 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
     """
     logger.info('Writing line coverage to %s', lcov_path)
 
-    with open(lcov_path, 'w') as f:
+    with open(lcov_path, 'w', encoding='utf-8') as f:
         f.write('TN:\n')
         for src_file in file_line_info:
             if ignore_missing_files and not os.path.exists(src_file):

@@ -388,7 +388,7 @@ class JsonDebugInfo(DebugInfo):
                 continue
 
             logger.debug('Attempting to parse JSON debug data from %s', path)
-            with open(path, 'r') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 lines = json.loads(f.read())
                 self._parse_info(lines)
                 return

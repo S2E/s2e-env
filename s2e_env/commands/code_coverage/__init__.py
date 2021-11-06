@@ -89,7 +89,7 @@ def aggregate_tb_files_per_state(tb_files):
     """
     ret = {}
     for f in tb_files:
-        with open(f, 'r') as fp:
+        with open(f, 'r', encoding='utf-8') as fp:
             try:
                 data = json.load(fp)
             except Exception:

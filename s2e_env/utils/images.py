@@ -114,7 +114,7 @@ def _get_templates(img_build_dir, filename, key):
     images = os.path.join(img_build_dir, filename)
 
     try:
-        with open(images, 'r') as f:
+        with open(images, 'r', encoding='utf-8') as f:
             template_json = json.load(f)
     except:
         raise CommandError(f'Could not parse {images}. Something is wrong with the environment') from None
@@ -145,7 +145,7 @@ def get_image_descriptor(image_dir):
     img_json_path = os.path.join(image_dir, 'image.json')
 
     try:
-        with open(img_json_path, 'r') as f:
+        with open(img_json_path, 'r', encoding='utf-8') as f:
             ret = json.load(f)
             _validate_version(ret, img_json_path)
             ret['path'] = os.path.join(image_dir, 'image.raw.s2e')

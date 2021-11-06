@@ -50,7 +50,7 @@ def rewrite_files(dir_, files_to_rewrite, to_replace, replace_with):
 
         logger.info('Rewriting %s', name)
 
-        with open(path, 'r+') as f:
+        with open(path, 'r+', encoding='utf-8') as f:
             contents = f.read()
             f.seek(0)
             f.write(contents.replace(to_replace, replace_with))

@@ -78,7 +78,7 @@ class TargetArguments:
             self._name_to_path[file] = path
 
             if not use_seeds:
-                with open(path, 'w') as fp:
+                with open(path, 'w', encoding='utf-8') as fp:
                     fp.write('x' * 256)
 
                 context = {

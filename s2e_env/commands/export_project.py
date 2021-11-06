@@ -108,7 +108,7 @@ class Command(ProjectCommand):
             # overwritten. However, there are still other paths that need
             # rewriting to ensure that the project can be correctly imported.
             logger.info('Updating project.json')
-            with open(os.path.join(export_dir, 'project.json'), 'r+') as f:
+            with open(os.path.join(export_dir, 'project.json'), 'r+', encoding='utf-8') as f:
                 proj_desc = json.load(f)
 
                 # The target files in a project are normally symbolic links.

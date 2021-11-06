@@ -141,7 +141,7 @@ class Command(ProjectCommand):
 
         # Write the execution tree to a JSON file
         json_trace_file = self.project_path('s2e-last', 'execution_trace.json')
-        with open(json_trace_file, 'w') as f:
+        with open(json_trace_file, 'w', encoding='utf-8') as f:
             if options['pretty_print']:
                 json.dump(execution_tree_json, f, indent=4, sort_keys=True, cls=TraceEncoder)
             else:

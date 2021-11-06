@@ -129,7 +129,7 @@ class Command(EnvCommand):
         rewrite_files(project_path, CONSTANTS['import_export']['project_files'],
                       S2E_ENV_PLACEHOLDER, self.env_path())
 
-        with open(os.path.join(project_path, 'project.json'), 'r') as f:
+        with open(os.path.join(project_path, 'project.json'), 'r', encoding='utf-8') as f:
             proj_desc = json.load(f)
 
             if 'image' not in proj_desc:

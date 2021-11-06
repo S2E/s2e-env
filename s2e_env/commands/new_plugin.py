@@ -33,7 +33,7 @@ logger = logging.getLogger('new_plugin')
 
 
 def _inject_plugin_path(makefile, plugin_path):
-    with open(makefile, 'r') as fp:
+    with open(makefile, 'r', encoding='utf-8') as fp:
         lines = fp.readlines()
 
     out_lines = []
@@ -140,7 +140,7 @@ class Command(EnvCommand):
         s2e_plugins_makefile = self.env_path('source', 's2e', 'libs2eplugins', 'src', 'CMakeLists.txt')
         ret = _inject_plugin_path(s2e_plugins_makefile, rel_plugin_path)
 
-        with open(s2e_plugins_makefile, 'w') as fp:
+        with open(s2e_plugins_makefile, 'w', encoding='utf-8') as fp:
             fp.write(ret)
 
         logger.success(

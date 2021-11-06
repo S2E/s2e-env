@@ -303,7 +303,7 @@ class AbstractProject(EnvCommand):
         config_copy['image'] = os.path.dirname(config['image']['path'])
 
         project_desc_path = os.path.join(project_dir, 'project.json')
-        with open(project_desc_path, 'w') as f:
+        with open(project_desc_path, 'w', encoding='utf-8') as f:
             s = json.dumps(config_copy, sort_keys=True, indent=4, cls=ConfigEncoder)
             f.write(s)
 

@@ -227,7 +227,7 @@ def _create_config(env_path):
 
     context = {
         'creation_time': str(datetime.datetime.now()),
-        'version': open(version_path, 'r').read().strip(),
+        'version': open(version_path, 'r', encoding='utf-8').read().strip(),
     }
 
     render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))

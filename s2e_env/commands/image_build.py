@@ -151,7 +151,7 @@ def _check_vmlinux():
     """
     try:
         for f in glob.glob(os.path.join(os.sep, 'boot', 'vmlinu*')):
-            with open(f):
+            with open(f, 'rb'):
                 pass
     except IOError:
         raise CommandError('Make sure that the kernels in /boot are readable. '
