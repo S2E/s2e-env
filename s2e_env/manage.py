@@ -59,7 +59,7 @@ def load_command_class(name):
     by the import process (ImportError, AttributeError) are allowed to
     propagate.
     """
-    module = importlib.import_module('s2e_env.commands.%s' % name)
+    module = importlib.import_module(f's2e_env.commands.{name}')
     return module.Command()
 
 
@@ -121,13 +121,13 @@ class CommandManager:
         else:
             usage = [
                 '',
-                'Type \'%s help <subcommand>\' for help on a specific '
-                'subcommand.' % self._prog_name,
+                f'Type \'{self._prog_name} help <subcommand>\' for help on a specific '
+                'subcommand.',
                 '',
                 'Available subcommands:',
             ]
             for command in find_commands():
-                usage.append('    %s' % command)
+                usage.append(f'    {command}')
 
         return '\n'.join(usage)
 
@@ -138,8 +138,7 @@ class CommandManager:
         """
         commands = find_commands()
         if subcommand not in commands:
-            sys.stderr.write('Unknown command - %r. Type \'%s help\' for '
-                             'usage\n' % (subcommand, self._prog_name))
+            sys.stderr.write(f'Unknown command - {subcommand}. Type \'{self._prog_name} help\' for usage\n')
             sys.exit(1)
 
         return load_command_class(subcommand)
@@ -152,7 +151,8 @@ class CommandManager:
         try:
             subcommand = self._argv[1]
         except IndexError:
-            subcommand = 'help' # Display help if no arguments were given
+            # Display help if no arguments were given
+            subcommand = 'help'
 
         parser = CommandParser(None,
                                usage='%(prog)s subcommand [options] [args]',
@@ -166,15 +166,13 @@ class CommandManager:
 
         if subcommand == 'help':
             if '--commands' in args:
-                sys.stdout.write('%s\n' %
-                                 self.main_help_text(commands_only=True))
+                sys.stdout.write(f'{self.main_help_text(commands_only=True)}\n')
             elif len(options.args) < 1:
-                sys.stdout.write('%s\n' % self.main_help_text())
+                sys.stdout.write(f'{self.main_help_text()}\n')
             else:
-                self.fetch_command(options.args[0]).print_help(self._prog_name,
-                                                               options.args[0])
+                self.fetch_command(options.args[0]).print_help(self._prog_name, options.args[0])
         elif self._argv[1:] in (['--help'], ['-h']):
-            sys.stdout.write('%s\n' % self.main_help_text())
+            sys.stdout.write(f'{self.main_help_text()}\n')
         else:
             self.fetch_command(subcommand).run_from_argv(self._argv)
 

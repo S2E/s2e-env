@@ -61,7 +61,7 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
 
         binaryninja_py_dir = os.path.join(binaryninja_dir, 'python')
         if not os.path.isdir(binaryninja_py_dir):
-            raise CommandError('Binary Ninja not found at %s' % binaryninja_dir)
+            raise CommandError(f'Binary Ninja not found at {binaryninja_dir}')
 
         sys.path.append(binaryninja_py_dir)
         self._binaryninja_mod = importlib.import_module('binaryninja')

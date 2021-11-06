@@ -51,7 +51,7 @@ def _get_project_name(archive):
         contents = tar(exclude='*/*', list=True, file=archive)
         return os.path.dirname(str(contents))
     except ErrorReturnCode as e:
-        raise CommandError('Failed to list archive - %s' % e) from e
+        raise CommandError(f'Failed to list archive - {e}') from e
 
 
 def _decompress_archive(archive_path, dest_path):
@@ -68,7 +68,7 @@ def _decompress_archive(archive_path, dest_path):
             old_path = os.path.join(directory, _get_project_name(archive_path))
             shutil.move(old_path, dest_path)
     except ErrorReturnCode as e:
-        raise CommandError('Failed to decompress project archive - %s' % e) from e
+        raise CommandError(f'Failed to decompress project archive - {e}') from e
 
 
 class Command(EnvCommand):
@@ -103,7 +103,7 @@ class Command(EnvCommand):
         # Check the archive
         archive = options['archive'][0]
         if not os.path.isfile(archive):
-            raise CommandError('%s is not a valid project archive' % archive)
+            raise CommandError(f'{archive} is not a valid project archive')
 
         # Get the name of the project that we are importing
         project_name = options.get('project_name')
@@ -119,8 +119,8 @@ class Command(EnvCommand):
                 logger.info('\'%s\' already exists - removing', project_name)
                 shutil.rmtree(self.projects_path(project_name))
             else:
-                raise CommandError('\'%s\' already exists. Either remove this '
-                                   'project or use the force option' % project_name)
+                raise CommandError(f'\'{project_name}\' already exists. Either remove this '
+                                   'project or use the force option')
 
         _decompress_archive(archive, project_path)
 

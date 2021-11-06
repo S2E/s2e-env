@@ -228,7 +228,7 @@ class ExecutionTraceParser:
     def _read_trace_entry(trace_file):
         magic, raw_header_size = _HEADER_PREFIX.unpack(trace_file.read(8))
         if magic != 0xdeaddead:
-            raise Exception('Invalid magic in trace file (%#x)' % magic)
+            raise Exception(f'Invalid magic in trace file (0x{magic:x})')
 
         raw_header = trace_file.read(raw_header_size)
         raw_item_size = _INTEGER.unpack(trace_file.read(4))[0]

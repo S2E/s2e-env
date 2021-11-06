@@ -53,7 +53,7 @@ class InfFileParser:
                 pass
 
         if not decoded:
-            raise Exception('Could not decode %s' % (filename))
+            raise Exception(f'Could not decode {filename}')
 
         return data
 

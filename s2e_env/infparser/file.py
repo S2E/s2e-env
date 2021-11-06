@@ -166,7 +166,7 @@ class InfFile:
         ret = CaseInsensitiveDict()
 
         if version:
-            dev_key = '%s.%s' % (dev_key, version)
+            dev_key = '{dev_key}.{version}'
 
         if dev_key not in self._sections:
             logger.warning('No section for %s', dev_key)

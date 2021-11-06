@@ -65,7 +65,7 @@ class QMPTCPServer(socketserver.TCPServer):
         """
         Start a new thread to process the request.
         """
-        thread_name = 'RequestHandlingThread-%d' % len(self._threads)
+        thread_name = f'RequestHandlingThread-{len(self._threads)}'
         logger.info('Starting thread "%s"', thread_name)
         t = threading.Thread(target=self.process_request_thread,
                              args=(request, client_address),

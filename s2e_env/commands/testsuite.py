@@ -83,7 +83,7 @@ def _get_run_test_scripts(testsuite_root):
 def _build_test(s2e_config, s2e_source_root, test_root):
     s2e_inc_dir = os.path.join(s2e_source_root, 'guest', 'common', 'include')
     env = os.environ.copy()
-    env['CFLAGS'] = '-I%s' % s2e_inc_dir
+    env['CFLAGS'] = f'-I{s2e_inc_dir}'
     env['S2ESRC'] = s2e_source_root
     env['WINDOWS_BUILD_HOST'] = s2e_config.get('windows_build_server', {}).get('host', '')
     env['WINDOWS_BUILD_USER'] = s2e_config.get('windows_build_server', {}).get('user', '')
@@ -107,7 +107,7 @@ def _call_post_project_gen_script(test_dir, test_config, options):
 
     script = os.path.join(test_dir, script)
     if not os.path.exists(script):
-        raise CommandError('%s does not exist' % script)
+        raise CommandError(f'{script} does not exist')
 
     env = os.environ.copy()
     env['PROJECT_DIR'] = options['project_path']
@@ -144,7 +144,7 @@ def _get_test_project_name(test, target_path, image_name):
 
     # We can have app images, which contain a slash
     image_name = image_name.replace('/', '_')
-    return 'testsuite/%s/%s_%s' % (test, target_name, image_name)
+    return f'testsuite/{test}/{target_name}_{image_name}'
 
 
 def _parse_target_arguments(test_root, test_config):
@@ -192,7 +192,7 @@ class TestsuiteGenerator(EnvCommand):
             'creation_time': str(datetime.datetime.now())
         }
 
-        run_tests_template = '%s/%s' % (test, script_template)
+        run_tests_template = f'{test}/{script_template}'
         run_tests = render_template(ctx, run_tests_template, templates_dir=ts_dir)
 
         run_tests_path = os.path.join(self.projects_path(options['name']), 'run-tests')
@@ -213,10 +213,10 @@ class TestsuiteGenerator(EnvCommand):
             host = self.config.get('windows_build_server', {}).get('host', '')
             user = self.config.get('windows_build_server', {}).get('user', '')
             if not host or not user:
-                msg = 'Test %s requires a Windows build server.\n' \
+                msg = f'Test {test_name} requires a Windows build server.\n' \
                       'Please check that your s2e.yaml file contains a valid Windows build server ' \
                       'configuration. Refer to the following page for details on how to set up the server:\n' \
-                      'http://s2e.systems/docs/WindowsEnvSetup.html' % test_name
+                      'http://s2e.systems/docs/WindowsEnvSetup.html'
                 raise CommandError(msg)
 
         return True
@@ -311,7 +311,7 @@ class TestsuiteGenerator(EnvCommand):
     def _get_tests(self):
         ts_dir = self.source_path('s2e', 'testsuite')
         if not os.path.isdir(ts_dir):
-            raise CommandError('%s does not exist. Please check that you updated the S2E source' % ts_dir)
+            raise CommandError(f'{ts_dir} does not exist. Please check that you updated the S2E source')
 
         tests = self._cmd_options['tests']
         if not tests:
@@ -570,4 +570,4 @@ class Command(EnvCommand):
         elif command == 'list':
             call_command(TestsuiteLister(), *args, **options)
         else:
-            raise CommandError('Invalid command %s' % command)
+            raise CommandError(f'Invalid command {command}')

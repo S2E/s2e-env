@@ -57,7 +57,7 @@ class FunctionInfoEntry:
         return self._end_addr < other._start_addr
 
     def __str__(self):
-        return '%s@%#x_%#x' % (self._name, self._start_addr, self._end_addr)
+        return f'{self._name}@0x{self._start_addr:x}_0x{self._end_addr:x}'
 
 
 class FunctionInfo:

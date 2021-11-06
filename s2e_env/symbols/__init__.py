@@ -153,7 +153,7 @@ class DebugInfo(metaclass=ABCMeta):
         except Exception as e:
             logger.debug(e, exc_info=1)
             errors.append(e)
-            err = 'Could not get JSON line information from %s' % target_path
+            err = f'Could not get JSON line information from {target_path}'
             errors.append(err)
 
         logger.error('Could not find debug information for %s', target_path)
@@ -168,7 +168,7 @@ class DebugInfo(metaclass=ABCMeta):
         for err in errors:
             logger.debug(err)
 
-        raise Exception('No usable line information available for %s' % target_path)
+        raise Exception(f'No usable line information available for {target_path}')
 
 
 class DwarfDebugInfo(DebugInfo):
@@ -258,13 +258,13 @@ class DwarfDebugInfo(DebugInfo):
             binary = self._class(f)
 
             if not binary.has_dwarf_info():
-                raise Exception('Could not find DWARF debug info in %s' % path)
+                raise Exception(f'Could not find DWARF debug info in {path}')
 
             dwarf_info = binary.get_dwarf_info()
             aranges = dwarf_info.get_aranges()
 
             if not aranges or not aranges._get_entries():
-                raise Exception('DWARF aranges section is missing or empty in %s' % path)
+                raise Exception(f'DWARF aranges section is missing or empty in {path}')
 
             self._dwarf_info = dwarf_info
             self._aranges = aranges
@@ -298,7 +298,7 @@ class DwarfDebugInfo(DebugInfo):
         except Exception as e:
             logger.debug(e, exc_info=1)
 
-        raise Exception('Could not find DWARF debug symbols for %s' % self.path)
+        raise Exception(f'Could not find DWARF debug symbols for {self.path}')
 
     # pylint: disable=protected-access
     # (accessing useful internal pyelftools methods)
@@ -379,8 +379,8 @@ class JsonDebugInfo(DebugInfo):
 
     def parse(self):
         candidates = [
-            '%s.lines' % self.path,
-            '%s.lines' % os.path.realpath(self.path)
+            f'{self.path}.lines',
+            f'{os.path.realpath(self.path)}.lines'
         ]
 
         for path in candidates:
@@ -415,7 +415,7 @@ def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files
 
     stdout_data = p.communicate(input=json_in.encode())[0]
     if p.returncode:
-        raise Exception('addrs2lines failed with error code %d' % p.returncode)
+        raise Exception(f'addrs2lines failed with error code {p.returncode}')
 
     return stdout_data
 
@@ -487,7 +487,7 @@ class SymbolManager:
     def get_target(self, target):
         syms = self._get_syms(target)
         if not syms:
-            raise Exception('Could not find symbols for %s' % target)
+            raise Exception(f'Could not find symbols for {target}')
 
         return syms
 

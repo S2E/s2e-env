@@ -21,8 +21,6 @@ SOFTWARE.
 """
 
 
-
-
 import curses
 import time
 
@@ -155,7 +153,7 @@ class Form:
 class Label(Form):
     def __init__(self, parent, x, y, text):
         super().__init__(parent, x, y, len(text) + 2, 1)
-        self._text = ' %s' % text
+        self._text = f' {text}'
 
     def do_draw(self, ax, ay):
         self._wnd.mvwin(ay, ax)

@@ -75,7 +75,7 @@ class Command(ProjectCommand):
         # Name the project archive if it doesn't already have a name
         output_path = options['output_path']
         if not output_path:
-            output_path = self.env_path('%s.tar.xz' % self.project_name)
+            output_path = self.env_path(f'{self.project_name}.tar.xz')
 
         with TemporaryDirectory() as temp_dir:
             # Store all of the exported files in a temporary directory so that
@@ -153,4 +153,4 @@ class Command(ProjectCommand):
                                       _err=sys.stderr)
             create_archive(self._project_name)
         except ErrorReturnCode as e:
-            raise CommandError('Failed to archive project - %s' % e) from e
+            raise CommandError(f'Failed to archive project - {e}') from e

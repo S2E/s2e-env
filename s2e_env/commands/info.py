@@ -21,8 +21,6 @@ SOFTWARE.
 """
 
 
-
-
 import glob
 import json
 import os
@@ -52,8 +50,7 @@ class Command(EnvCommand):
         # Get information on the available projects
         projects = {}
         for project in os.listdir(self.env_path('projects')):
-            json_desc_path = self.env_path('projects', project,
-                                           'project.json')
+            json_desc_path = self.env_path('projects', project, 'project.json')
             with open(json_desc_path, 'r') as f:
                 projects[project] = json.load(f)
 

@@ -53,13 +53,11 @@ def _check_project_dir(project_dir, force=False):
         return
 
     if force:
-        logger.info('\'%s\' already exists - removing',
-                    os.path.basename(project_dir))
+        logger.info('\'%s\' already exists - removing', os.path.basename(project_dir))
         shutil.rmtree(project_dir)
     else:
-        raise CommandError('\'%s\' already exists. Either remove this '
-                           'project or use the force option' %
-                           os.path.basename(project_dir))
+        raise CommandError(f'\'{os.path.basename(project_dir)}\' already exists. Either remove this '
+                           'project or use the force option')
 
 
 def is_valid_arch(target_arch, os_desc):
@@ -97,9 +95,8 @@ class BaseProject(AbstractProject):
 
         # Check architecture consistency (if the target has been specified)
         if target.path and not is_valid_arch(target.arch, img_desc['os']):
-            raise CommandError('Binary is %s while VM image is %s. Please '
-                               'choose another image' % (target.arch,
-                                                         img_desc['os']['arch']))
+            raise CommandError(f'Binary is {target.arch} while VM image is {img_desc["os"]["arch"]}. Please '
+                               'choose another image')
 
         # Determine if guestfs is available for this image
         guestfs_paths = self._select_guestfs(img_desc)

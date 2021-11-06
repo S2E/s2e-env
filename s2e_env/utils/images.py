@@ -87,13 +87,13 @@ class ImageDownloader:
     def _download_image(self, image, dest_dir):
         image_desc = self._templates.get(image)
         if not image_desc:
-            raise CommandError('%s is not a valid image name' % image)
+            raise CommandError(f'{image} is not a valid image name')
 
         url = self._templates[image].get('url')
         if not url:
-            raise CommandError('The image %s has not downloadable archive' % image)
+            raise CommandError(f'The image {image} has not downloadable archive')
 
-        dest_file = os.path.join(dest_dir, '%s.tar.xz' % image)
+        dest_file = os.path.join(dest_dir, f'{image}.tar.xz')
         _download(url, dest_file)
         _decompress(dest_file)
 
@@ -105,10 +105,9 @@ def _validate_version(descriptor, filename):
     version = descriptor.get('version')
     required_version = CONSTANTS['required_versions']['guest_images']
     if version != required_version:
-        raise CommandError('%s versions do not match (s2e-env: %.2f, image: '
-                           '%.2f). Make sure that you have the correct '
-                           'revision of the guest-images repository' %
-                           (filename, required_version, version))
+        raise CommandError(f'{filename} versions do not match (s2e-env: {required_version:.2f}, image: '
+                           f'{version:.2f}). Make sure that you have the correct '
+                           'revision of the guest-images repository')
 
 
 def _get_templates(img_build_dir, filename, key):
@@ -118,8 +117,7 @@ def _get_templates(img_build_dir, filename, key):
         with open(images, 'r') as f:
             template_json = json.load(f)
     except:
-        raise CommandError('Could not parse %s. Something is wrong with the '
-                           'environment' % images) from None
+        raise CommandError(f'Could not parse {images}. Something is wrong with the environment') from None
 
     _validate_version(template_json, images)
 
@@ -156,8 +154,7 @@ def get_image_descriptor(image_dir):
     except CommandError:
         raise
     except Exception as e:
-        raise CommandError('Unable to open image description %s: %s' %
-                           (img_json_path, e)) from e
+        raise CommandError(f'Unable to open image description {img_json_path}: {e}') from e
 
 
 def get_all_images(templates, app_templates):

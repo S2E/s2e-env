@@ -64,8 +64,7 @@ class Command(EnvCommand):
         # Exit if the makefile doesn't exist
         makefile = self.env_path('source', 'Makefile')
         if not os.path.isfile(makefile):
-            raise CommandError('No makefile found in %s' %
-                               os.path.dirname(makefile))
+            raise CommandError(f'No makefile found in {os.path.dirname(makefile)}')
 
         # If the build directory doesn't exist, create it
         build_dir = self.env_path('build')
@@ -128,12 +127,12 @@ class Command(EnvCommand):
             # Check if the user has specified a valid component prefix
             # TODO: This will delete both the debug and release stamps (if they exist)
             if component in stamp_prefixes:
-                stamps_to_delete.extend(glob.glob(self.env_path('build', 'stamps', '%s-*' % component)))
+                stamps_to_delete.extend(glob.glob(self.env_path('build', 'stamps', f'{component}-*')))
                 continue
 
             # If we've made it this far, the component is not valid
-            raise CommandError('Component %s is not valid. Valid components '
-                               'are: %s' % (component, ', '.join(stamp_prefixes)))
+            raise CommandError(f'Component {component} is not valid. Valid components '
+                               f'are: {", ".join(stamp_prefixes)}')
 
         # Delete the stamps, ignoring any stamps that do not exist
         for stamp_to_delete in stamps_to_delete:
