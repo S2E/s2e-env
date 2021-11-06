@@ -225,10 +225,11 @@ def _create_config(env_path):
     s2e_yaml = 's2e.yaml'
     version_path = os.path.join(os.path.dirname(__file__), '..', 'dat', 'VERSION')
 
-    context = {
-        'creation_time': str(datetime.datetime.now()),
-        'version': open(version_path, 'r', encoding='utf-8').read().strip(),
-    }
+    with open(version_path, 'r', encoding='utf-8') as fp:
+        context = {
+            'creation_time': str(datetime.datetime.now()),
+            'version': fp.read().strip(),
+        }
 
     render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
 

@@ -430,25 +430,25 @@ class TestsuiteRunner(EnvCommand):
             with open(stderr, 'w', encoding='utf-8') as se:
                 status = None
                 try:
-                    p = subprocess.Popen([script], env=env, stdout=so, stderr=se)
-                    while True:
-                        if state.get('terminating', False):
-                            p.terminate()
-                            p.wait()
-                            raise TestCancelledException()
-                        try:
-                            p.communicate(timeout=1)
-                        except subprocess.TimeoutExpired:
-                            pass
+                    with subprocess.Popen([script], env=env, stdout=so, stderr=se) as p:
+                        while True:
+                            if state.get('terminating', False):
+                                p.terminate()
+                                p.wait()
+                                raise TestCancelledException()
+                            try:
+                                p.communicate(timeout=1)
+                            except subprocess.TimeoutExpired:
+                                pass
 
-                        if p.returncode is None:
-                            continue
+                            if p.returncode is None:
+                                continue
 
-                        if not p.returncode:
-                            break
+                            if not p.returncode:
+                                break
 
-                        if p.returncode:
-                            raise Exception(f'Error while running {script}')
+                            if p.returncode:
+                                raise Exception(f'Error while running {script}')
 
                     status = 'SUCCESS'
                 except TestCancelledException:

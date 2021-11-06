@@ -411,13 +411,12 @@ def _invoke_addrs2_lines(s2e_prefix, target_path, json_in, include_covered_files
 
     args.append(target_path)
 
-    p = Popen(args, stdout=PIPE, stdin=PIPE)
+    with Popen(args, stdout=PIPE, stdin=PIPE) as p:
+        stdout_data = p.communicate(input=json_in.encode())[0]
+        if p.returncode:
+            raise Exception(f'addrs2lines failed with error code {p.returncode}')
 
-    stdout_data = p.communicate(input=json_in.encode())[0]
-    if p.returncode:
-        raise Exception(f'addrs2lines failed with error code {p.returncode}')
-
-    return stdout_data
+        return stdout_data
 
 
 def _get_coverage_fast(s2e_prefix, search_paths, target, addr_counts, include_covered_files_only):
