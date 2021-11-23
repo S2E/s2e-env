@@ -109,7 +109,7 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
     """
     logger.info('Writing line coverage to %s', lcov_path)
 
-    with open(lcov_path, 'w') as f:
+    with open(lcov_path, 'w', encoding='utf-8') as f:
         f.write('TN:\n')
         for src_file in file_line_info:
             if ignore_missing_files and not os.path.exists(src_file):
@@ -121,15 +121,16 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
             num_non_zero_lines = 0
             num_instrumented_lines = 0
 
-            f.write('SF:%s\n' % src_file)
+            f.write(f'SF:{src_file}\n')
             for line, count in file_line_info[src_file].items():
-                f.write('DA:%d,%d\n' % (line, count))
+                f.write(f'DA:{line},{count}\n')
 
                 if count:
                     num_non_zero_lines += 1
                 num_instrumented_lines += 1
-            f.write('LH:%d\n' % num_non_zero_lines)
-            f.write('LF:%d\n' % num_instrumented_lines)
+
+            f.write(f'LH:{num_non_zero_lines}\n')
+            f.write(f'LF:{num_instrumented_lines}\n')
             f.write('end_of_record\n')
 
 
@@ -188,7 +189,7 @@ class LineCoverage(ProjectCommand):
                 logger.success('Line coverage saved to %s', lcov_info_path)
 
                 if do_gen_html:
-                    lcov_html_dir = os.path.join(lcov_out_dir, '%s_lcov' % module)
+                    lcov_html_dir = os.path.join(lcov_out_dir, f'{module}_lcov')
                     _gen_html(lcov_info_path, lcov_html_dir)
                     logger.success('An HTML report is available in %s/index.html', lcov_html_dir)
 
@@ -212,7 +213,7 @@ class LineCoverage(ProjectCommand):
 
             ret = []
             for i in range(0, last_n_outputs):
-                output_dir = os.path.join(dirname, 's2e-out-%d' % (int(index) - i))
+                output_dir = os.path.join(dirname, f's2e-out-{int(index) - i}')
                 if os.path.exists(output_dir):
                     ret.append(output_dir)
 

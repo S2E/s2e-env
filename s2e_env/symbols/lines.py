@@ -60,7 +60,7 @@ class LineInfoEntry:
         return self._addr < other._addr
 
     def __str__(self):
-        return '%s:%d (%#x)' % (self._filename, self._line, self._addr)
+        return f'{self._filename}:{self._line} (0x{self._addr:x})'
 
 
 class LinesByAddr:

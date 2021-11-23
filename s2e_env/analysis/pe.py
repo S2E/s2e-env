@@ -57,6 +57,6 @@ class PEAnalysis:
             if export.name:
                 exports.append(export.name)
             else:
-                export.append('%d' % export.ordinal)
+                export.append(f'{export.ordinal}')
 
         return exports

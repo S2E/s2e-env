@@ -60,7 +60,7 @@ class SectionDescriptor:
         return self.runtime_load_base + self.size <= other.runtime_load_base
 
     def __str__(self):
-        return 'name:%s rt_base=%#x size=%#x' % (self.name, self.runtime_load_base, self.size)
+        return f'name:{self.name} rt_base=0x{self.runtime_load_base:x} size=0x{self.size:x}'
 
 
 @total_ordering
@@ -105,7 +105,7 @@ class Module:
         return self.path < other.path
 
     def __str__(self):
-        return 'Module name:%s (%s) pid:%d' % (self.name, self.path, self.pid)
+        return f'Module name:{self.name} ({self.path}) pid:{self.pid}'
 
 
 def _index(sections, x):
@@ -129,7 +129,7 @@ class ModuleMap:
 
         for section in mod.sections:
             if not section.size:
-                raise Exception('Section %s of module %s has zero size' % (section, mod))
+                raise Exception(f'Section {section} of module {mod} has zero size')
 
             idx = _index(pid_sections, section)
             if idx is not None:
@@ -160,7 +160,7 @@ class ModuleMap:
     def get(self, pid, pc):
         pid = self._translate_pid(pid, pc)
         if pid not in self._pid_to_sections:
-            raise Exception('Could not find pid=%d' % pid)
+            raise Exception(f'Could not find pid={pid}')
 
         sections = self._pid_to_sections[pid]
         sd = SectionDescriptor(None)
@@ -169,7 +169,7 @@ class ModuleMap:
 
         idx = _index(sections, sd)
         if idx is None:
-            raise Exception('Could not find section containing address %#x' % pc)
+            raise Exception(f'Could not find section containing address 0x{pc:x}')
 
         section = sections[idx]
         return self._section_to_module[(pid, section)]

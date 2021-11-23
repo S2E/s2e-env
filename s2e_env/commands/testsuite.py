@@ -24,10 +24,10 @@ import datetime
 import logging
 import multiprocessing
 import multiprocessing.dummy
-import signal
-import subprocess
 import os
+import signal
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -83,7 +83,7 @@ def _get_run_test_scripts(testsuite_root):
 def _build_test(s2e_config, s2e_source_root, test_root):
     s2e_inc_dir = os.path.join(s2e_source_root, 'guest', 'common', 'include')
     env = os.environ.copy()
-    env['CFLAGS'] = '-I%s' % s2e_inc_dir
+    env['CFLAGS'] = f'-I{s2e_inc_dir}'
     env['S2ESRC'] = s2e_source_root
     env['WINDOWS_BUILD_HOST'] = s2e_config.get('windows_build_server', {}).get('host', '')
     env['WINDOWS_BUILD_USER'] = s2e_config.get('windows_build_server', {}).get('user', '')
@@ -107,7 +107,7 @@ def _call_post_project_gen_script(test_dir, test_config, options):
 
     script = os.path.join(test_dir, script)
     if not os.path.exists(script):
-        raise CommandError('%s does not exist' % script)
+        raise CommandError(f'{script} does not exist')
 
     env = os.environ.copy()
     env['PROJECT_DIR'] = options['project_path']
@@ -144,7 +144,7 @@ def _get_test_project_name(test, target_path, image_name):
 
     # We can have app images, which contain a slash
     image_name = image_name.replace('/', '_')
-    return 'testsuite/%s/%s_%s' % (test, target_name, image_name)
+    return f'testsuite/{test}/{target_name}_{image_name}'
 
 
 def _parse_target_arguments(test_root, test_config):
@@ -192,11 +192,11 @@ class TestsuiteGenerator(EnvCommand):
             'creation_time': str(datetime.datetime.now())
         }
 
-        run_tests_template = '%s/%s' % (test, script_template)
+        run_tests_template = f'{test}/{script_template}'
         run_tests = render_template(ctx, run_tests_template, templates_dir=ts_dir)
 
         run_tests_path = os.path.join(self.projects_path(options['name']), 'run-tests')
-        with open(run_tests_path, 'w') as fp:
+        with open(run_tests_path, 'w', encoding='utf-8') as fp:
             fp.write(run_tests)
 
         st = os.stat(run_tests_path)
@@ -213,10 +213,10 @@ class TestsuiteGenerator(EnvCommand):
             host = self.config.get('windows_build_server', {}).get('host', '')
             user = self.config.get('windows_build_server', {}).get('user', '')
             if not host or not user:
-                msg = 'Test %s requires a Windows build server.\n' \
+                msg = f'Test {test_name} requires a Windows build server.\n' \
                       'Please check that your s2e.yaml file contains a valid Windows build server ' \
                       'configuration. Refer to the following page for details on how to set up the server:\n' \
-                      'http://s2e.systems/docs/WindowsEnvSetup.html' % test_name
+                      'http://s2e.systems/docs/WindowsEnvSetup.html'
                 raise CommandError(msg)
 
         return True
@@ -311,7 +311,7 @@ class TestsuiteGenerator(EnvCommand):
     def _get_tests(self):
         ts_dir = self.source_path('s2e', 'testsuite')
         if not os.path.isdir(ts_dir):
-            raise CommandError('%s does not exist. Please check that you updated the S2E source' % ts_dir)
+            raise CommandError(f'{ts_dir} does not exist. Please check that you updated the S2E source')
 
         tests = self._cmd_options['tests']
         if not tests:
@@ -357,7 +357,7 @@ class TestsuiteLister(EnvCommand):
             test_root = os.path.join(ts_dir, test)
 
             cfg_file = os.path.join(test_root, 'config.yml')
-            with open(cfg_file, 'r') as fp:
+            with open(cfg_file, 'r', encoding='utf-8') as fp:
                 config = yaml.safe_load(fp)['test']
 
             logger.info('%-25s: %s', test, config['description'])
@@ -426,29 +426,29 @@ class TestsuiteRunner(EnvCommand):
 
         start_time = datetime.datetime.now()
 
-        with open(stdout, 'w') as so:
-            with open(stderr, 'w') as se:
+        with open(stdout, 'w', encoding='utf-8') as so:
+            with open(stderr, 'w', encoding='utf-8') as se:
                 status = None
                 try:
-                    p = subprocess.Popen([script], env=env, stdout=so, stderr=se)
-                    while True:
-                        if state.get('terminating', False):
-                            p.terminate()
-                            p.wait()
-                            raise TestCancelledException()
-                        try:
-                            p.communicate(timeout=1)
-                        except subprocess.TimeoutExpired:
-                            pass
+                    with subprocess.Popen([script], env=env, stdout=so, stderr=se) as p:
+                        while True:
+                            if state.get('terminating', False):
+                                p.terminate()
+                                p.wait()
+                                raise TestCancelledException()
+                            try:
+                                p.communicate(timeout=1)
+                            except subprocess.TimeoutExpired:
+                                pass
 
-                        if p.returncode is None:
-                            continue
+                            if p.returncode is None:
+                                continue
 
-                        if not p.returncode:
-                            break
+                            if not p.returncode:
+                                break
 
-                        if p.returncode:
-                            raise Exception(f'Error while running {script}')
+                            if p.returncode:
+                                raise Exception(f'Error while running {script}')
 
                     status = 'SUCCESS'
                 except TestCancelledException:
@@ -508,9 +508,11 @@ class TestsuiteRunner(EnvCommand):
             'terminating': False,
         }
 
+        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, original_sigint_handler)
+
         try:
             r = [pool.apply_async(self.call_script, (state, script,)) for script in scripts_to_run]
-            pool.close()
 
             # This works around a bug in Python 2.7, which prevents pool.join() from
             # being interrupted by ctrl + c.
@@ -522,6 +524,7 @@ class TestsuiteRunner(EnvCommand):
             state['terminating'] = True
             pool.terminate()
         finally:
+            pool.close()
             pool.join()
 
 
@@ -567,4 +570,4 @@ class Command(EnvCommand):
         elif command == 'list':
             call_command(TestsuiteLister(), *args, **options)
         else:
-            raise CommandError('Invalid command %s' % command)
+            raise CommandError(f'Invalid command {command}')

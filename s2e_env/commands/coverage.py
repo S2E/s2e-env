@@ -85,4 +85,4 @@ class Command(ProjectCommand):
         elif command == 'lcov':
             call_command(LineCoverage(), args, **options)
         else:
-            raise CommandError('Invalid command %s' % command)
+            raise CommandError('Invalid command {command}')

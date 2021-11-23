@@ -52,9 +52,9 @@ def _link_existing_install(env_path, existing_install):
     # Check that the expected S2E installation directories exist
     for dir_ in ('bin', os.path.join('share', 'libs2e')):
         if not os.path.isdir(os.path.join(existing_install, dir_)):
-            raise CommandError('Invalid S2E installation - ``%s`` does not '
+            raise CommandError(f'Invalid S2E installation - ``{dir_}`` does not '
                                'exist. Are you sure that this directory '
-                               'contains a valid S2E installation?' % dir_)
+                               'contains a valid S2E installation?')
 
     logger.info('Using existing S2E installation at %s', existing_install)
 
@@ -168,7 +168,7 @@ def _get_s2e_sources(env_path, manifest_branch):
     try:
         # Now use repo to initialize all the repositories
         logger.info('Fetching %s from %s', git_s2e_repo, git_url)
-        repo.init(u='%s/%s' % (git_url, git_s2e_repo), b=manifest_branch,
+        repo.init(u=f'{git_url}/{git_s2e_repo}', b=manifest_branch,
                   _out=sys.stdout, _err=sys.stderr)
         repo.sync(_out=sys.stdout, _err=sys.stderr)
     except ErrorReturnCode as e:
@@ -206,7 +206,7 @@ def _download_repo(repo_path):
     response = requests.get(repo_url)
 
     if response.status_code != 200:
-        raise CommandError('Unable to download repo from %s' % repo_url)
+        raise CommandError(f'Unable to download repo from {repo_url}')
 
     with open(repo_path, 'wb') as f:
         f.write(response.content)
@@ -225,10 +225,11 @@ def _create_config(env_path):
     s2e_yaml = 's2e.yaml'
     version_path = os.path.join(os.path.dirname(__file__), '..', 'dat', 'VERSION')
 
-    context = {
-        'creation_time': str(datetime.datetime.now()),
-        'version': open(version_path, 'r').read().strip(),
-    }
+    with open(version_path, 'r', encoding='utf-8') as fp:
+        context = {
+            'creation_time': str(datetime.datetime.now()),
+            'version': fp.read().strip(),
+        }
 
     render_template(context, s2e_yaml, os.path.join(env_path, s2e_yaml))
 
@@ -288,13 +289,12 @@ class Command(BaseCommand):
                 logger.info('%s already exists - removing', env_path)
                 shutil.rmtree(env_path)
             else:
-                raise CommandError('Something already exists at \'%s\'. '
+                raise CommandError(f'Something already exists at \'{env_path}\'. '
                                    'Please select a different location or use '
                                    'the ``force`` option to erase this '
                                    'environment.\n\nDid you mean to rebuild or '
                                    'update your existing environment? Try '
-                                   '``s2e build`` or ``s2e update`` instead' %
-                                   env_path)
+                                   '``s2e build`` or ``s2e update`` instead')
 
         try:
             # Create environment if it doesn't exist
@@ -312,10 +312,10 @@ class Command(BaseCommand):
             # Create the shell script to activate the environment
             _create_activate_script(env_path)
 
-            msg = 'Environment created in %s. You may wish to modify your ' \
-                  'environment\'s s2e.yaml config file. Source ``%s`` to ' \
-                  'activate your environment' % (env_path,
-                                                 os.path.join(env_path, 's2e_activate'))
+            s2e_activate_path = os.path.join(env_path, 's2e_activate')
+            msg = f'Environment created in {env_path}. You may wish to modify your ' \
+                  f'environment\'s s2e.yaml config file. Source ``{s2e_activate_path}`` to ' \
+                  'activate your environment'
 
             existing_install_path = options['use_existing_install']
             if existing_install_path:
@@ -329,7 +329,7 @@ class Command(BaseCommand):
                 _get_s2e_sources(env_path, options['manifest_branch'])
 
                 # Remind the user that they must build S2E
-                msg = '%s. Then run ``s2e build`` to build S2E' % msg
+                msg = f'{msg}. Then run ``s2e build`` to build S2E'
 
             logger.success(msg)
         except:

@@ -39,12 +39,12 @@ def get_build_id(path):
         section = elf.get_section_by_name('.note.gnu.build-id')
         data = section.data()
         name_size, hash_size, identifier = struct.unpack('<III', data[:12])
-        name, info_hash = struct.unpack('<%ds%ds' % (name_size, hash_size), data[12:])
+        name, info_hash = struct.unpack(f'<{name_size}s{hash_size}s', data[12:])
 
         hexval = binascii.hexlify(info_hash)
         logger.debug('%s: id=%s name=%s hash=%s (%d)', path, identifier, name, hexval, len(info_hash))
 
-        return os.path.join('.build-id', hexval[0:2], '%s.debug' % hexval[2:])
+        return os.path.join('.build-id', hexval[0:2], f'{hexval[2:]}.debug')
 
 
 def get_debug_file_for_binary(path):

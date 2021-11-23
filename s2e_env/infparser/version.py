@@ -86,11 +86,11 @@ class InfVersion:
         if self.architecture is None:
             return 'Windows 2000 and later'
 
-        ret = '%s' % self.architecture
+        ret = f'{self.architecture}'
 
         if self.major is not None:
-            ret += ' %d' % self.major
+            ret += f' {int(self.major)}'
             if self.minor is not None:
-                ret += '.%d' % self.minor
+                ret += f'.{int(self.minor)}'
 
         return ret

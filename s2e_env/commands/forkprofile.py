@@ -21,7 +21,6 @@ SOFTWARE.
 """
 
 
-
 import logging
 import os
 
@@ -102,18 +101,10 @@ class ForkProfiler:
         for v in profile:
             mod, rel_pc, count, sym, fcn = v
             if v[3]:
-                print('%05d %s:%#010x %4d %s:%d (%s)' % (mod.pid,
-                                                         os.path.normpath(mod.path),
-                                                         rel_pc,
-                                                         count,
-                                                         os.path.normpath(sym.filename),
-                                                         sym.line,
-                                                         fcn.name if fcn else None))
+                print(f'{mod.pid:05d} {os.path.normpath(mod.path)}:{rel_pc:010x} {count:4d}'
+                      f'{os.path.normpath(sym.filename)}:{sym.line} ({fcn.name if fcn else None})')
             else:
-                print('%05d %s:%#010x %4d (no debug info)' % (mod.pid,
-                                                              os.path.normpath(mod.path),
-                                                              rel_pc,
-                                                              count))
+                print(f'{mod.pid:05d} {os.path.normpath(mod.path)}:{rel_pc:#010x} {count:4d} (no debug info)')
 
 
 class Command(ProjectCommand):

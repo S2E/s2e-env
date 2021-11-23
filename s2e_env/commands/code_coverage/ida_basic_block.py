@@ -65,15 +65,15 @@ def _get_ida_path(ida_dir, arch):
         ida_path = os.path.join(ida_dir, ida_bin)
 
         if arch == 'x86_64':
-            ida_path = '%s64' % ida_path
+            ida_path = f'{ida_path}64'
         elif arch != 'i386':
-            raise CommandError('Invalid project architecture `%s` - unable to '
-                               'determine the IDA Pro version' % arch)
+            raise CommandError(f'Invalid project architecture {arch} - unable to '
+                               'determine the IDA Pro version')
 
         if os.path.isfile(ida_path):
             return ida_path
 
-    raise CommandError('IDA Pro not found at %s' % ida_dir)
+    raise CommandError(f'IDA Pro not found at {ida_dir}')
 
 
 class IDABasicBlockCoverage(BasicBlockCoverage):
@@ -136,20 +136,19 @@ class IDABasicBlockCoverage(BasicBlockCoverage):
                 env_vars['TERM'] = 'xterm'
 
                 ida = sh.Command(self._ida_path)
-                ida('-A', '-B',
-                    '-S%s' % self.install_path('bin', 'extractBasicBlocks.py'),
+                ebpy = self.install_path('bin', 'extractBasicBlocks.py')
+                ida('-A', '-B', f'-S{ebpy}',
                     temp_module_path, _out=os.devnull, _tty_out=False,
                     _cwd=temp_dir, _env=env_vars)
 
                 # Check that the basic block list file was correctly generated
-                disas_file = os.path.join(temp_dir, '%s.disas' % module_name)
+                disas_file = os.path.join(temp_dir, f'{module_name}.disas')
                 if not os.path.isfile(disas_file):
-                    raise CommandError('Failed to generate disas file for '
-                                       '%s' % module_name)
+                    raise CommandError(f'Failed to generate disas file for {module_name}')
 
                 logger.info('Disassembly successful')
                 # Parse the basic block list file
-                with open(disas_file, 'r') as f:
+                with open(disas_file, 'r', encoding='utf-8') as f:
                     return json.load(f, cls=BasicBlockDecoder)
         except ErrorReturnCode as e:
             raise CommandError(e) from e

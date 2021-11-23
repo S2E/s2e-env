@@ -54,7 +54,7 @@ class Device:
         return isinstance(self, PCIDevice)
 
     def __unicode__(self):
-        return 'DEVICE %s %s [%s]' % (self.install_section, self.hardware_id, self.name)
+        return f'DEVICE {self.install_section} {self.hardware_id} [{self.name}]'
 
     def __str__(self):
         return str(self)
@@ -96,10 +96,9 @@ class PCIDevice(Device):
         }
 
     def __unicode__(self):
-        return 'DEVICE PCI VID=%x PID=%x SUBSYS=%x [%s] %s %s %s' % (
-            self.vendorId, self.deviceId, self.subsystemId,
-            self.name, self.hardware_id, self.install_section, self.version
-        )
+        return \
+            f'DEVICE PCI VID={self.vendorId:x} PID={self.deviceId:x} SUBSYS={self.subsystemId}'\
+            f'[{self.name}] {self.hardware_id} {self.install_section} {self.version}'
 
 
 class USBDevice(Device):
@@ -118,7 +117,7 @@ class USBDevice(Device):
                 self.deviceId = int(f.split('PID_')[1], 16)
 
     def __unicode__(self):
-        return 'DEVICE USB VID=%x PID=%x [%s]' % (self.vendorId, self.deviceId, self.name)
+        return f'DEVICE USB VID={self.vendorId:x} PID={self.deviceId:x} [{self.name}]'
 
 
 class InstallInfo:

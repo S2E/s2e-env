@@ -74,13 +74,13 @@ setup(
         'pefile==2019.4.18',
         'construct==2.9.52',
         'patool==1.12',
-        'pyunpack==0.1.2',
+        'pyunpack==0.2.2',
 
         # FTP server used by image creation
         'pyftpdlib',
 
         # Used by plugin creation script
-        'pygit2'
+        'pygit2==1.2.1'
     ],
     tests_require=[
         'mock',

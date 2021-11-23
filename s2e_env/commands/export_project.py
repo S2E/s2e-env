@@ -75,7 +75,7 @@ class Command(ProjectCommand):
         # Name the project archive if it doesn't already have a name
         output_path = options['output_path']
         if not output_path:
-            output_path = self.env_path('%s.tar.xz' % self.project_name)
+            output_path = self.env_path(f'{self.project_name}.tar.xz')
 
         with TemporaryDirectory() as temp_dir:
             # Store all of the exported files in a temporary directory so that
@@ -108,7 +108,7 @@ class Command(ProjectCommand):
             # overwritten. However, there are still other paths that need
             # rewriting to ensure that the project can be correctly imported.
             logger.info('Updating project.json')
-            with open(os.path.join(export_dir, 'project.json'), 'r+') as f:
+            with open(os.path.join(export_dir, 'project.json'), 'r+', encoding='utf-8') as f:
                 proj_desc = json.load(f)
 
                 # The target files in a project are normally symbolic links.
@@ -153,4 +153,4 @@ class Command(ProjectCommand):
                                       _err=sys.stderr)
             create_archive(self._project_name)
         except ErrorReturnCode as e:
-            raise CommandError('Failed to archive project - %s' % e) from e
+            raise CommandError(f'Failed to archive project - {e}') from e

@@ -21,8 +21,6 @@ SOFTWARE.
 """
 
 
-
-
 import argparse
 import ctypes.util
 import datetime
@@ -49,6 +47,7 @@ logger = logging.getLogger('run')
 libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
 s2e_main_process = None
+
 
 def send_signal_to_children_on_exit(sig):
     # Make sure that s2e would get killed if the parent process crashes
@@ -132,6 +131,8 @@ class S2EThread(Thread):
         # Launch s2e
         # pylint: disable=subprocess-popen-preexec-fn
         global s2e_main_process
+
+        # pylint: disable=consider-using-with
         s2e_main_process = subprocess.Popen(
             self._args, preexec_fn=_s2e_preexec, env=self._env, cwd=self._cwd,
             stdout=self._stdout,
@@ -231,8 +232,11 @@ class Command(ProjectCommand):
                 signal.signal(s, _sigterm_handler)
 
             if not no_tui:
-                stdout = open(self.project_path('stdout.txt'), 'w')
-                stderr = open(self.project_path('stderr.txt'), 'w')
+                # pylint: disable=consider-using-with
+                stdout = open(self.project_path('stdout.txt'), 'w', encoding='utf-8')
+
+                # pylint: disable=consider-using-with
+                stderr = open(self.project_path('stderr.txt'), 'w', encoding='utf-8')
             else:
                 stdout = sys.stdout
                 stderr = sys.stderr
@@ -273,14 +277,14 @@ class Command(ProjectCommand):
                 qmp_server.server_close()
 
         if s2e_main_process.returncode:
-            raise CommandError('S2E terminated with error %d' % s2e_main_process.returncode)
+            raise CommandError(f'S2E terminated with error {s2e_main_process.returncode}')
 
     def _get_libs2e(self):
-        with open(self.project_path('project.json')) as fp:
+        with open(self.project_path('project.json'), 'r', encoding='utf-8') as fp:
             project_desc = json.loads(fp.read())
 
         qemu_build = self.image['qemu_build']
-        qemu = self.install_path('bin', 'qemu-system-%s' % qemu_build)
+        qemu = self.install_path('bin', f'qemu-system-{qemu_build}')
 
         s2e_build = 's2e'
         if project_desc.get('single_path', False):
@@ -301,7 +305,7 @@ class Command(ProjectCommand):
             'S2E_UNBUFFERED_STREAM': '1',
             'S2E_SHARED_DIR': self.install_path('share', 'libs2e'),
             'LD_PRELOAD': libs2e,
-            'S2E_QMP_SERVER': '%s:%d' % (server, port)
+            'S2E_QMP_SERVER': f'{server}:{port}'
         }
         env.update(env_s2e)
 
@@ -309,7 +313,7 @@ class Command(ProjectCommand):
             qemu,
             '-enable-kvm',
             '-drive',
-            'file=%s,format=s2e,cache=writeback' % self.image['path'],
+            f'file={self.image["path"]},format=s2e,cache=writeback',
             '-serial', 'file:serial.txt',
             '-loadvm', self.image['snapshot'],
             '-monitor', 'null',
@@ -336,7 +340,7 @@ class Command(ProjectCommand):
         data = {
             'binaries': binaries,
             'run_time': elapsed_time,
-            'core_count': '%d/%d' % (gs.get('instance_current_count', 0), gs.get('instance_max_count', 0)),
+            'core_count': f'{gs.get("instance_current_count", 0)}/{gs.get("instance_max_count", 0)}',
             'states': gs.get('state_highest_id', 0) - gs.get('state_completed_count', 0),
             'completed_states': gs.get('state_completed_count', 0),
             'completed_seeds': gs.get('seeds_completed', 0),

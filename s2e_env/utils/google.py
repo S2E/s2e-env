@@ -32,9 +32,9 @@ logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 32768
 
+
 # Inspired from:
 # http://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive
-
 def _get_confirm_token(response):
     for key, value in response.cookies.items():
         if key.startswith('download_warning'):
@@ -55,7 +55,7 @@ def _save_response_content(response, destination):
                 f.write(chunk)
 
             if next_count > 1024 * 1024 * 10:
-                sys.stdout.write('Downloaded %d bytes\r' % bytes_count)
+                sys.stdout.write(f'Downloaded {bytes_count} bytes\r')
                 sys.stdout.flush()
                 next_count = 0
 

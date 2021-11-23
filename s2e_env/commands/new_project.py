@@ -124,7 +124,7 @@ def _extract_inf_files(target_path):
             if full_path.endswith('.cat'):
                 logger.warning('Catalog file %s is missing', full_path)
                 continue
-            raise Exception('%s does not exist' % full_path)
+            raise Exception(f'{full_path} does not exist')
 
         logger.info('    %s', full_path)
         file_paths.append(full_path)
@@ -140,7 +140,7 @@ def _translate_target_to_files(path):
     """
 
     if not os.path.isfile(path):
-        raise Exception('Target %s does not exist' % path)
+        raise Exception(f'Target {path} does not exist')
 
     if path.endswith('.inf'):
         logger.info('Detected Windows INF file, attempting to create a driver project...')
@@ -184,7 +184,7 @@ def _parse_sym_args(sym_args_str):
         try:
             sym_args.append(int(i))
         except ValueError as e:
-            raise argparse.ArgumentTypeError('\'%s\' is not a valid index' % i) from e
+            raise argparse.ArgumentTypeError(f'\'{i}\' is not a valid index') from e
 
     return sym_args
 
@@ -277,9 +277,9 @@ class Command(EnvCommand):
                             help='Create an empty, target-less project. Used '
                                  'when no binary is needed')
 
+        project_types_keys = ','.join(list(PROJECT_TYPES.keys()))
         parser.add_argument('-t', '--type', required=False, default=None,
-                            help='Project type (%s), valid only when creating empty projects' %
-                            ','.join(list(PROJECT_TYPES.keys())))
+                            help=f'Project type ({project_types_keys}), valid only when creating empty projects')
 
         parser.add_argument('-s', '--use-seeds', action='store_true',
                             help='Use this option to use seeds for creating '

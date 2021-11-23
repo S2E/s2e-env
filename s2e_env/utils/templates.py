@@ -81,7 +81,7 @@ def render_template(context, template, output_path=None, templates_dir=None,
     rendered_data = '\n'.join(cleaned_lines)
 
     if output_path:
-        with open(output_path, 'w') as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             f.write(rendered_data)
 
         if executable:

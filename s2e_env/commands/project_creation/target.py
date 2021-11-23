@@ -78,7 +78,7 @@ class TargetArguments:
             self._name_to_path[file] = path
 
             if not use_seeds:
-                with open(path, 'w') as fp:
+                with open(path, 'w', encoding='utf-8') as fp:
                     fp.write('x' * 256)
 
                 context = {
@@ -231,7 +231,7 @@ class Target:
         return not self._path
 
     def __str__(self):
-        return 'Target(path=%s,arch=%s)' % (self._path, self._arch)
+        return f'Target(path={self._path},arch={self._arch})'
 
     def toJSON(self):
         return {

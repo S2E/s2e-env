@@ -21,8 +21,6 @@ SOFTWARE.
 """
 
 
-
-
 import shutil
 import sys
 import tempfile
@@ -50,7 +48,7 @@ class TemporaryDirectory:
         self.name = tempfile.mkdtemp(suffix, prefix, dir_)
 
     def __repr__(self):
-        return '<{} {!r}>'.format(self.__class__.__name__, self.name)
+        return f'<{self.__class__.__name__} {repr(self.name)}>'
 
     def __enter__(self):
         return self.name
@@ -66,11 +64,11 @@ class TemporaryDirectory:
             try:
                 shutil.rmtree(self.name)
             except Exception as e:
-                print('ERROR: {!r} while cleaning up {!r}'.format(e, self),
+                print(f'ERROR: {repr(e)} while cleaning up {repr(self)}',
                       file=sys.stderr)
                 return
 
             self._closed = True
             if warn:
-                self._warn('Implicitly cleaning up {!r}'.format(self),
+                self._warn(f'Implicitly cleaning up {repr(self)}',
                            RuntimeWarning)

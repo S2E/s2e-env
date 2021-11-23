@@ -21,8 +21,6 @@ SOFTWARE.
 """
 
 
-
-
 import glob
 import json
 import os
@@ -46,15 +44,14 @@ class Command(EnvCommand):
         for img_path in glob.glob(self.image_path('*', '*.json')):
             # We only care about the file name, not the extension (first index)
             # Remove the leading '.' from the hidden file
-            with open(img_path, 'r') as f:
+            with open(img_path, 'r', encoding='utf-8') as f:
                 images.append(json.load(f))
 
         # Get information on the available projects
         projects = {}
         for project in os.listdir(self.env_path('projects')):
-            json_desc_path = self.env_path('projects', project,
-                                           'project.json')
-            with open(json_desc_path, 'r') as f:
+            json_desc_path = self.env_path('projects', project, 'project.json')
+            with open(json_desc_path, 'r', encoding='utf-8') as f:
                 projects[project] = json.load(f)
 
                 # Make creation timestamp human-readable

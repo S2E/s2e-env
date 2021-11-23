@@ -62,7 +62,7 @@ class BasicBlock:
         return self._function
 
     def __str__(self):
-        return 'BB(start=%#x, end=%#x, function=%s)' % (self._start_addr, self._end_addr, self._function)
+        return f'BB(start=0x{self._start_addr:x}, end=0x{self._end_addr:x}, function={self._function})'
 
 
 class BasicBlockEncoder(json.JSONEncoder):
@@ -204,7 +204,7 @@ class BasicBlockCoverage(ProjectCommand):
         if not disas_info:
             disas_info = self._get_disassembly_info(module_path)
             if not disas_info:
-                raise CommandError('No disassembly information found for %s' % module)
+                raise CommandError(f'No disassembly information found for {module}')
 
             # Sort the basic block. This simplifies the basic block coverage
             # calculation
@@ -226,7 +226,7 @@ class BasicBlockCoverage(ProjectCommand):
         # extracted by a disassembler)
         bb_coverage = _get_basic_block_coverage(tb_coverage, bbs)
         if not bb_coverage:
-            raise CommandError('No basic block coverage information found for %s' % module_name)
+            raise CommandError(f'No basic block coverage information found for {module_name}')
 
         # Calculate some statistics (across all states)
         total_bbs = len(bbs)
@@ -302,7 +302,7 @@ class BasicBlockCoverage(ProjectCommand):
         """
         logger.info('Checking for existing .disas file')
 
-        disas_path = self.project_path('%s.disas' % module)
+        disas_path = self.project_path(f'{module}.disas')
         if not os.path.isfile(disas_path):
             logger.info('No .disas file found')
             return None
@@ -320,7 +320,7 @@ class BasicBlockCoverage(ProjectCommand):
 
         logger.info('%s found. Returning cached basic blocks', disas_path)
 
-        with open(disas_path, 'r') as disas_file:
+        with open(disas_path, 'r', encoding='utf-8') as disas_file:
             return json.load(disas_file, cls=BasicBlockDecoder)
 
     def _save_disassembly_info(self, module, disas_info):
@@ -335,11 +335,11 @@ class BasicBlockCoverage(ProjectCommand):
             ``disas_info``.
             disas_info: A dictionary containing the disassemly information.
         """
-        disas_path = self.project_path('%s.disas' % module)
+        disas_path = self.project_path(f'{module}.disas')
 
         logger.info('Saving disassembly information to %s', disas_path)
 
-        with open(disas_path, 'w') as disas_file:
+        with open(disas_path, 'w', encoding='utf-8') as disas_file:
             json.dump(disas_info, disas_file, cls=BasicBlockEncoder)
 
     def _save_basic_block_coverage(self, module, basic_blocks, total_bbs, num_covered_bbs):
@@ -358,8 +358,7 @@ class BasicBlockCoverage(ProjectCommand):
         Returns:
             The path of the JSON file.
         """
-        bb_coverage_file = self.project_path('s2e-last',
-                                             '%s_coverage.json' % module)
+        bb_coverage_file = self.project_path('s2e-last', f'{module}_coverage.json')
 
         logger.info('Saving basic block coverage to %s', bb_coverage_file)
 
@@ -374,7 +373,7 @@ class BasicBlockCoverage(ProjectCommand):
             'coverage': [to_dict(bb) for bbs in basic_blocks.values() for bb in bbs],
         }
 
-        with open(bb_coverage_file, 'w') as f:
+        with open(bb_coverage_file, 'w', encoding='utf-8') as f:
             json.dump(bbs_json, f)
 
         return bb_coverage_file
@@ -431,17 +430,17 @@ class BasicBlockCoverage(ProjectCommand):
         """
         drcov_dir = self.project_path('s2e-last', 'drcov')
         if os.path.isdir(drcov_dir):
-            raise CommandError('drcov directory %s already exists' % drcov_dir)
+            raise CommandError(f'drcov directory {drcov_dir} already exists')
 
         os.mkdir(drcov_dir)
 
         module = os.path.basename(module_path)
 
         for state, bbs in basic_blocks.items():
-            drcov_filename = '%s_coverage_%s.drcov' % (module, state)
+            drcov_filename = f'{module}_coverage_{state}.drcov'
             drcov_file = os.path.join(drcov_dir, drcov_filename)
 
-            with open(drcov_file, 'wb') as f:
+            with open(drcov_file, 'wb', encoding='utf-8') as f:
                 f.write(self.DRCOV_HEADER)
 
                 # Each drcov module entry is formatted as follows:
@@ -467,11 +466,12 @@ class BasicBlockCoverage(ProjectCommand):
                 #
                 # Because there is only a single module entry, the module ID
                 # will always be 0
-                f.write('BB Table: %d bbs\n' % len(bbs))
+                f.write(f'BB Table: {len(bbs)} bbs\n')
                 for bb in bbs:
-                    f.write('%s' % struct.pack(self.DRCOV_BB_FORMAT,
-                                               bb.start_addr - module_base,
-                                               bb.end_addr - bb.start_addr,
-                                               0))
+                    s = str(struct.pack(self.DRCOV_BB_FORMAT,
+                                        bb.start_addr - module_base,
+                                        bb.end_addr - bb.start_addr,
+                                        0))
+                    f.write(s)
 
         return drcov_dir
