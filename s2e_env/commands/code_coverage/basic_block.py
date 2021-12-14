@@ -304,7 +304,7 @@ class BasicBlockCoverage(ProjectCommand):
         # modification time compared to the .disas file
 
         disas_mtime = os.path.getmtime(disas_path)
-        target_mtime = os.path.getmtime(self._project_desc['target_path'])
+        target_mtime = os.path.getmtime(self._project_desc['project_dir'])
 
         if disas_mtime < target_mtime:
             logger.info('%s is out of date. A new .disas file will be generated',
