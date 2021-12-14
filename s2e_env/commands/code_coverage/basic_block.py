@@ -106,7 +106,7 @@ def _binary_search(tb_start_addr, bbs):
     given translation block.
     """
     num_bbs = len(bbs)
-    lo = 1
+    lo = 0
     hi = num_bbs - 1
 
     if tb_start_addr <= bbs[0].end_addr:
@@ -114,24 +114,17 @@ def _binary_search(tb_start_addr, bbs):
     if tb_start_addr > bbs[hi].end_addr:
         return num_bbs
 
-    while lo < hi:
+    while lo <= hi:
         mid = (lo + hi) // 2
 
-        if bbs[mid - 1].end_addr < tb_start_addr <= bbs[mid].end_addr:
-            return mid
-        if tb_start_addr <= bbs[mid].end_addr:
-            hi = mid
+        if bbs[mid].start_addr < tb_start_addr:
+            lo = mid + 1
+        elif bbs[mid].start_addr > tb_start_addr:
+            hi = mid - 1
         else:
-            lo = mid
-
-    if bbs[lo - 1].end_addr < tb_start_addr <= bbs[lo].end_addr:
-        return lo
-
-    if bbs[hi - 1].end_addr < tb_start_addr <= bbs[hi].end_addr:
-        return hi
+            return mid
 
     return num_bbs
-
 
 def _get_basic_block_coverage(tb_coverage, bbs):
     """
