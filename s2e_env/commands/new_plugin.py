@@ -64,7 +64,7 @@ def _inject_plugin_path(makefile, plugin_path):
 def _get_user_name():
     try:
         username = subprocess.check_output(['git', 'config', 'user.name']).decode()
-    except:
+    except subprocess.CalledProcessError:
         username = ''
 
     return username.strip()
@@ -90,7 +90,7 @@ class Command(EnvCommand):
         parser.add_argument('--force',
                             help='Overwrites existing plugin',
                             action='store_true')
-        
+
         parser.add_argument('--author-name',
                             help='The plugin author name (uses git config "user.name" if not provided).')
 
