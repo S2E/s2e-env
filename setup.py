@@ -77,10 +77,7 @@ setup(
         'pyunpack==0.2.2',
 
         # FTP server used by image creation
-        'pyftpdlib',
-
-        # Used by plugin creation script
-        'pygit2==1.2.1'
+        'pyftpdlib'
     ],
     tests_require=[
         'mock',

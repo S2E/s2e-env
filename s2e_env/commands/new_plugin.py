@@ -23,8 +23,7 @@ SOFTWARE.
 import datetime
 import logging
 import os
-
-import pygit2
+import subprocess
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.templates import render_template, DEFAULT_TEMPLATES_DIR
@@ -63,11 +62,12 @@ def _inject_plugin_path(makefile, plugin_path):
 
 
 def _get_user_name():
-    cfg = pygit2.Config.get_global_config()
-    for v in cfg.get_multivar('user.name'):
-        return v
+    try:
+        username = subprocess.check_output(['git', 'config', 'user.name']).decode()
+    except subprocess.CalledProcessError:
+        username = ''
 
-    raise CommandError('Could not determine your name. Run git config --global user.name "Your Name"')
+    return username.strip()
 
 
 class Command(EnvCommand):
@@ -91,6 +91,9 @@ class Command(EnvCommand):
                             help='Overwrites existing plugin',
                             action='store_true')
 
+        parser.add_argument('--author-name',
+                            help='The plugin author name (uses git config "user.name" if not provided).')
+
     # pylint: disable=too-many-locals
     def handle(self, *args, **options):
         s2e_src_dir = self.env_path('source', 's2e', 'libs2eplugins', 'src')
@@ -98,6 +101,11 @@ class Command(EnvCommand):
 
         plugin_name = os.path.basename(options['plugin_name'][0])
         plugin_rel_dir = os.path.dirname(options['plugin_name'][0])
+        author = options['author_name'] or _get_user_name()
+
+        if not author:
+            raise CommandError('Could not determine your name. Run this command again and provide a '
+                               '"--author-name NAME" or set it with "git config user.name NAME"')
 
         if not os.path.exists(s2e_src_dir):
             raise CommandError(f'{s2e_src_dir} does not exist. Make sure the source code is initialized properly.')
@@ -121,7 +129,7 @@ class Command(EnvCommand):
 
         context = {
             'author': {
-                'name': _get_user_name(),
+                'name': author,
                 'year': datetime.datetime.now().year
             },
             'plugin': {
