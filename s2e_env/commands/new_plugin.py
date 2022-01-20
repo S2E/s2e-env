@@ -90,6 +90,9 @@ class Command(EnvCommand):
         parser.add_argument('--force',
                             help='Overwrites existing plugin',
                             action='store_true')
+        
+        parser.add_argument('--author-name',
+                            help='The plugin author name (uses git config "user.name" if not provided).')
 
     # pylint: disable=too-many-locals
     def handle(self, *args, **options):
@@ -98,6 +101,11 @@ class Command(EnvCommand):
 
         plugin_name = os.path.basename(options['plugin_name'][0])
         plugin_rel_dir = os.path.dirname(options['plugin_name'][0])
+        author = options['author_name'] or _get_user_name()
+
+        if not author:
+            raise CommandError('Could not determine your name. Run this command again and provide a '
+                               '"--author-name NAME" or set it with "git config user.name NAME"')
 
         if not os.path.exists(s2e_src_dir):
             raise CommandError(f'{s2e_src_dir} does not exist. Make sure the source code is initialized properly.')
@@ -121,7 +129,7 @@ class Command(EnvCommand):
 
         context = {
             'author': {
-                'name': _get_user_name(),
+                'name': author,
                 'year': datetime.datetime.now().year
             },
             'plugin': {
