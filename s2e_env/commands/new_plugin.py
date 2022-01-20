@@ -23,8 +23,7 @@ SOFTWARE.
 import datetime
 import logging
 import os
-
-import pygit2
+import subprocess
 
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.templates import render_template, DEFAULT_TEMPLATES_DIR
@@ -63,11 +62,12 @@ def _inject_plugin_path(makefile, plugin_path):
 
 
 def _get_user_name():
-    cfg = pygit2.Config.get_global_config()
-    for v in cfg.get_multivar('user.name'):
-        return v
+    try:
+        username = subprocess.check_output(['git', 'config', 'user.name']).decode()
+    except:
+        username = ''
 
-    raise CommandError('Could not determine your name. Run git config --global user.name "Your Name"')
+    return username.strip()
 
 
 class Command(EnvCommand):
