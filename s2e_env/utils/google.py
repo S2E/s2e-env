@@ -33,16 +33,6 @@ logger = logging.getLogger(__name__)
 CHUNK_SIZE = 32768
 
 
-# Inspired from:
-# http://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive
-def _get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-
-    return None
-
-
 def _save_response_content(response, destination):
     bytes_count = 0
     next_count = 0
@@ -66,13 +56,7 @@ def _download(docid, destination):
     session = requests.Session()
 
     logger.info('Requesting %s with id=%s', url, docid)
-    response = session.get(url, params={'id': docid}, stream=True)
-    token = _get_confirm_token(response)
-
-    if token:
-        logger.info('Sending confirmation token')
-        params = {'id': docid, 'confirm': token}
-        response = session.get(url, params=params, stream=True)
+    response = session.get(url, params={'id': docid, 'confirm':'t'}, stream=True)
 
     _save_response_content(response, destination)
 
