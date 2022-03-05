@@ -96,7 +96,21 @@ class Command(EnvCommand):
 
         logger.success('S2E built')
 
-    def _rebuild_components(self, components):
+    def _get_components(self, target):
+        lines = self._make(target).strip().split('\n')
+        print(lines)
+        if len(lines) == 1:
+            components = lines[0].split(' ')
+        elif len(lines) >= 2:
+            components = lines[1].split(' ')
+        else:
+            raise CommandError(f'Invalid make output: {lines}')
+
+        filtered_components = ['ALWAYS']
+        return [f for f in components if f not in filtered_components]
+
+
+    def _rebuild_components(self, components_to_rebuild):
         """
         Cleans components to force them to be rebuilt.
 
@@ -107,32 +121,23 @@ class Command(EnvCommand):
         rebuild, the stamp must be deleted. This function will delete the
         specified stamps to force a rebuild.
         """
+
+        s2e_comp = self._get_components('list-s2e-targets')
+        qemu_comp = self._get_components('list-qemu-targets')
+
+        available_components = sorted(list(set(s2e_comp + qemu_comp)))
         # We are only interested in components that create a "stamp" in the
         # "stamps" directory. The "stamps" directory is stripped from the
         # component
-        stamps = [component[7:] for component in self._make('list').strip().split(' ')
-                  if component.startswith('stamps/')]
-
-        # The user can also specify "libs2e" rather than the complete
-        # "libs2e-{release,debug}-make" stamp
-        stamp_prefixes = {component.split('-')[0] for component in stamps}
 
         stamps_to_delete = []
-        for component in components:
-            # Check if the specified component is valid "as is"
-            if component in stamps:
-                stamps_to_delete.append(self.env_path('build', 'stamps', component))
-                continue
+        for component in components_to_rebuild:
+            if component not in available_components:
+                raise CommandError(f'Component {component} is not valid. Valid components '
+                               f'are: {", ".join(available_components)}')
 
-            # Check if the user has specified a valid component prefix
-            # TODO: This will delete both the debug and release stamps (if they exist)
-            if component in stamp_prefixes:
-                stamps_to_delete.extend(glob.glob(self.env_path('build', 'stamps', f'{component}-*')))
-                continue
-
-            # If we've made it this far, the component is not valid
-            raise CommandError(f'Component {component} is not valid. Valid components '
-                               f'are: {", ".join(stamp_prefixes)}')
+            if component.startswith('stamps/'):
+                stamps_to_delete.extend(glob.glob(self.env_path('build', component)))
 
         # Delete the stamps, ignoring any stamps that do not exist
         for stamp_to_delete in stamps_to_delete:
