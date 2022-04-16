@@ -96,10 +96,9 @@ def _install_dependencies(interactive):
 
     install_opts = ['--no-install-recommends']
     env = {}
-    if not interactive:
-        logger.info('Running install in non-interactive mode')
-        env['DEBIAN_FRONTEND'] = 'noninteractive'
-        install_opts = ['-y'] + install_opts
+
+    env['DEBIAN_FRONTEND'] = 'noninteractive'
+    install_opts = ['-y'] + install_opts
 
     try:
         # Enable 32-bit libraries
@@ -275,10 +274,6 @@ class Command(BaseCommand):
                                  'this location')
         parser.add_argument('-mb', '--manifest-branch', type=str, required=False, default='master',
                             help='Specify an alternate branch for the repo manifest')
-        parser.add_argument('-n', '--non-interactive', required=False,
-                            action='store_true', default=False,
-                            help='Install packages without user interaction. '
-                                 'This is useful for unattended installation.')
 
     def handle(self, *args, **options):
         env_path = os.path.realpath(options['dir'])
@@ -323,7 +318,7 @@ class Command(BaseCommand):
             else:
                 # Install S2E's dependencies via apt-get
                 if not options['skip_dependencies']:
-                    _install_dependencies(not options['non_interactive'])
+                    _install_dependencies()
 
                 # Get the source repositories
                 _get_s2e_sources(env_path, options['manifest_branch'])
