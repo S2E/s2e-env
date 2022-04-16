@@ -71,7 +71,37 @@ def _link_existing_install(env_path, existing_install):
     repos.git_clone_to_source(env_path, guest_images_repo)
 
 
-def _install_dependencies(interactive):
+def _compute_dependencies():
+    version = _get_os_version()
+    if not version:
+        return []
+
+    os_name, major_version = version
+
+    logger.info('Detected OS:%s version:%s', os_name, major_version)
+
+    deps = CONSTANTS['dependencies']
+
+    all_install_packages = []
+
+    common = deps.get('common', [])
+    common_os = deps.get(f'common-{os_name}', [])
+    os_specific = deps.get(f'{os_name}-{major_version}')
+
+    if common:
+        all_install_packages += common
+        logger.debug('Common packages: %s', common)
+    if common_os:
+        all_install_packages += common_os
+        logger.debug('OS-common packages: %s', common_os)
+    if os_specific:
+        all_install_packages += os_specific
+        logger.debug('OS-specific packages: %s', os_specific)
+
+    return all_install_packages
+
+
+def _install_dependencies():
     """
     Install S2E's dependencies.
 
@@ -79,12 +109,9 @@ def _install_dependencies(interactive):
     """
     logger.info('Installing S2E dependencies')
 
-    ubuntu_ver = _get_ubuntu_version()
-    if not ubuntu_ver:
+    all_install_packages = _compute_dependencies()
+    if not all_install_packages:
         return
-
-    all_install_packages = CONSTANTS['dependencies']['common'] + \
-        CONSTANTS['dependencies'].get(f'ubuntu-{ubuntu_ver}', [])
 
     install_packages = []
     deb_package_urls = []
@@ -121,29 +148,26 @@ def _install_dependencies(interactive):
         apt_get.install(install_opts + [f'{filename}.deb'])
 
 
-def _get_ubuntu_version():
-    """
-    Gets the "major" Ubuntu version.
-
-    If an unsupported OS/Ubuntu version is found a warning is printed and
-    ``None`` is returned.
-    """
+def _get_os_version():
+    supported_oses = ['ubuntu', 'debian']
     id_name, version, _ = distro.linux_distribution(full_distribution_name=False)
+    id_name = id_name.lower()
 
-    if id_name.lower() != 'ubuntu':
-        logger.warning('You are running on a non-Ubuntu system. Skipping S2E '
+    if id_name not in supported_oses:
+        logger.warning('You are running an unsupported Linux distribution. Skipping S2E '
                        'dependencies - please install them manually')
+        logger.info('Supported OSes: %s', ", ".join(supported_oses))
         return None
 
     major_version = int(version.split('.')[0])
 
-    if major_version not in CONSTANTS['required_versions']['ubuntu_major_ver']:
-        logger.warning('You are running an unsupported version of Ubuntu. '
-                       'Skipping S2E dependencies  - please install them '
-                       'manually')
+    if major_version not in CONSTANTS['required_versions'][f'{id_name}_major_ver']:
+        logger.warning('You are running an unsupported version of %s. '
+                       'Skipping S2E dependencies - please install them '
+                       'manually', id_name)
         return None
 
-    return major_version
+    return id_name, major_version
 
 
 def _get_s2e_sources(env_path, manifest_branch):
