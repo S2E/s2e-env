@@ -40,7 +40,7 @@ class memoize:
         self._cache = {}
 
     def __call__(self, *args):
-        if not isinstance(args, collections.Hashable):
+        if not isinstance(args, collections.abc.Hashable):
             return self._func(args)
 
         if args in self._cache:
