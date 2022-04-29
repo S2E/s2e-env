@@ -47,7 +47,6 @@ dependencies:
         - xz-utils
         - docker.io
         - p7zip-full
-        - fuse
         - libhivex-bin
         - jigdo-file
 
@@ -74,7 +73,6 @@ dependencies:
         - protobuf-compiler
         - libbsd-dev
         - libsigc++-2.0-dev
-        - libsdl-dev
         - libglib2.0-dev
         - libglib2.0-dev:i386
         - libglib2.0-0:i386
@@ -93,15 +91,18 @@ dependencies:
     common-ubuntu:
         # Testing dependencies
         - wine-stable
-        - python-docutils
 
     common-debian:
+        - fuse
         - wine
         - wine32
         - wine64
         - python3-docutils
 
     ubuntu-18:
+        - fuse
+        - python-docutils
+        - libsdl-dev
         - lib32ncurses5
         - lib32ncurses5-dev
         - libncurses5-dev
@@ -114,6 +115,9 @@ dependencies:
         - pxz
 
     ubuntu-20:
+        - fuse
+        - python-docutils
+        - libsdl-dev
         - lib32ncurses-dev
         - lib32ncurses6
         - libncurses5-dev
@@ -122,6 +126,11 @@ dependencies:
         # Ubuntu 20.04 doesn't have pxz package (at least not on the release date),
         # so we install it manually
         - http://mirrors.kernel.org/ubuntu/pool/universe/p/pxz/pxz_4.999.99~beta5+gitfcfea93-2_amd64.deb
+
+    ubuntu-22:
+        - fuse3
+        - python3-docutils
+        - libsdl1.2-dev
 
 
 # S2E Git repos
@@ -140,6 +149,7 @@ required_versions:
     ubuntu_major_ver:
         - 18
         - 20
+        - 22
     debian_major_ver:
         - 11
     # images.json must have this version
