@@ -32,6 +32,7 @@ dependencies:
         - build-essential
         - cmake
         - wget
+        - curl
         - git
         - texinfo
         - flex
