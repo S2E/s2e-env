@@ -207,3 +207,4 @@ import_export:
         - guest-tools
         - guest-tools32
         - guest-tools64
+        - s2e-last
