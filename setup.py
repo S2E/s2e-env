@@ -68,6 +68,7 @@ setup(
         'psutil',
         'protobuf3-to-dict',
         'immutables',
+        'alive_progress',
 
         # Dependencies for symchk
         'pdbparse==1.5',

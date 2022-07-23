@@ -22,32 +22,28 @@ SOFTWARE.
 
 
 import logging
-import sys
 import urllib.parse
 
+from alive_progress import alive_bar
 import requests
 
 
 logger = logging.getLogger(__name__)
 
-CHUNK_SIZE = 32768
+CHUNK_SIZE = 1024 * 128
 
 
 def _save_response_content(response, destination):
-    bytes_count = 0
-    next_count = 0
     with open(destination, 'wb') as f:
-        for chunk in response.iter_content(CHUNK_SIZE):
-            # filter out keep-alive new chunks
-            if chunk:
-                bytes_count += len(chunk)
-                next_count += len(chunk)
-                f.write(chunk)
-
-            if next_count > 1024 * 1024 * 10:
-                sys.stdout.write(f'Downloaded {bytes_count} bytes\r')
-                sys.stdout.flush()
-                next_count = 0
+        length = int(response.headers.get('Content-Length'))
+        logger.info('File size: %d bytes', length)
+        with alive_bar(length) as progress:
+            for chunk in response.iter_content(CHUNK_SIZE):
+                # filter out keep-alive new chunks
+                if chunk:
+                    f.write(chunk)
+                    # pylint: disable=not-callable
+                    progress(len(chunk))
 
 
 def _download(docid, destination):
