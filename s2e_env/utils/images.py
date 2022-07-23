@@ -27,6 +27,8 @@ import logging
 import os
 import sys
 
+import distro
+
 # pylint: disable=no-name-in-module
 from sh import tar, ErrorReturnCode
 
@@ -243,3 +245,65 @@ def select_guestfs(image_path, img_desc):
             ret.append(guestfs_path)
 
     return ret
+
+
+def select_best_image(base_templates, image_names):
+    """
+    Select the best image for the current host OS among the specified images.
+    """
+
+    id_name, version, _ = distro.linux_distribution(full_distribution_name=False)
+    id_name = id_name.lower()
+
+    # First try to match by name and version.
+    for image in image_names:
+        tpl = base_templates[image]
+        if tpl.get('os').get('name') == id_name and tpl.get('os').get('version') == version:
+            return image
+
+    # If that fails, match by name only.
+    for image in image_names:
+        tpl = base_templates[image]
+        if tpl.get('os').get('name') == id_name:
+            return image
+
+    # If nothing works, pick the first suitable image.
+    return image_names[0]
+
+
+def check_host_incompatibility(base_templates, image_name):
+    """
+    Warn users when the selected image may not work properly with binaries
+    built on the host.
+    """
+
+    id_name, version, _ = distro.linux_distribution(full_distribution_name=False)
+    id_name = id_name.lower()
+
+    tpl = base_templates[image_name]
+    guest_name = tpl.get('os').get('name')
+    guest_version = tpl.get('os').get('version')
+    if guest_name == id_name and guest_version.startswith(version):
+        return
+
+    logger.warning('Your host OS does not match the guest OS. '
+                    'To ensure that binaries built on the host run properly in the guest, '
+                    'both the host and the guest OS must be identical. You may want to build '
+                    'your binaries in a docker container that matches the guest OS.')
+
+    if id_name == 'ubuntu' and version == '22.02':
+        logger.error('The libc of the guest OS that you selected is not compatible with the libc on your host. '
+                        'Binaries that you build on your host will not run properly in the guest.')
+
+def split_image_name(image_name):
+    """
+    Split the image name into (base_image_name,app_name).
+    """
+    components = image_name.split('/')
+    if len(components) == 1:
+        return (components[0], None)
+
+    if len(components) == 2:
+        return (components[0], components[1])
+
+    raise Exception(f"Invalid image name {image_name}")
