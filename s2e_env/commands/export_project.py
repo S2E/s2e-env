@@ -116,7 +116,8 @@ class Command(ProjectCommand):
                 # so we must update their paths
 
                 proj_path = proj_desc['project_dir']
-                update_path = lambda p: os.path.join(proj_path, os.path.basename(p))
+                def update_path(p):
+                    return os.path.join(proj_path, os.path.basename(p))
 
                 target_path = proj_desc.get('target_path')
                 if target_path:

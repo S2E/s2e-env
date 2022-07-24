@@ -355,9 +355,11 @@ class BasicBlockCoverage(ProjectCommand):
 
         logger.info('Saving basic block coverage to %s', bb_coverage_file)
 
-        to_dict = lambda bb: {'start_addr': bb.start_addr,
-                              'end_addr': bb.end_addr,
-                              'function': bb.function}
+        def to_dict(bb):
+            return {'start_addr': bb.start_addr,
+                    'end_addr': bb.end_addr,
+                    'function': bb.function}
+
         bbs_json = {
             'stats': {
                 'total_basic_blocks': total_bbs,

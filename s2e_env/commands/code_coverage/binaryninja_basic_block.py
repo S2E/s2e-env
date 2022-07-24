@@ -117,7 +117,8 @@ class BinaryNinjaBasicBlockCoverage(BasicBlockCoverage):
         # This lambda is used to retrieve the abstracted instruction type at a
         # given address. This is so that we don't have to deal with the various
         # call instructions that may be used in the underlying architecture
-        get_op = lambda addr: basic_block.function.get_low_level_il_at(addr).operation
+        def get_op(addr):
+            return basic_block.function.get_low_level_il_at(addr).operation
 
         for i, addr in enumerate(inst_addrs):
             op = get_op(addr)

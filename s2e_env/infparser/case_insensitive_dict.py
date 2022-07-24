@@ -89,7 +89,7 @@ class CaseInsensitiveDict(MutableMapping):
         self._dict[cl] = value
 
     def has_key(self, key):
-        return self.__contains__(key.lower())
+        return key.lower() in self
 
     def prefixed_keys(self, prefix):
         return self._trie.keys(prefix.lower())
