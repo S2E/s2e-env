@@ -32,7 +32,8 @@ import shutil
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.images import ImageDownloader, get_image_templates, \
-        get_image_descriptor, select_guestfs
+        get_image_descriptor, select_guestfs, split_image_name, \
+        check_host_incompatibility, select_best_image
 
 from .utils import ConfigEncoder
 
@@ -228,6 +229,22 @@ class AbstractProject(EnvCommand):
         if not image:
             image = self._guess_image(target, img_templates)
 
+        base_image_name, app_image_name = split_image_name(image)
+        if app_image_name:
+            # Don't do any validation on app images yet.
+            return self._get_or_download_image(img_templates, image, download_image)
+
+        if image not in img_templates:
+            raise CommandError(f'Unknown guest image {image}. Run s2e image_build for a list of supported images.')
+
+        supported_images = self.get_usable_images(target, img_templates)
+        if not supported_images:
+            raise CommandError('No suitable image available for this target.')
+
+        if image not in supported_images:
+            raise CommandError(f'Chosen image {image} is not compatbile with the target.')
+
+        check_host_incompatibility(img_templates, base_image_name)
         return self._get_or_download_image(img_templates, image, download_image)
 
     def _guess_image(self, target, img_templates):
@@ -239,16 +256,17 @@ class AbstractProject(EnvCommand):
         logger.info('No image was specified (-i option). Attempting to guess '
                     'a suitable image for a %s binary...', target.arch)
 
-        images = self.get_usable_images(target, img_templates)
-        if not images:
+        usable_images = self.get_usable_images(target, img_templates)
+        if not usable_images:
             raise CommandError('No suitable image available for this target')
 
-        image = images[0]
+        selected_image = select_best_image(img_templates, usable_images)
+
         logger.warning('Found %s, which looks suitable for this '
                        'binary. Please use -i if you want to use '
-                       'another image', image)
+                       'another image', selected_image)
 
-        return image
+        return selected_image
 
     def get_usable_images(self, target, image_templates):
         """

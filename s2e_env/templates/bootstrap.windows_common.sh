@@ -57,7 +57,7 @@ function win_path {
 S2ECMD=./s2ecmd.exe
 S2EGET=./s2eget.exe
 S2EPUT=./s2eput.exe
-COMMON_TOOLS="s2ecmd.exe s2eget.exe s2eput.exe s2e.sys s2e.inf drvctl.exe tickler.exe"
+COMMON_TOOLS="s2ecmd.exe s2e.sys s2e.inf drvctl.exe tickler.exe"
 {% if image_arch=='x86_64' %}
 COMMON_TOOLS="${COMMON_TOOLS} libs2e32.dll libs2e64.dll"
 {% else %}

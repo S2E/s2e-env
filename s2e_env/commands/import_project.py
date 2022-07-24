@@ -25,11 +25,7 @@ import json
 import logging
 import os
 import shutil
-import sys
 import tempfile
-
-# pylint: disable=no-name-in-module
-from sh import tar, ErrorReturnCode
 
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
@@ -39,36 +35,6 @@ from s2e_env.utils.images import get_image_descriptor
 
 
 logger = logging.getLogger('import')
-
-
-def _get_project_name(archive):
-    """
-    Get the project name from the archive.
-
-    The project name is the name of the root directory in the archive.
-    """
-    try:
-        contents = tar(exclude='*/*', list=True, file=archive)
-        return os.path.dirname(str(contents))
-    except ErrorReturnCode as e:
-        raise CommandError(f'Failed to list archive - {e}') from e
-
-
-def _decompress_archive(archive_path, dest_path):
-    """
-    Decompress the given archive into the S2E environment's projects directory.
-    """
-    try:
-        with tempfile.TemporaryDirectory() as directory:
-            logger.info('Decompressing archive %s to %s', archive_path, directory)
-            tar(extract=True, xz=True, verbose=True, file=archive_path,
-                directory=directory, _out=sys.stdout,
-                _err=sys.stderr)
-
-            old_path = os.path.join(directory, _get_project_name(archive_path))
-            shutil.move(old_path, dest_path)
-    except ErrorReturnCode as e:
-        raise CommandError(f'Failed to decompress project archive - {e}') from e
 
 
 class Command(EnvCommand):
@@ -107,22 +73,10 @@ class Command(EnvCommand):
 
         # Get the name of the project that we are importing
         project_name = options.get('project_name')
-        if not project_name:
-            project_name = _get_project_name(archive)
 
-        logger.info('Importing project \'%s\' from %s', project_name, archive)
+        logger.info('Importing project from %s', archive)
 
-        # Check if a project with that name already exists
-        project_path = self.projects_path(project_name)
-        if os.path.isdir(project_path):
-            if options['force']:
-                logger.info('\'%s\' already exists - removing', project_name)
-                shutil.rmtree(self.projects_path(project_name))
-            else:
-                raise CommandError(f'\'{project_name}\' already exists. Either remove this '
-                                   'project or use the force option')
-
-        _decompress_archive(archive, project_path)
+        project_path = self._decompress_archive(archive, project_name, options.get('force'))
 
         # Rewrite all of the exported files to fix their S2E environment paths
         logger.info('Rewriting project files')
@@ -169,3 +123,41 @@ class Command(EnvCommand):
         """
         guestfs_paths = abstract_project.select_guestfs(self.image_path(), image)
         abstract_project.symlink_guestfs(project_path, guestfs_paths)
+
+    def _decompress_archive(self, archive_path, project_name, overwrite):
+        """
+        Decompress the given archive into the S2E environment's projects directory.
+        """
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                logger.info('Decompressing archive %s to %s', archive_path, directory)
+                shutil.unpack_archive(archive_path, directory)
+
+                files = os.listdir(directory)
+                if len(files) != 1:
+                    raise Exception(f'Archive {archive_path} is invalid')
+
+                src_proj_name = files[0]
+                src_proj_path = os.path.join(directory, src_proj_name)
+                if not os.path.isdir(src_proj_path):
+                    raise Exception(f'{src_proj_path} is not a directory')
+
+                # Check if a project with that name already exists
+                if not project_name:
+                    project_name = src_proj_name
+
+                project_path = self.projects_path(project_name)
+                if os.path.isdir(project_path):
+                    if overwrite:
+                        logger.info('\'%s\' already exists - removing', project_path)
+                        shutil.rmtree(project_path)
+                    else:
+                        raise CommandError(f'\'{project_name}\' already exists. Either remove this '
+                                        'project or use the force option')
+
+                shutil.move(src_proj_path, project_path)
+
+                return project_path
+
+        except Exception as e:
+            raise CommandError(f'Failed to decompress project archive - {e}') from e

@@ -108,8 +108,8 @@ as needed.
 
 If something does not run as expected, you can troubleshoot like this:
 
-    * Enable graphics output by deleting the -nographic flag from launch-s2e.sh
-    * Look at the logs in serial.txt, log.txt, and s2e-last/debug.txt
+    * Enable graphics using GUI=1 ./launch.s2e
+    * Look at the logs in serial.txt and s2e-last/debug.txt
     * Run S2E in GDB using ./launch-s2e.sh debug
 
 -------

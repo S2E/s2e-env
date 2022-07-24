@@ -50,6 +50,7 @@ dependencies:
         - p7zip-full
         - libhivex-bin
         - jigdo-file
+        - cloud-image-utils
 
         # S2E dependencies
         - libdwarf-dev
@@ -206,3 +207,4 @@ import_export:
         - guest-tools
         - guest-tools32
         - guest-tools64
+        - s2e-last

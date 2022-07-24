@@ -43,6 +43,4 @@ function target_tools {
 }
 
 S2ECMD=./s2ecmd
-S2EGET=./s2eget
-S2EPUT=./s2eput
-COMMON_TOOLS="s2ecmd s2eget s2eput"
+COMMON_TOOLS="s2ecmd"

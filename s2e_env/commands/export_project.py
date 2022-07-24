@@ -29,7 +29,7 @@ import sys
 
 # pylint: disable=no-name-in-module
 # No name 'tar' in module 'sh'
-from sh import tar, ErrorReturnCode
+from sh import tar
 
 try:
     from tempfile import TemporaryDirectory
@@ -66,7 +66,7 @@ class Command(ProjectCommand):
 
         parser.add_argument('output_path', nargs='?',
                             help='The path to the exported project archive. '
-                                 'Defaults to <project_name>.tar.xz in the '
+                                 'Defaults to <project_name>.zip in the '
                                  'current working directory')
         parser.add_argument('-r', '--export-results', action='store_true',
                             help='Export the results in the s2e-out-* directories')
@@ -75,7 +75,7 @@ class Command(ProjectCommand):
         # Name the project archive if it doesn't already have a name
         output_path = options['output_path']
         if not output_path:
-            output_path = self.env_path(f'{self.project_name}.tar.xz')
+            output_path = self.env_path(f'{self.project_name}.zip')
 
         with TemporaryDirectory() as temp_dir:
             # Store all of the exported files in a temporary directory so that
@@ -116,7 +116,8 @@ class Command(ProjectCommand):
                 # so we must update their paths
 
                 proj_path = proj_desc['project_dir']
-                update_path = lambda p: os.path.join(proj_path, os.path.basename(p))
+                def update_path(p):
+                    return os.path.join(proj_path, os.path.basename(p))
 
                 target_path = proj_desc.get('target_path')
                 if target_path:
@@ -147,10 +148,16 @@ class Command(ProjectCommand):
         """
         try:
             logger.info('Creating archive %s', archive_path)
-            create_archive = tar.bake(create=True, xz=True, verbose=True,
-                                      file=archive_path, directory=export_dir,
-                                      _out=sys.stdout,
-                                      _err=sys.stderr)
-            create_archive(self._project_name)
-        except ErrorReturnCode as e:
+            if archive_path.endswith('.tar.xz'):
+                create_archive = tar.bake(create=True, xz=True, verbose=True,
+                                        file=archive_path, directory=export_dir,
+                                        _out=sys.stdout,
+                                        _err=sys.stderr)
+                create_archive(self._project_name)
+            elif archive_path.endswith('zip'):
+                shutil.make_archive(archive_path.removesuffix('.zip'), 'zip', export_dir)
+            else:
+                raise Exception('Unsupported archive format extension')
+
+        except Exception as e:
             raise CommandError(f'Failed to archive project - {e}') from e
