@@ -109,7 +109,7 @@ A typical workflow is therefore:
 1. Run `s2e init $DIR` to create a new S2E environment in `$DIR`. This will
    create the environment, install dependencies (unless `--skip-dependencies`
    is used) and fetch all of the S2E engine code.
-2. Activate the environment via `. $DIR/install/bin/s2e_activate`.
+2. Activate the environment via `. $DIR/s2e_activate`.
 3. Look around the source code, make some modifications, etc. Then when you are
    ready to build run `s2e build`.
 4. You'll need some images to analyze your software in! See what images are
