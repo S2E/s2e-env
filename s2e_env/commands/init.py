@@ -226,7 +226,7 @@ def _download_repo(repo_path):
     logger.info('Fetching repo')
 
     repo_url = CONSTANTS['repo']['url']
-    response = requests.get(repo_url)
+    response = requests.get(repo_url, timeout=3600)
 
     if response.status_code != 200:
         raise CommandError(f'Unable to download repo from {repo_url}')
