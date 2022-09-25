@@ -135,6 +135,11 @@ add_plugin("ModuleTracer")
 add_plugin("KeyValueStore")
 
 -------------------------------------------------------------------------------
+-- Records statistics into s2e-last/stats.csv.
+-- This corresponds to the old klee run.stats file.
+add_plugin("StatsTracker")
+
+-------------------------------------------------------------------------------
 -- Records the program counter of executed translation blocks.
 -- Generates a json coverage file. This file can be later processed by other
 -- tools to generate line coverage information. Please refer to the S2E
