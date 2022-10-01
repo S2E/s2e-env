@@ -154,17 +154,17 @@ def _get_os_version():
     id_name = id_name.lower()
 
     if id_name not in supported_oses:
-        logger.warning('You are running an unsupported Linux distribution. Skipping S2E '
-                       'dependencies - please install them manually')
+        logger.warning('You are running an unsupported Linux distribution (%s %s). Skipping S2E '
+                       'dependencies - please install them manually', id_name, version)
         logger.info('Supported OSes: %s', ", ".join(supported_oses))
         return None
 
     major_version = int(version.split('.')[0])
 
     if major_version not in CONSTANTS['required_versions'][f'{id_name}_major_ver']:
-        logger.warning('You are running an unsupported version of %s. '
+        logger.warning('You are running an unsupported version of %s (%s). '
                        'Skipping S2E dependencies - please install them '
-                       'manually', id_name)
+                       'manually', id_name, version)
         return None
 
     return id_name, major_version
