@@ -27,7 +27,7 @@ IMAGE_PATH="$ENV_DIR/{{ rel_image_path }}"
 IMAGE_JSON="$(dirname $IMAGE_PATH)/image.json"
 
 if [ ! -f "$IMAGE_PATH" -o ! -f "$IMAGE_JSON" ]; then
-    echo "$IMAGE_PATH and/or $IMAGE_JSON do not exist. Please check that your images are build properly."
+    echo "$IMAGE_PATH and/or $IMAGE_JSON do not exist. Please check that your images are built properly."
     exit 1
 fi
 
