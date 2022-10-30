@@ -10,7 +10,7 @@ might be the analysis of the ``file`` program from
 
 # Prerequisites
 
-We assume that you are working on an Ubuntu 18.04 LTS 64-bit OS.
+We assume that you are working on an Ubuntu 20.04 LTS 64-bit OS.
 You will need the following packages:
 
 ```console
