@@ -468,6 +468,7 @@ class TestsuiteRunner(EnvCommand):
                             logger.error('   Check %s for details', stdout)
                             logger.error('   Check %s for details', stderr)
 
+    # pylint: disable=too-many-locals
     def handle(self, *args, **options):
         logger.info('Running testsuite')
 
@@ -484,6 +485,11 @@ class TestsuiteRunner(EnvCommand):
         # This would also allow filtering by image name or any other part the project name.
         # By default, all tests are run.
         selected_tests = options['tests']
+        exclude_test = options.get('exclude_test')
+
+        if exclude_test:
+            logger.info('Excluding tests with prefix %s', exclude_test)
+
         if selected_tests:
             scripts_to_run = []
             for test in selected_tests:
@@ -495,6 +501,14 @@ class TestsuiteRunner(EnvCommand):
             logger.error('Could not find any tests to run. Please generate the testsuite first (s2e testsuite generate)'
                          ' and check that the specified test exists.')
             return
+
+        old_scripts_to_run = scripts_to_run
+        scripts_to_run = []
+
+        for script in old_scripts_to_run:
+            if exclude_test and (exclude_test in script):
+                continue
+            scripts_to_run.append(script)
 
         send_signal_to_children_on_exit(signal.SIGKILL)
 
@@ -552,6 +566,10 @@ class Command(EnvCommand):
 
         run_ts_parser.add_argument('--instance-count', dest='instances', type=int,
                                    default=0, help='How many instances to run in parallel')
+
+        run_ts_parser.add_argument('--exclude-test', dest='exclude_test', type=str,
+                                   help='Test prefix to exclude')
+
 
         run_ts_parser.add_argument('tests', nargs='*', help='Tests to run (all if empty)')
 
