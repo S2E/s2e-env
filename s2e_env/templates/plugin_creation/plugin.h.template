@@ -47,7 +47,7 @@ struct S2E_{{ plugin.name | upper }}_COMMAND {
 {% endif %}
 
 {% if use_guest_interface %}
-class {{ plugin.name }} : public Plugin, IPluginInvoker {
+class {{ plugin.name }} : public Plugin, public IPluginInvoker {
 {% else %}
 class {{ plugin.name }} : public Plugin {
 {% endif %}
