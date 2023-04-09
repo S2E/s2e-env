@@ -34,7 +34,7 @@ load-plugins=pylint.extensions.comparetozero,pylint.extensions.emptystring,pylin
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=invalid-name,broad-except,too-few-public-methods,missing-docstring,global-statement,suppressed-message,locally-disabled
+disable=broad-exception-raised,invalid-name,broad-except,too-few-public-methods,missing-docstring,global-statement,suppressed-message,locally-disabled
 
 
 [REPORTS]
