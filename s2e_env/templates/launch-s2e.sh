@@ -23,6 +23,8 @@ if [ "x$1" = "xdebug" ]; then
   shift
 fi
 
+{% if rel_image_path %}
+
 IMAGE_PATH="$ENV_DIR/{{ rel_image_path }}"
 IMAGE_JSON="$(dirname $IMAGE_PATH)/image.json"
 
@@ -31,10 +33,24 @@ if [ ! -f "$IMAGE_PATH" -o ! -f "$IMAGE_JSON" ]; then
     exit 1
 fi
 
+QEMU_DRIVE="-drive file=$IMAGE_PATH,format=s2e,cache=writeback"
 QEMU_EXTRA_FLAGS=$(jq -r '.qemu_extra_flags' "$IMAGE_JSON")
 QEMU_MEMORY=$(jq -r '.memory' "$IMAGE_JSON")
 QEMU_SNAPSHOT=$(jq -r '.snapshot' "$IMAGE_JSON")
-QEMU_DRIVE="-drive file=$IMAGE_PATH,format=s2e,cache=writeback"
+
+{% else %}
+
+QEMU_EXTRA_FLAGS="{{qemu_extra_flags}}"
+QEMU_MEMORY="{{qemu_memory}}"
+{% if qemu_snapshot %}
+QEMU_SNAPSHOT="{{qemu_snapshot}}"
+{% endif %}
+{% if qemu_bios %}
+QEMU_BIOS="-bios \"{{qemu_bios}}\""
+{% endif %}
+
+{% endif %}
+
 
 export S2E_CONFIG=s2e-config.lua
 export S2E_SHARED_DIR=$INSTALL_DIR/share/libs2e
@@ -45,6 +61,21 @@ if [ $S2E_MAX_PROCESSES -gt 1 ]; then
     # Multi-threaded mode does not support graphics output, so we override
     # whatever settings were there before.
     export GRAPHICS=-nographic
+fi
+
+QEMU_ARGS="-k en-us -monitor null -enable-kvm -serial file:serial.txt $GRAPHICS -m $QEMU_MEMORY $QEMU_EXTRA_FLAGS"
+
+if [ "x$QEMU_DRIVE" != "x" ]; then
+    QEMU_ARGS="$QEMU_ARGS $QEMU_DRIVE"
+fi
+
+if [ "x$QEMU_SNAPSHOT" != "x" ]; then
+    QEMU_ARGS="$QEMU_ARGS -loadvm $QEMU_SNAPSHOT"
+fi
+
+if [ "x$QEMU_BIOS" != "x" ]; then
+    QEMU_ARGS="$QEMU_ARGS $QEMU_BIOS"
+    QEMU_ARGS="$QEMU_ARGS -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios"
 fi
 
 if [ "x$DEBUG" != "x" ]; then
@@ -78,19 +109,13 @@ if [ "x$DEBUG" != "x" ]; then
     # - Display debug output from the BIOS:
     #    -chardev stdio,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios
 
-    $GDB $QEMU $QEMU_DRIVE \
-        -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
-        -serial file:serial.txt $QEMU_EXTRA_FLAGS \
-        -loadvm $QEMU_SNAPSHOT $*
+    $GDB $QEMU $QEMU_ARGS $*
 
 else
     QEMU="$INSTALL_DIR/bin/qemu-system-{{ qemu_arch }}"
     LIBS2E="$INSTALL_DIR/share/libs2e/libs2e-{{ qemu_arch }}-$S2E_MODE.so"
 
-    LD_PRELOAD=$LIBS2E $QEMU $QEMU_DRIVE \
-        -k en-us $GRAPHICS -monitor null -m $QEMU_MEMORY -enable-kvm \
-        -serial file:serial.txt $QEMU_EXTRA_FLAGS \
-        -loadvm $QEMU_SNAPSHOT $* &
+    LD_PRELOAD=$LIBS2E $QEMU $QEMU_ARGS $* &
 
     CHILD_PID=$!
     trap "kill $CHILD_PID" SIGINT

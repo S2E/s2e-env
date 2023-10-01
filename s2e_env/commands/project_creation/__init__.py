@@ -28,3 +28,4 @@ from .linux_project import LinuxProject
 from .target import Target
 from .windows_project import WindowsExeProject, WindowsDLLProject, \
         WindowsDriverProject
+from .bios_project import BIOSProject
