@@ -30,7 +30,7 @@ SRC_DIR=${SRC_DIR:-.}
 
 python3 -m venv venv-test
 . venv-test/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip wheel
 
 pip install "$SRC_DIR"
 pip install pylint pytest-cov mock

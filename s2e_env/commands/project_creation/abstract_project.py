@@ -318,7 +318,10 @@ class AbstractProject(EnvCommand):
         # when images are rebuilt. Instead, always use latest images.json
         # in guest-images repo. This avoids forcing users to create new projects
         # everytime guest image parameters change.
-        config_copy['image'] = os.path.dirname(config['image']['path'])
+        if config['image'].get('path', None):
+            config_copy['image'] = os.path.dirname(config['image']['path'])
+        else:
+            config_copy['image'] = None
 
         project_desc_path = os.path.join(project_dir, 'project.json')
         with open(project_desc_path, 'w', encoding='utf-8') as f:
