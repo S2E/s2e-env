@@ -81,7 +81,6 @@ dependencies:
         - libglib2.0-dev
         - libglib2.0-dev:i386
         - libglib2.0-0:i386
-        - qemu
         - mingw-w64
         - gcc-multilib
         - g++-multilib
@@ -93,16 +92,24 @@ dependencies:
         - lcov
         - jq
 
-    common-ubuntu:
-        # Testing dependencies
-        - wine-stable
-
     common-debian:
-        - fuse
         - wine
         - wine32
         - wine64
         - python3-docutils
+
+    debian-11:
+        - fuse
+        - qemu
+
+    debian-12:
+        - fuse3
+        - qemu-system-x86
+
+    common-ubuntu:
+        - qemu
+        # Testing dependencies
+        - wine-stable
 
     ubuntu-18:
         - fuse
@@ -157,6 +164,7 @@ required_versions:
         - 22
     debian_major_ver:
         - 11
+        - 12
     # images.json must have this version
     guest_images: 3
 
