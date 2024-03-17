@@ -514,8 +514,7 @@ class Command(EnvCommand):
         def get_max_len(lst):
             ret = 0
             for item in lst:
-                if len(item) > ret:
-                    ret = len(item)
+                ret = max(ret, len(item))
             return ret
 
         print('Available image groups:')
