@@ -47,7 +47,7 @@ def _save_response_content(response, destination):
 
 
 def _download(docid, destination):
-    url = 'https://docs.google.com/uc?export=download'
+    url = 'https://drive.usercontent.google.com/download'
 
     session = requests.Session()
 

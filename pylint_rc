@@ -16,7 +16,7 @@ persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=pylint.extensions.comparetozero,pylint.extensions.emptystring,pylint.extensions.no_self_use
+load-plugins=pylint.extensions.no_self_use
 
 [MESSAGES CONTROL]
 
@@ -247,4 +247,4 @@ max-public-methods=20
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "Exception"
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception
