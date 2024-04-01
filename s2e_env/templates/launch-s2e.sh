@@ -90,18 +90,27 @@ if [ "x$DEBUG" != "x" ]; then
 
     rm -f gdb.ini
 
-    echo handle SIGUSR1 noprint >> gdb.ini
-    echo handle SIGUSR2 noprint >> gdb.ini
-    echo set disassembly-flavor intel >> gdb.ini
-    echo set print pretty on >> gdb.ini
-    echo set environment S2E_CONFIG=$S2E_CONFIG >> gdb.ini
-    echo set environment S2E_SHARED_DIR=$S2E_SHARED_DIR >> gdb.ini
-    echo set environment LD_PRELOAD=$LIBS2E >> gdb.ini
-    echo set environment S2E_UNBUFFERED_STREAM=1 >> gdb.ini
-    # echo set environment LIBCPU_LOG_LEVEL=in_asm,int,exec >> gdb.ini
-    # echo set environment LIBCPU_LOG_FILE=/tmp/log.txt >> gdb.ini
-    # echo set environment S2E_QMP_SERVER=127.0.0.1:3322 >> gdb.ini
-    echo set python print-stack full >> gdb.ini
+    cat <<EOF >gdb.ini
+    handle SIGUSR1 noprint
+    handle SIGUSR2 noprint
+    set disassembly-flavor intel
+    set print pretty on
+    set environment S2E_CONFIG=$S2E_CONFIG
+    set environment S2E_SHARED_DIR=$S2E_SHARED_DIR
+    set environment LD_PRELOAD=$LIBS2E
+    set environment S2E_UNBUFFERED_STREAM=1
+    # set environment LIBCPU_LOG_LEVEL=in_asm,int,exec
+    # set environment LIBCPU_LOG_FILE=/tmp/log.txt
+    # set environment S2E_QMP_SERVER=127.0.0.1:3322
+    set python print-stack full
+
+python
+import sys
+sys.path.insert(0, '/usr/share/gcc/python')
+from libstdcxx.v6.printers import register_libstdcxx_printers
+register_libstdcxx_printers (None)
+end
+EOF
 
     GDB="gdb  --init-command=gdb.ini --args"
 
