@@ -87,6 +87,7 @@ dependencies:
         - libpixman-1-dev
         - libtinfo5
         - libpng-dev
+        - libzstd-dev
 
         # s2e-env dependencies
         - lcov
