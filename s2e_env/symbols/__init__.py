@@ -56,6 +56,9 @@ class DebugInfo(metaclass=ABCMeta):
     def add(self, filename, line, addr):
         self._lines.add(filename, line, addr)
 
+    def add_all(self, lines):
+        self._lines = LinesByAddr(lines)
+
     def get(self, addr):
         """
         Return line and function information for the given address.
@@ -337,12 +340,15 @@ class Addrs2LinesDebugInfo(DebugInfo):
 
             lines = json.loads(stdout_data)
 
+            resolved_source_lines = {}
+
             for source_file, data in list(lines.items()):
                 file_path = guess_source_file_path(self._search_paths, source_file)
-                for line in data.get('lines', []):
-                    for address in line[1]:
-                        self.add(file_path, line[0], address)
-                        parsed = True
+                resolved_source_lines[file_path] = data
+                if data.get('lines', []):
+                    parsed = True
+
+            self.add_all(resolved_source_lines)
 
             if parsed:
                 break
