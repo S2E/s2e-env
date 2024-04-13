@@ -101,7 +101,7 @@ class ForkProfiler:
         for v in profile:
             mod, rel_pc, count, sym, fcn = v
             if v[3]:
-                print(f'{mod.pid:05d} {os.path.normpath(mod.path)}:{rel_pc:010x} {count:4d}'
+                print(f'{mod.pid:05d} {os.path.normpath(mod.path)}:{rel_pc:010x} {count:4d} '
                       f'{os.path.normpath(sym.filename)}:{sym.line} ({fcn.name if fcn else None})')
             else:
                 print(f'{mod.pid:05d} {os.path.normpath(mod.path)}:{rel_pc:#010x} {count:4d} (no debug info)')
