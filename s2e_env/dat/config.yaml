@@ -90,6 +90,9 @@ dependencies:
         - libzstd-dev
         - libgmock-dev
         - libgtest-dev
+        - rapidjson-dev
+        - libsoci-dev
+        - libcapstone-dev
 
         # s2e-env dependencies
         - lcov
