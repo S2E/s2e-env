@@ -88,6 +88,8 @@ dependencies:
         - libtinfo5
         - libpng-dev
         - libzstd-dev
+        - libgmock-dev
+        - libgtest-dev
 
         # s2e-env dependencies
         - lcov
