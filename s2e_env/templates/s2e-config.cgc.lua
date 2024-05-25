@@ -3,9 +3,30 @@ This is CGC-specific configuration. The default settings are very close to
 those that were used during the CGC final event.
 ]]--
 
+
 -------------------------------------------------------------------------------
--- This plugin is to be used together with the Decree Linux Kernel.
--- The Decree kernel has a custom binary loader for challenge binaries (CBs).
+-- LinuxMonitor is a plugin that monitors Linux events and exposes them
+-- to other plugins in a generic way. Events include process load/termination,
+-- thread events, signals, etc.
+--
+-- LinuxMonitor requires a custom Linux kernel with S2E extensions. This kernel
+-- (and corresponding VM image) can be built with S2E tools. Please refer to
+-- the documentation for more details.
+
+add_plugin("LinuxMonitor")
+pluginsConfig.LinuxMonitor = {
+    -- Kill the execution state when it encounters a segfault
+    terminateOnSegfault = true,
+
+    -- Kill the execution state when it encounters a trap
+    terminateOnTrap = true,
+}
+
+-------------------------------------------------------------------------------
+-- This plugin is to monitor events from Decree binaries.
+-- S2E does not use the old CGC Linux kernel to run Decree binaries. Instead,
+-- it uses a custom user-space loader that emulates Decree syscalls. Decree binaries
+-- run otherwise like any other statically-linked Linux binaries.
 -- That loader is instrumented in order to communicate important events
 -- to DecreeMonitor. Instrumented events include CB loading/unloading, syscall
 -- invocation, etc.
@@ -80,3 +101,19 @@ add_plugin("DecreePovGenerator")
 -- Note: this plugin is currently only enabled for Decree, as it does not
 -- support Linux properly (probably a signal issue).
 add_plugin("StackMonitor")
+
+
+-------------------------------------------------------------------------------
+-- Override default config
+pluginsConfig.ProcessExecutionDetector = {
+    moduleNames = {
+        "cgcload",
+    },
+}
+
+pluginsConfig.ModuleExecutionDetector = {
+    mod_0 = {
+        moduleName = "cgcload",
+    },
+    logLevel="info"
+}
