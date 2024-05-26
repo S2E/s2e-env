@@ -296,6 +296,9 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         logging.getLogger('pwnlib').setLevel('ERROR')
 
+        target = self.project_desc.get('target', {})
+        os = target.get('os', None)
+
         img_os_desc = self.image['os']
 
         archs = []
@@ -318,7 +321,7 @@ class Command(ProjectCommand):
                         handler(fp, arch, platform, gp_reg)
 
         # Specific for decree
-        if 'decree' in img_os_desc['binary_formats']:
+        if os == 'decree':
             type2_handlers = [(0, type2_decree_shellcode_i386_0), (1, type2_decree_shellcode_i386_1)]
 
             for i, handler in type2_handlers:
