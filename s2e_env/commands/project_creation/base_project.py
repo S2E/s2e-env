@@ -79,12 +79,13 @@ class BaseProject(AbstractProject):
 
     supported_tools = []
 
-    def __init__(self, bootstrap_template, lua_template, image_override=None):
+    def __init__(self, bootstrap_template, lua_template, image_override=None, misc_templates=None):
         super().__init__()
 
         self._bootstrap_template = bootstrap_template
         self._lua_template = lua_template
         self._image_override = image_override
+        self._misc_templates = misc_templates
 
     def _configure(self, target, *args, **options):
         if target.is_empty():
@@ -231,6 +232,7 @@ class BaseProject(AbstractProject):
         self._create_launch_script(project_dir, config)
         self._create_lua_config(project_dir, config)
         self._create_bootstrap(project_dir, config)
+        self._create_misc_templates(project_dir, config)
 
         # Even though the AbstractProject will save the project description, we
         # need it to be able to generate recipes below
@@ -354,3 +356,18 @@ class BaseProject(AbstractProject):
         template = 'bootstrap.sh'
         output_path = os.path.join(project_dir, template)
         render_template(context, template, output_path)
+
+    def _create_misc_templates(self, project_dir, config):
+        """
+        Render any other optional scripts.
+        """
+        if not self._misc_templates:
+            return
+
+        context = config.copy()
+        context['env_dir'] = self.env_path()
+
+        for template in self._misc_templates:
+            output_path = os.path.join(project_dir, template)
+            executable = template.endswith('.sh')
+            render_template(context, template, output_path, executable=executable)

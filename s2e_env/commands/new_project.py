@@ -329,8 +329,6 @@ class Command(EnvCommand):
         # It provides a class that is instantiated with the current
         # command-line arguments and options
         proj_class = options.pop('project_class', None)
-        if not proj_class:
-            proj_class = _get_project_class(**options)
 
         if options['target']:
             _handle_with_file(options.pop('target'), options.pop('target_args'), proj_class, *args, **options)

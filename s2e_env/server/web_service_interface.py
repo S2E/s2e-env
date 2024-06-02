@@ -44,4 +44,3 @@ class WebServiceInterfacePlugin:
 
         if data_type == 'stats':
             WebServiceInterfacePlugin.handle_stats(analysis, data)
-            return
