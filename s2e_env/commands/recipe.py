@@ -293,6 +293,7 @@ class Command(ProjectCommand):
         filename = f'{filename}.rcp'
         return self.project_path('recipes', filename)
 
+    # pylint: disable=too-many-locals
     def handle(self, *args, **options):
         logging.getLogger('pwnlib').setLevel('ERROR')
 

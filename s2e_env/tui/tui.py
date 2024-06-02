@@ -103,6 +103,9 @@ class Form:
         Width and Height can be set to None to expand the window
         to the size of the parent container.
         """
+        mw = 0
+        mh = 0
+
         if w is None or h is None:
             form = self.get_parent()
             if form is None:
