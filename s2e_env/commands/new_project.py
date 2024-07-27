@@ -333,4 +333,7 @@ class Command(EnvCommand):
         if options['target']:
             _handle_with_file(options.pop('target'), options.pop('target_args'), proj_class, *args, **options)
         else:
+            if not proj_class:
+                proj_class = _get_project_class(**options)
+
             _handle_empty_project(proj_class, *args, **options)
