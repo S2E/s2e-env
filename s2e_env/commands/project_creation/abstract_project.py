@@ -210,7 +210,7 @@ class AbstractProject(EnvCommand):
     # Image helper methods
     #
 
-    def _select_image(self, target, image=None, download_image=True):
+    def _select_image(self, target, image=None, download_image=True, debootstrap=False):
         """
         Select an image to use for this project.
 
@@ -234,17 +234,20 @@ class AbstractProject(EnvCommand):
             # Don't do any validation on app images yet.
             return self._get_or_download_image(img_templates, image, download_image)
 
-        if image not in img_templates:
-            raise CommandError(f'Unknown guest image {image}. Run s2e image_build for a list of supported images.')
+        if not debootstrap:
+            if image not in img_templates:
+                raise CommandError(f'Unknown guest image {image}. Run s2e image_build for a list of supported images.')
 
         supported_images = self.get_usable_images(target, img_templates)
         if not supported_images:
             raise CommandError('No suitable image available for this target.')
 
-        if image not in supported_images:
-            raise CommandError(f'Chosen image {image} is not compatbile with the target.')
+        if not debootstrap:
+            if image not in supported_images:
+                raise CommandError(f'Chosen image {image} is not compatible with the target.')
 
-        check_host_incompatibility(img_templates, base_image_name)
+
+        check_host_incompatibility(img_templates, base_image_name, debootstrap)
         return self._get_or_download_image(img_templates, image, download_image)
 
     def _guess_image(self, target, img_templates):
