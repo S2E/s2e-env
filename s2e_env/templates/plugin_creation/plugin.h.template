@@ -58,12 +58,13 @@ public:
 
     void initialize();
 
-private:
-
     {% if use_guest_interface %}
     // Allow the guest to communicate with this plugin using s2e_invoke_plugin
     virtual void handleOpcodeInvocation(S2EExecutionState *state, uint64_t guestDataPtr, uint64_t guestDataSize);
     {% endif %}
+
+private:
+
 };
 
 } // namespace plugins
