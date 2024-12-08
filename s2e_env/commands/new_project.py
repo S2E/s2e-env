@@ -320,6 +320,9 @@ class Command(EnvCommand):
                             help='If a project with the given name already '
                                  'exists, replace it')
 
+        parser.add_argument("--debootstrap", action='store_true', required=False, default=False,
+                            help='Enables the use for the all-in-one generic debootstrap image')
+
     def handle(self, *args, **options):
         if not validate_arguments(options):
             return

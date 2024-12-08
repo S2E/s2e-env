@@ -99,7 +99,7 @@ class BaseProject(AbstractProject):
             img_desc = self._image_override
         else:
             img_desc = self._select_image(target, options.get('image'),
-                                        options.get('download_image', False))
+                                        options.get('download_image', False), options.get("debootstrap"))
 
             # Check architecture consistency (if the target has been specified)
             if target.path and not is_valid_arch(target.arch, img_desc['os']):
@@ -179,7 +179,9 @@ class BaseProject(AbstractProject):
             'enable_tickler': options.get('enable_tickler', False),
 
             'single_path': options.get('single_path', False),
-            'custom_lua_string': options.get('custom_lua_string', '')
+            'custom_lua_string': options.get('custom_lua_string', ''),
+
+            'debootstrap': options.get('debootstrap', False)
         }
 
         # Do some basic analysis on the target (if it exists)
@@ -352,6 +354,7 @@ class BaseProject(AbstractProject):
         context = config.copy()
         context['target_bootstrap_template'] = self._bootstrap_template
         context['image_arch'] = config['image']['os']['arch']
+        context['debootstrap'] = config['debootstrap']
 
         template = 'bootstrap.sh'
         output_path = os.path.join(project_dir, template)

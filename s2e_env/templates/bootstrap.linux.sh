@@ -30,7 +30,11 @@ function execute_target {
 # Nothing more to initialize on Linux
 function target_init {
     # Start the LinuxMonitor kernel module
+    {% if debootstrap == true %}
+    sudo insmod /root/s2e-kprobe/s2e-`uname -r`/s2e-kprobe.ko > /dev/ttyS0
+    {% else %}
     sudo modprobe s2e
+    {% endif %}
 }
 
 # Returns Linux-specific tools
