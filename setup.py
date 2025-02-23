@@ -26,7 +26,7 @@ import os
 import pip
 from setuptools import setup, find_packages
 
-pyelftools_version = '0.24+s2e'
+pyelftools_version = '0.28+s2e'
 pyelftools_url = f'git+https://github.com/S2E/pyelftools.git#egg=pyelftools-{pyelftools_version}'
 
 version = pip.__version__.split('.')
