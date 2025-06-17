@@ -69,7 +69,7 @@ setup(
         'protobuf3-to-dict',
         'immutables',
         'alive_progress',
-        'protobuf==3.20.2',
+        'protobuf==4.25.8',
 
         # Dependencies for symchk
         'pdbparse==1.5',
