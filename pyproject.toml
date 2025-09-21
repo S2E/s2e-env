@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "s2e-env"
+description = "A command-line tool for administering S2E environments"
+authors = [
+    {name = "Adrian Herrera", email = "adrian.herrera@epfl.ch"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.6"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Environment :: Console",
+    "Programming Language :: Python",
+    "Topic :: Security",
+    "Topic :: Software Development",
+    "Topic :: System",
+]
+dependencies = [
+    # S2E engine requirements
+    "docutils",
+    "pygments",
+    # s2e-env requirements
+    "distro",
+    "enum34",
+    "jinja2",
+    "pefile",
+    "psutil",
+    "pyelftools @ git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+s2e",
+    "python-magic",
+    "pyyaml",
+    "requests",
+    "sh",
+    "termcolor",
+    "pytrie",
+    "pwntools==4.3.1",
+    "protobuf3-to-dict",
+    "immutables",
+    "alive_progress",
+    "protobuf==3.20.2",
+    # Dependencies for symchk
+    "pdbparse @ git+https://github.com/faratech/pdbparse.git@5eeff2bc11a5063f130216f929706631e8302be2",
+    "pefile==2019.4.18",
+    "construct==2.10.70",
+    "patool==1.12",
+    "pyunpack==0.2.2",
+    # FTP server used by image creation
+    "pyftpdlib"
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "http://s2e.systems"
+Repository = "https://github.com/S2E/s2e-env.git"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+s2e = "s2e_env.manage:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+# This will automatically find all packages
+
+[tool.setuptools.package-data]
+s2e_env = [
+    "templates/*",
+    "templates/plugin_creation/*",
+    "dat/*",
+]
+
+[tool.setuptools.dynamic]
+version = {file = "s2e_env/dat/VERSION"}
