@@ -60,7 +60,53 @@ class Command(EnvCommand):
                             help='List of S2E components to clean prior to '
                                  'the build process')
 
+    def build_tools(self):
+        build_dir = self.env_path('build')
+        makefile = self.env_path('source', 's2e', 'Makefile.tools')
+
+        if not os.path.isfile(makefile):
+            raise CommandError(f'No makefile found in {os.path.dirname(makefile)}')
+
+        # If the build directory doesn't exist, create it
+        if not os.path.isdir(build_dir):
+            os.mkdir(build_dir)
+
+        try:
+            logger.info('Generating S2E build environment Docker image')
+            docker = sh.Command('docker')
+
+            docker(
+                "build",
+                "--target", "s2e-build-env",
+                "-t", "s2e-build-env",
+                ".",
+                _out=sys.stdout,
+                _err=sys.stderr,
+                _cwd=self.env_path('source', 's2e')
+            )
+
+            logger.info('Building S2E tools in %s', build_dir)
+            docker(
+                "run", "-t", "--rm",
+                "-e", "SYSTEM_CLANG_VERSION=15",
+                "-e", f"S2E_PREFIX={self.install_path()}",
+                "-w", build_dir,
+                "-v", f"{self.env_path()}:{self.env_path()}",
+                "s2e-build-env",
+                "/run_as.sh", os.getuid(), os.getgid(),
+                "make", "-f", makefile, "install",
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+        except ErrorReturnCode as e:
+            raise CommandError(e) from e
+
+        logger.success('S2E tools built')
+
+
     def handle(self, *args, **options):
+        self.build_tools()
+
         # Exit if the makefile doesn't exist
         makefile = self.env_path('source', 'Makefile')
         if not os.path.isfile(makefile):
