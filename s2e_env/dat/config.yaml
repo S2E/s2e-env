@@ -44,6 +44,8 @@ dependencies:
         - autoconf
         - libtool
         - automake
+        - clang-19
+        - clang-format-19
 
         # Image build dependencies
         - libguestfs-tools
@@ -85,18 +87,23 @@ dependencies:
         - gcc-multilib
         - g++-multilib
         - libpixman-1-dev
-        - libtinfo5
         - libpng-dev
         - libzstd-dev
         - libgmock-dev
         - libgtest-dev
-        - rapidjson-dev
         - libsoci-dev
         - libcapstone-dev
+        - libcurl4-openssl-dev
 
         # s2e-env dependencies
         - lcov
         - jq
+
+        # llvm/clang dependencies for KLEE
+        - libedit-dev
+        - libpfm4-dev
+        - llvm-14-dev
+        - clang-14
 
     common-debian:
         - wine
@@ -105,19 +112,33 @@ dependencies:
         - python3-docutils
 
     debian-12:
+        - libtinfo5
+        - fuse3
+        - qemu-system-x86
+
+    debian-13:
+        - libtinfo6
         - fuse3
         - qemu-system-x86
 
     common-ubuntu:
-        - qemu
         # Testing dependencies
         - wine-stable
 
     ubuntu-22:
+        - libtinfo5
+        - qemu
         - fuse3
         - python3-docutils
         - libsdl1.2-dev
 
+    ubuntu-24:
+        - libtinfo6
+        - qemu-system-x86
+        - fuse3
+        - python3-docutils
+        - libsdl1.2-dev
+        - libpolly-14-dev
 
 # S2E Git repos
 repos:
@@ -134,8 +155,10 @@ repos:
 required_versions:
     ubuntu_major_ver:
         - 22
+        - 24
     debian_major_ver:
         - 12
+        - 13
     # images.json must have this version
     guest_images: 3
 
