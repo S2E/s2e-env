@@ -122,7 +122,7 @@ def install_dependencies():
             install_packages.append(package)
 
     install_opts = ['--no-install-recommends']
-    env = {}
+    env = os.environ.copy()
 
     env['DEBIAN_FRONTEND'] = 'noninteractive'
     install_opts = ['-y'] + install_opts
