@@ -44,8 +44,6 @@ dependencies:
         - autoconf
         - libtool
         - automake
-        - clang-19
-        - clang-format-19
 
         # Image build dependencies
         - libguestfs-tools
@@ -110,6 +108,8 @@ dependencies:
         - wine32
         - wine64
         - python3-docutils
+        - clang-19
+        - clang-format-19
 
     debian-12:
         - libtinfo5
@@ -139,6 +139,14 @@ dependencies:
         - python3-docutils
         - libsdl1.2-dev
         - libpolly-14-dev
+        - clang-19
+        - clang-format-19
+
+# Which compiler to use for building S2E and its dependencies.
+# QEMU LLVM bitcode code is always built with clang-14.
+clang_versions:
+    default: 19
+    ubuntu-22: 14
 
 # S2E Git repos
 repos:
