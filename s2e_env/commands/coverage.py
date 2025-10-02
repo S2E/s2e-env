@@ -53,6 +53,10 @@ class Command(ProjectCommand):
                                  help='S2E output directories to consider (default is s2e-last).',
                                  required=False)
 
+        lcov_parser.add_argument('--exclude-pattern', action='append',
+                                 help='Exclude the given pattern from the report. Can be specified multiple times.',
+                                 required=False)
+
         lcov_parser.add_argument('--aggregate-outputs', type=int,
                                  help='Specifies n most recent s2e-out-* folders to aggregate for coverage.',
                                  required=False)

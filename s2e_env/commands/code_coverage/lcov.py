@@ -24,6 +24,7 @@ SOFTWARE.
 
 import logging
 import os
+import re
 import sys
 
 # pylint: disable=no-name-in-module
@@ -93,7 +94,17 @@ def _get_addr_coverage(directory, aggregated_coverage):
     return aggregated_coverage
 
 
-def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
+def _is_excluded(file_path, excluded_patterns):
+    if not excluded_patterns:
+        return False
+
+    if any(re.search(pattern, file_path) for pattern in excluded_patterns):
+        return True
+
+    return False
+
+
+def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files, excluded_patterns):
     """
     Save the line coverage information in lcov format.
 
@@ -120,6 +131,10 @@ def _save_coverage_info(lcov_path, file_line_info, ignore_missing_files):
 
             num_non_zero_lines = 0
             num_instrumented_lines = 0
+
+            if _is_excluded(src_file, excluded_patterns):
+                logger.info('Excluding %s from coverage report', src_file)
+                continue
 
             f.write(f'SF:{src_file}\n')
             for line, count in file_line_info[src_file].items():
@@ -177,6 +192,7 @@ class LineCoverage(ProjectCommand):
         for module_path, addr_counts in coverage.items():
             try:
                 cov = options.get('include_covered_files_only', False)
+                excluded_patterns = options.get('exclude_pattern', [])
                 file_line_info = syms.get_coverage(module_path, addr_counts, cov)
 
                 module = os.path.basename(module_path)
@@ -184,7 +200,7 @@ class LineCoverage(ProjectCommand):
                 # genhtml will throw an error if there are missing files, so we skip them
                 # if the user enabled html reports.
                 lcov_info_path = os.path.join(lcov_out_dir, module + '.info')
-                _save_coverage_info(lcov_info_path, file_line_info, do_gen_html)
+                _save_coverage_info(lcov_info_path, file_line_info, do_gen_html, excluded_patterns)
 
                 logger.success('Line coverage saved to %s', lcov_info_path)
 
