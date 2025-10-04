@@ -42,7 +42,8 @@ dependencies = [
     "alive_progress",
     "protobuf==3.20.2",
     # Dependencies for symchk
-    "pdbparse @ git+https://github.com/faratech/pdbparse.git@5eeff2bc11a5063f130216f929706631e8302be2",
+    # TODO: replace with official release when available
+    # "pdbparse @ git+https://github.com/faratech/pdbparse.git@5eeff2bc11a5063f130216f929706631e8302be2",
     "pefile==2019.4.18",
     "construct==2.10.70",
     "patool==1.12",
