@@ -36,7 +36,7 @@ pip install "$SRC_DIR"
 pip install pylint pytest-cov mock
 
 echo Running pylint...
-pylint -rn --rcfile=${SRC_DIR}/pylint_rc ${SRC_DIR}/s2e_env
+pylint --prefer-stubs=yes -rn --rcfile=${SRC_DIR}/pylint_rc ${SRC_DIR}/s2e_env
 
 echo Running tests...
 export TERM=linux

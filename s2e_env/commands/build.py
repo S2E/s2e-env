@@ -29,10 +29,23 @@ import sys
 import sh
 from sh import ErrorReturnCode
 
+from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
-
+from s2e_env.utils.host import get_os_version
 
 logger = logging.getLogger('build')
+
+
+def _get_clang_version():
+    default = CONSTANTS["clang_versions"]["default"]
+    os_name, os_version = get_os_version()
+    version = CONSTANTS["clang_versions"].get(f"{os_name}-{os_version}", None)
+    if version:
+        logger.info('Using clang-%s to build S2E', version)
+        return version
+
+    logger.info('Using clang-%s to build S2E', default)
+    return default
 
 
 class Command(EnvCommand):
@@ -60,20 +73,53 @@ class Command(EnvCommand):
                             help='List of S2E components to clean prior to '
                                  'the build process')
 
-    def handle(self, *args, **options):
+    def _build_tools(self, build_dir):
+        makefile = self.env_path('source', 's2e', 'Makefile.tools')
+        if not os.path.isfile(makefile):
+            raise CommandError(f'{makefile} not found')
+
+        try:
+            logger.info('Generating S2E build environment Docker image')
+            docker = sh.Command('docker')
+
+            docker(
+                "build",
+                "--target", "s2e-build-env",
+                "-t", "s2e-build-env",
+                ".",
+                _out=sys.stdout,
+                _err=sys.stderr,
+                _cwd=self.env_path('source', 's2e')
+            )
+
+            logger.info('Building S2E tools in %s', build_dir)
+            docker(
+                "run", "-t", "--rm",
+                "-e", "SYSTEM_CLANG_VERSION=15",
+                "-e", f"S2E_PREFIX={self.install_path()}",
+                "-w", build_dir,
+                "-v", f"{self.env_path()}:{self.env_path()}",
+                "s2e-build-env",
+                "/run_as.sh", os.getuid(), os.getgid(),
+                "make", "-f", makefile, "install",
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+        except ErrorReturnCode as e:
+            raise CommandError(e) from e
+
+        logger.success('S2E tools built')
+
+    def _build_s2e(self, build_dir, **options):
         # Exit if the makefile doesn't exist
         makefile = self.env_path('source', 'Makefile')
         if not os.path.isfile(makefile):
-            raise CommandError(f'No makefile found in {os.path.dirname(makefile)}')
-
-        # If the build directory doesn't exist, create it
-        build_dir = self.env_path('build')
-        if not os.path.isdir(build_dir):
-            os.mkdir(build_dir)
+            raise CommandError(f'{makefile} not found')
 
         # Set up some environment variables
         env_vars = os.environ.copy()
         env_vars['S2E_PREFIX'] = self.install_path()
+        env_vars['SYSTEM_CLANG_VERSION'] = f"{_get_clang_version()}"
 
         components = options['components']
         self._make = sh.Command('make').bake(directory=build_dir, file=makefile, _env=env_vars)
@@ -95,6 +141,15 @@ class Command(EnvCommand):
             raise CommandError(e) from e
 
         logger.success('S2E built')
+
+    def handle(self, *args, **options):
+        # If the build directory doesn't exist, create it
+        build_dir = self.env_path('build')
+        if not os.path.isdir(build_dir):
+            os.mkdir(build_dir)
+
+        self._build_tools(build_dir)
+        self._build_s2e(build_dir, **options)
 
     def _get_components(self, target):
         lines = self._make(target).strip().split('\n')
