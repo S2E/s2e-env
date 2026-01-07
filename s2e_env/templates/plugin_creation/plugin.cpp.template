@@ -43,7 +43,7 @@ class {{ plugin.name }}State: public PluginState {
     // Declare any methods and fields you need here
 
 public:
-    static PluginState *factory(Plugin *p, S2EExecutionState *s) {
+    static PluginState *factory(Plugin *p) {
         return new {{ plugin.name }}State();
     }
 
