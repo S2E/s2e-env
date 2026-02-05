@@ -40,7 +40,7 @@ dependencies = [
     "protobuf3-to-dict==0.1.5",
     "immutables==0.21",
     "alive_progress==3.3.0",
-    "protobuf==3.20.2",
+    "protobuf==5.29.6",
     # Dependencies for symchk
     # TODO: replace with official release when available
     # "pdbparse @ git+https://github.com/faratech/pdbparse.git@5eeff2bc11a5063f130216f929706631e8302be2",
