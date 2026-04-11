@@ -29,7 +29,7 @@ dependencies = [
     "jinja2==3.1.6",
     "pefile==2019.4.18",
     "psutil==7.1.0",
-    "pyelftools @ git+https://github.com/S2E/pyelftools.git#egg=pyelftools-0.24+s2e",
+    "pyelftools @ git+https://github.com/S2E/pyelftools.git",
     "python-magic==0.4.27",
     "pyyaml==6.0.2",
     "requests==2.32.5",
