@@ -49,7 +49,8 @@ dependencies = [
     "patool==1.12",
     "pyunpack==0.2.2",
     # FTP server used by image creation
-    "pyftpdlib==2.0.1"
+    "pyftpdlib==2.0.1",
+    "tomli==2.4.1",
 ]
 
 dynamic = ["version"]
