@@ -93,7 +93,7 @@ class ImageDownloader:
 
         url = self._templates[image].get('url')
         if not url:
-            raise CommandError(f'The image {image} has not downloadable archive')
+            raise CommandError(f'The image {image} has no downloadable archive')
 
         dest_file = os.path.join(dest_dir, f'{image}.tar.xz')
         _download(url, dest_file)
