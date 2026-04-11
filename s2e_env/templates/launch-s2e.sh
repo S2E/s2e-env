@@ -63,7 +63,7 @@ if [ $S2E_MAX_PROCESSES -gt 1 ]; then
     export GRAPHICS=-nographic
 fi
 
-QEMU_ARGS="-k en-us -monitor null -enable-kvm -serial file:serial.txt $GRAPHICS -m $QEMU_MEMORY $QEMU_EXTRA_FLAGS"
+QEMU_ARGS="-k en-us -monitor null -accel accel=kvm,kernel-irqchip=split -serial file:serial.txt $GRAPHICS -m $QEMU_MEMORY $QEMU_EXTRA_FLAGS"
 
 if [ "x$QEMU_DRIVE" != "x" ]; then
     QEMU_ARGS="$QEMU_ARGS $QEMU_DRIVE"
@@ -85,7 +85,7 @@ if [ "x$DEBUG" != "x" ]; then
         exit 1
     fi
 
-    QEMU="$BUILD_DIR/qemu-$BUILD/{{ qemu_arch }}-softmmu/qemu-system-{{ qemu_arch }}"
+    QEMU="$BUILD_DIR/qemu-$BUILD/qemu-system-{{ qemu_arch }}"
     LIBS2E="$BUILD_DIR/libs2e-$BUILD/{{ qemu_arch }}-$S2E_MODE-softmmu/libs2e.so"
 
     rm -f gdb.ini
