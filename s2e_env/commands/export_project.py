@@ -26,15 +26,11 @@ import logging
 import os
 import shutil
 import sys
+from tempfile import TemporaryDirectory
 
 # pylint: disable=no-name-in-module
 # No name 'tar' in module 'sh'
 from sh import tar
-
-try:
-    from tempfile import TemporaryDirectory
-except ImportError:
-    from s2e_env.utils.tempdir import TemporaryDirectory
 
 from s2e_env import CONSTANTS
 from s2e_env.command import ProjectCommand, CommandError

@@ -311,7 +311,8 @@ class Command(ProjectCommand):
 
         args = [
             qemu,
-            '-enable-kvm',
+            '-accel',
+            'accel=kvm,kernel-irqchip=split',
             '-drive',
             f'file={self.image["path"]},format=s2e,cache=writeback',
             '-serial', 'file:serial.txt',

@@ -368,12 +368,12 @@ def _get_max_instances(**options):
         # Determine optimal number of cores based on available memory
         cpus = psutil.cpu_count()
         mem = psutil.virtual_memory().available
+        mem_per_instance = options.get('mem_per_instance', TestsuiteRunner.AVERAGE_S2E_MEM_USAGE)
 
         if options.get('log', True):
             logger.info('The system has %d CPUs and %d GB of available RAM', cpus, mem / (1 << 30))
-            logger.info('Average memory usage per S2E instance: %d GB',
-                        TestsuiteRunner.AVERAGE_S2E_MEM_USAGE / (1 << 30))
-        max_instances = int(mem / TestsuiteRunner.AVERAGE_S2E_MEM_USAGE)
+            logger.info('Average memory usage per S2E instance: %d GB', mem_per_instance / (1 << 30))
+        max_instances = int(mem / mem_per_instance)
         return min(cpus, max_instances)
 
     return options.get('instances')
@@ -411,7 +411,7 @@ class TestsuiteRunner(EnvCommand):
     This class runs the S2E testsuite.
     """
 
-    AVERAGE_S2E_MEM_USAGE = 3 * 1024 * 1024 * 1024
+    AVERAGE_S2E_MEM_USAGE = 4 * 1024 * 1024 * 1024
 
     def call_script(self, state, script):
         if not _throttle(state):
@@ -430,25 +430,25 @@ class TestsuiteRunner(EnvCommand):
             with open(stderr, 'w', encoding='utf-8') as se:
                 status = None
                 try:
-                    with subprocess.Popen([script], env=env, stdout=so, stderr=se) as p:
+                    with subprocess.Popen([script], env=env, stdout=so, stderr=se,
+                                          start_new_session=True) as p:
                         while True:
                             if state.get('terminating', False):
-                                p.terminate()
+                                try:
+                                    os.killpg(p.pid, signal.SIGKILL)
+                                except ProcessLookupError:
+                                    pass
                                 p.wait()
                                 raise TestCancelledException()
                             try:
-                                p.communicate(timeout=1)
+                                p.wait(timeout=1)
                             except subprocess.TimeoutExpired:
-                                pass
-
-                            if p.returncode is None:
                                 continue
 
                             if not p.returncode:
                                 break
 
-                            if p.returncode:
-                                raise Exception(f'Error while running {script}')
+                            raise Exception(f'Error while running {script}')
 
                     status = 'SUCCESS'
                 except TestCancelledException:
@@ -472,6 +472,7 @@ class TestsuiteRunner(EnvCommand):
     def handle(self, *args, **options):
         logger.info('Running testsuite')
 
+        options['mem_per_instance'] = options['mem_per_instance'] * (1 << 30)
         actual_instances = _get_max_instances(**options)
 
         logger.info('Running %d tests in parallel', actual_instances)
@@ -522,22 +523,19 @@ class TestsuiteRunner(EnvCommand):
             'terminating': False,
         }
 
-        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGINT, original_sigint_handler)
+        def _handle_sigint(_signum, _frame):
+            logger.warning('Terminating testsuite (CTRL+C)')
+            state['terminating'] = True
+
+        original_sigint_handler = signal.signal(signal.SIGINT, _handle_sigint)
 
         try:
             r = [pool.apply_async(self.call_script, (state, script,)) for script in scripts_to_run]
-
-            # This works around a bug in Python 2.7, which prevents pool.join() from
-            # being interrupted by ctrl + c.
             for item in r:
                 item.wait(timeout=9999999)
-
-        except KeyboardInterrupt:
-            logger.warning('Terminating testsuite (CTRL+C)')
-            state['terminating'] = True
-            pool.terminate()
         finally:
+            state['terminating'] = True
+            signal.signal(signal.SIGINT, original_sigint_handler)
             pool.close()
             pool.join()
 
@@ -566,6 +564,11 @@ class Command(EnvCommand):
 
         run_ts_parser.add_argument('--instance-count', dest='instances', type=int,
                                    default=0, help='How many instances to run in parallel')
+
+        run_ts_parser.add_argument('--mem-per-instance', dest='mem_per_instance', type=int,
+                                   default=TestsuiteRunner.AVERAGE_S2E_MEM_USAGE // (1 << 30),
+                                   metavar='GB',
+                                   help='Average memory usage per S2E instance in GB (default: %(default)s)')
 
         run_ts_parser.add_argument('--exclude-test', dest='exclude_test', type=str,
                                    help='Test prefix to exclude')
