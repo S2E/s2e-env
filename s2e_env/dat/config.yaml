@@ -105,16 +105,16 @@ dependencies:
         # llvm/clang dependencies for KLEE
         - libedit-dev
         - libpfm4-dev
-        - llvm-14-dev
-        - clang-14
+        - llvm-19-dev
+
+        - clang-19
+        - clang-format-19
 
     common-debian:
         - wine
         - wine32
         - wine64
         - python3-docutils
-        - clang-19
-        - clang-format-19
 
     debian-12:
         - libtinfo5
@@ -127,31 +127,27 @@ dependencies:
         - qemu-system-x86
 
     common-ubuntu:
-        # Testing dependencies
-        - wine-stable
-
-    ubuntu-22:
-        - libtinfo5
-        - qemu
-        - fuse3
-        - python3-docutils
-        - libsdl1.2-dev
-
-    ubuntu-24:
         - libtinfo6
         - qemu-system-x86
         - fuse3
         - python3-docutils
         - libsdl1.2-dev
+
+    ubuntu-24:
+        - wine-stable
         - libpolly-14-dev
-        - clang-19
-        - clang-format-19
+
+    ubuntu-26:
+        - libpolly-dev
+        - wine
+        - wine32
+        - wine64
+
 
 # Which compiler to use for building S2E and its dependencies.
-# QEMU LLVM bitcode code is always built with clang-14.
+# QEMU LLVM bitcode code is always built with clang-19.
 clang_versions:
     default: 19
-    ubuntu-22: 14
 
 # S2E Git repos
 repos:
@@ -167,8 +163,8 @@ repos:
 
 required_versions:
     ubuntu_major_ver:
-        - 22
         - 24
+        - 26
     debian_major_ver:
         - 12
         - 13

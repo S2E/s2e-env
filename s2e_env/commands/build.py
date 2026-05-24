@@ -84,8 +84,9 @@ class Command(EnvCommand):
 
             docker(
                 "build",
-                "--target", "s2e-build-env",
-                "-t", "s2e-build-env",
+                "-f", "Dockerfile.tools",
+                "--target", "s2e-build-env-tools",
+                "-t", "s2e-build-env-tools",
                 ".",
                 _out=sys.stdout,
                 _err=sys.stderr,
@@ -94,12 +95,13 @@ class Command(EnvCommand):
 
             logger.info('Building S2E tools in %s', build_dir)
             docker(
-                "run", "-t", "--rm",
+                "run",
+                "-t", "--rm",
                 "-e", "SYSTEM_CLANG_VERSION=15",
                 "-e", f"S2E_PREFIX={self.install_path()}",
                 "-w", build_dir,
                 "-v", f"{self.env_path()}:{self.env_path()}",
-                "s2e-build-env",
+                "s2e-build-env-tools",
                 "/run_as.sh", os.getuid(), os.getgid(),
                 "make", "-f", makefile, "install",
                 _out=sys.stdout,
