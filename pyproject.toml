@@ -22,7 +22,7 @@ classifiers = [
 dependencies = [
     # S2E engine requirements
     "docutils==0.22.2",
-    "pygments==2.19.2",
+    "pygments==2.20.0",
     # s2e-env requirements
     "distro==1.9.0",
     "enum34==1.1.10",
