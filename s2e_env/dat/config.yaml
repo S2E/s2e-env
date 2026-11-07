@@ -51,7 +51,8 @@ dependencies:
         - libguestfs-tools
         - genisoimage
         - xz-utils
-        - docker.io
+        - podman
+        - uidmap
         - p7zip-full
         - libhivex-bin
         - jigdo-file

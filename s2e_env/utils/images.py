@@ -60,7 +60,11 @@ def _decompress(path):
     """
     logger.info('Decompressing %s', path)
     try:
-        tar(extract=True, xz=True, verbose=True, file=path,
+        # When run as root, for example in the demo container, tar restores the
+        # owners stored in the archive. In a rootless container, these owners
+        # are subordinate UIDs on the host, and the user could not delete the
+        # extracted files.
+        tar(extract=True, xz=True, verbose=True, no_same_owner=True, file=path,
             directory=os.path.dirname(path), _out=sys.stdout,
             _err=sys.stderr)
     except ErrorReturnCode as e:
@@ -289,7 +293,7 @@ def check_host_incompatibility(base_templates, image_name):
     logger.warning('Your host OS does not match the guest OS. '
                     'To ensure that binaries built on the host run properly in the guest, '
                     'both the host and the guest OS must be identical. You may want to build '
-                    'your binaries in a docker container that matches the guest OS.')
+                    'your binaries in a container (for example, with Podman) that matches the guest OS.')
 
     if id_name == 'ubuntu' and version == '22.02':
         logger.error('The libc of the guest OS that you selected is not compatible with the libc on your host. '
