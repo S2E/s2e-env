@@ -39,6 +39,7 @@ from sh.contrib import sudo
 from s2e_env import CONSTANTS
 from s2e_env.command import BaseCommand, CommandError
 from s2e_env.utils import repos
+from s2e_env.utils.podman import STORAGE_CONF_HINT
 from s2e_env.utils.templates import render_template
 
 logger = logging.getLogger('init')
@@ -121,11 +122,13 @@ def install_dependencies():
         else:
             install_packages.append(package)
 
-    install_opts = ['--no-install-recommends']
+    # Recommended packages are installed because rootless Podman needs some of
+    # them (passt or slirp4netns for network access, dbus-user-session for the
+    # user session bus), and Debian lists them only under Recommends.
+    install_opts = ['-y']
     env = os.environ.copy()
 
     env['DEBIAN_FRONTEND'] = 'noninteractive'
-    install_opts = ['-y'] + install_opts
 
     try:
         # Enable 32-bit libraries
@@ -146,6 +149,20 @@ def install_dependencies():
         os.rename(filename, f'{filename}.deb')
         apt_get = sudo.bake('apt-get', _fg=True, _env=env)
         apt_get.install(install_opts + [f'{filename}.deb'])
+
+    _print_podman_setup()
+
+
+def _print_podman_setup():
+    """
+    Tell the user what remains to be done before Podman can build images.
+    """
+    logger.warning('Log out and log in before building S2E or images. Rootless Podman needs the '
+                   'user session bus, which starts with the next login.')
+
+    if _get_os_version() == ('debian', 12):
+        logger.warning('Podman on Debian 12 uses the slow vfs storage driver by default. %s',
+                       STORAGE_CONF_HINT)
 
 
 def _get_os_version():

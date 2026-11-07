@@ -148,9 +148,6 @@ class BaseCommand(metaclass=ABCMeta):
         args = cmd_options.pop('args', ())
 
         try:
-            if not os.getuid():
-                raise CommandError('Please do not run s2e as root')
-
             self.execute(*args, **cmd_options)
         except Exception as e:
             # Only handle CommandErrors here

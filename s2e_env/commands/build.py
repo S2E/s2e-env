@@ -32,6 +32,7 @@ from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils.host import get_os_version
+from s2e_env.utils.podman import check_podman
 
 logger = logging.getLogger('build')
 
@@ -78,11 +79,13 @@ class Command(EnvCommand):
         if not os.path.isfile(makefile):
             raise CommandError(f'{makefile} not found')
 
-        try:
-            logger.info('Generating S2E build environment Docker image')
-            docker = sh.Command('docker')
+        check_podman()
 
-            docker(
+        try:
+            logger.info('Generating S2E build environment Podman image')
+            podman = sh.Command('podman')
+
+            podman(
                 "build",
                 "-f", "Dockerfile.tools",
                 "--target", "s2e-build-env-tools",
@@ -94,7 +97,7 @@ class Command(EnvCommand):
             )
 
             logger.info('Building S2E tools in %s', build_dir)
-            docker(
+            podman(
                 "run",
                 "-t", "--rm",
                 "-e", "SYSTEM_CLANG_VERSION=15",
@@ -102,7 +105,6 @@ class Command(EnvCommand):
                 "-w", build_dir,
                 "-v", f"{self.env_path()}:{self.env_path()}",
                 "s2e-build-env-tools",
-                "/run_as.sh", os.getuid(), os.getgid(),
                 "make", "-f", makefile, "install",
                 _out=sys.stdout,
                 _err=sys.stderr

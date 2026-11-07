@@ -46,6 +46,7 @@ from sh import ErrorReturnCode
 from s2e_env import CONSTANTS
 from s2e_env.command import EnvCommand, CommandError
 from s2e_env.utils import repos
+from s2e_env.utils.podman import check_podman
 from s2e_env.utils.images import ImageDownloader, get_image_templates, get_app_templates, get_all_images, \
                                  translate_image_name
 
@@ -85,14 +86,6 @@ def _raise_group_error(group_name):
                        'images. Please run the following command, then logout '
                        'and login:\n\n'
                        f'\tsudo usermod -a -G {group_name} $(whoami)')
-
-
-def _check_groups_docker():
-    """
-    Check that the current user belongs to the required groups to both run S2E and build S2E images.
-    """
-    if not _user_belongs_to('docker'):
-        _raise_group_error('docker')
 
 
 def _check_groups_kvm():
@@ -429,7 +422,7 @@ class Command(EnvCommand):
             _check_kvm()
             _check_groups_kvm()
 
-        _check_groups_docker()
+        check_podman()
         _check_vmlinux()
 
         self._has_cow = _check_cow(self.image_path())
