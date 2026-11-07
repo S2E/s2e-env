@@ -24,7 +24,6 @@ SOFTWARE.
 # TODO: implement line continuator
 # TODO: support semicolons in quoted strings
 
-import codecs
 import logging
 import re
 
@@ -46,7 +45,7 @@ class InfFileParser:
 
         for codec in ('utf-16', 'utf-8'):
             try:
-                with codecs.open(filename, 'r', codec) as fp:
+                with open(filename, 'r', encoding=codec, newline='') as fp:
                     data = fp.read()
                     decoded = True
             except UnicodeError:
