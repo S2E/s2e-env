@@ -32,9 +32,9 @@ class ELFTestCase(TestCase):
         """Test basic block code coverage of an x86 ELF executable, mmount"""
         bbs = tb_coverage = None
 
-        with open(os.path.join(CURR_DIR, 'mmount_bbs.json'), 'r') as f1:
+        with open(os.path.join(CURR_DIR, 'mmount_bbs.json'), 'r', encoding='utf-8') as f1:
             bbs = json.load(f1, cls=basic_block.BasicBlockDecoder)
-        with open(os.path.join(CURR_DIR, 'mmount_tb_coverage.json'), 'r') as f2:
+        with open(os.path.join(CURR_DIR, 'mmount_tb_coverage.json'), 'r', encoding='utf-8') as f2:
             tb_coverage = json.load(f2)
 
         bb_coverage = basic_block._get_basic_block_coverage(tb_coverage, bbs)
